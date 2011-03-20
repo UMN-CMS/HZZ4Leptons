@@ -164,7 +164,7 @@ ZSmearingProducer::ZSmearingProducer(const edm::ParameterSet& iConfig) :
   std::cout << "++ EB smearing parameters: \tp0: " << EBPrams_.sigma[0]
 	    << "\tp1: " << EBPrams_.sigma[1]
 	    << "\tp2: " << EBPrams_.sigma[2] 
-	    << "\tp3: " << EBPrams_.sigma[3] 
+	    << "\tp3 (c): " << EBPrams_.sigma[3] 
 	    << "\tpalpha: " << EBPrams_.alpha 
 	    << "\tmean: " << EBPrams_.mean
 	    << "\tn: " << EBPrams_.N
@@ -182,6 +182,7 @@ ZSmearingProducer::ZSmearingProducer(const edm::ParameterSet& iConfig) :
   std::cout << "++ EE smearing parameters: \tp0: " << EEPrams_.sigma[0]
 	    << "\tp1: " << EEPrams_.sigma[1]
 	    << "\tp2: " << EEPrams_.sigma[2] 
+	    << "\tp3 (c): " << EEPrams_.sigma[3] 
 	    << "\tpalpha: " << EEPrams_.alpha 
 	    << "\tmean: " << EEPrams_.mean
     	    << "\tn: " << EEPrams_.N
@@ -326,6 +327,7 @@ void ZSmearingProducer::smearElectron(math::PtEtaPhiELorentzVector &electron)
   //double et  = electron.Et();
   //double pt = electron.Pt();
 
+  // Efrac is the ratio E_smeared/E_true for this specific electron
   double Efrac = 1.0;
   
   ZShapeElectron myElec;
@@ -342,7 +344,7 @@ void ZSmearingProducer::smearElectron(math::PtEtaPhiELorentzVector &electron)
   else if (fabs(deteta) < EEHFbountry)
   {
     //Do EE Stuff
-    Efrac = smearECALCB(deteta,e, mdt_EE);
+    Efrac = smearECALCB(deteta,e, mdt_EE);    // EE is now using the same parameterization as EB
   }
   else if (fabs(deteta) < 5.0)
   {
@@ -449,11 +451,30 @@ Double_t crystalBall(Double_t *x, Double_t *par)
 
 // x[0] is energy, x[1] is eta 
 Double_t EBRes(Double_t *x,Double_t *par) {
+  // x[0] is sqrt(E)
+  // x[1] is eta
   if (x[0] < 0.01 ) return 100.;
   Double_t p0 = par[0]/x[0];        // par[0] is stochastic term
-  Double_t p1 = par[0]*par[1]/x[0]; // par[1-2] are parameters for eta-dependece
+  Double_t p1 = par[0]*par[1]/x[0]; // par[1-2] are parameters for eta-dependece; par[3] is the constant term
   Double_t p2 = par[0]*par[2]/x[0];
-  return ( TMath::Power((TMath::Power( (p0-p1*fabs(x[1])+p2*x[1]*x[1]),2) + par[3]*par[3]),0.5) );
+
+  //  std::cout << "par[0]: "        << par[0]
+  //	    << "\t par[1]: "     << par[1]
+  //	    << "\t par[2]: "     << par[2]
+  //	    << "\t par[3] (c): " << par[3]
+  //	    << "\t energy: " << x[0]*x[0]
+  //	    << "\t eta: " << x[1] 
+  //	    << "\t EBRes widht: " << ( TMath::Power( (
+  //					      TMath::Power( (p0-p1*fabs(x[1])+p2*x[1]*x[1]),2) +
+  //					      par[3]*par[3]),0.5)
+  //				       )
+  //	    << std::endl;
+  
+  return ( TMath::Power( (
+			  TMath::Power( (p0-p1*fabs(x[1])+p2*x[1]*x[1]),2) + 
+			  par[3]*par[3]),0.5)
+	   );
+
 }
 
 Double_t EERes(Double_t *x,Double_t *par) {
@@ -464,10 +485,12 @@ Double_t EERes(Double_t *x,Double_t *par) {
   return (p0-p1*fabs(x[1])+p2*x[1]*x[1]);
 }
 
+// depending on which calorimeter, return width of E_smear/E_true
+//                                                    et is actually ENERGY
 double ZSmearingProducer::getSigma(double eta, double et, MyDetType det)
 {
   double x[2];
-  x[0] = (et<1)?(0):sqrt(et); // energy for EB
+  x[0] = (et<1)?(0):sqrt(et); // x[0] IS   sqrt (energy for EB/EE)  
   x[1] = eta;
   
   if ( det == mdt_EB)
@@ -483,8 +506,10 @@ double ZSmearingProducer::getSigma(double eta, double et, MyDetType det)
 
 double ZSmearingProducer::smearECALCB(double eta, double et, MyDetType det)
 {
+  // note1 : despited named "et" this variable actually carries Energy <<<
+  // note2 : these 5 parameters are to set up a crystal-ball 
   double params[5];
-  params[3] = getSigma(eta, et, det);
+  params[3] = getSigma(eta, et, det);  // et is used to store energy!
   params[0] = ( det == mdt_EB ) ? (EBPrams_.alpha) : (EEPrams_.alpha);
   params[1] = ( det == mdt_EB ) ? (EBPrams_.N) : (EEPrams_.N);
   params[2] = ( det == mdt_EB) ?  (EBPrams_.mean) : (1.0);
@@ -511,63 +536,63 @@ double ZSmearingProducer::smearECALCB(double eta, double et, MyDetType det)
 
 }
 
-//Method for smearing ECAL - nowhere use feb 24th 2011 (gf)
-double ZSmearingProducer::smearECAL(double eta, double et, MyDetType det)
-{
-  double p0r = 0.;
-  double p1r = 0.;
-  double p2r = 0.;
-  double p0l = 0.;
-  double p1l = 0.;
-  double p2l = 0.;
-
-  if ( det == mdt_EB ) 
-    {
-      //First the right, then the left sides sigma
-      p0r = 0.0028 + 0.380/et;
-      p1r = 0.0267 - 0.617/et;
-      p2r = -0.0146 + 0.597/et;
-
-      p0l = 0.0057 + 0.321/et;
-      p1l = 0.0185 - 0.410/et;
-      p2l = -0.010 + 0.789/et;
-    }
-  else if ( det == mdt_EE ) 
-    {
-      p0r = +6.29/et;
-      p1r = -4.53/et;
-      p2r = +0.95/et;
-
-      p0l = +7.98/et;
-      p1l = -5.56/et;
-      p2l = +1.25/et;
-    }
-  else return -1000.;
-
-  double sigmaL = p0l + p1l*fabs(eta) + p2l*eta*eta;
-  double sigmaR = p0r + p1r*fabs(eta) + p2r*eta*eta;
-  //std::cout << " Side " << det << " sigmaL " << sigmaL << " sigmaR " << sigmaR << std::endl;
-
-  double randomnumber = randomNum_->Uniform(0,1); //(between 0 and 1)
-  double leftfraction = (1.0/(1.0+sigmaR/sigmaL));
-  double meancor = (sigmaR*sigmaR - sigmaL*sigmaL)/(pow(2.0*3.141596,0.5)*(sigmaL + sigmaR));
-  //std::cout << " Mean is " << meancor << std::endl;
-  double frac = -1001.;
-  if (randomnumber < leftfraction)
-    {
-      double myfrac = randomNum_->Gaus(1.0-meancor,sigmaL);
-      frac = (1.0-meancor-fabs(1.0-meancor-myfrac));
-      //std::cout << " Went Left Myfac is " << myfrac << " and final Frac is " << frac << std::endl; 
-    }
-  else
-    {
-      double myfrac = randomNum_->Gaus(1.0-meancor,sigmaR);
-      frac = (1.0-meancor+fabs(1.0-meancor-myfrac));
-      //std::cout << " Went Right Myfac is " << myfrac << " and final Frac is " << frac << std::endl; 
-    }
-
-  return frac;
-}
+////Method for smearing ECAL - nowhere use feb 24th 2011 (gf)
+//double ZSmearingProducer::smearECAL(double eta, double et, MyDetType det)
+//{
+//  double p0r = 0.;
+//  double p1r = 0.;
+//  double p2r = 0.;
+//  double p0l = 0.;
+//  double p1l = 0.;
+//  double p2l = 0.;
+//
+//  if ( det == mdt_EB ) 
+//    {
+//      //First the right, then the left sides sigma
+//      p0r = 0.0028 + 0.380/et;
+//      p1r = 0.0267 - 0.617/et;
+//      p2r = -0.0146 + 0.597/et;
+//
+//      p0l = 0.0057 + 0.321/et;
+//      p1l = 0.0185 - 0.410/et;
+//      p2l = -0.010 + 0.789/et;
+//    }
+//  else if ( det == mdt_EE ) 
+//    {
+//      p0r = +6.29/et;
+//      p1r = -4.53/et;
+//      p2r = +0.95/et;
+//
+//      p0l = +7.98/et;
+//      p1l = -5.56/et;
+//      p2l = +1.25/et;
+//    }
+//  else return -1000.;
+//
+//  double sigmaL = p0l + p1l*fabs(eta) + p2l*eta*eta;
+//  double sigmaR = p0r + p1r*fabs(eta) + p2r*eta*eta;
+//  //std::cout << " Side " << det << " sigmaL " << sigmaL << " sigmaR " << sigmaR << std::endl;
+//
+//  double randomnumber = randomNum_->Uniform(0,1); //(between 0 and 1)
+//  double leftfraction = (1.0/(1.0+sigmaR/sigmaL));
+//  double meancor = (sigmaR*sigmaR - sigmaL*sigmaL)/(pow(2.0*3.141596,0.5)*(sigmaL + sigmaR));
+//  //std::cout << " Mean is " << meancor << std::endl;
+//  double frac = -1001.;
+//  if (randomnumber < leftfraction)
+//    {
+//      double myfrac = randomNum_->Gaus(1.0-meancor,sigmaL);
+//      frac = (1.0-meancor-fabs(1.0-meancor-myfrac));
+//      //std::cout << " Went Left Myfac is " << myfrac << " and final Frac is " << frac << std::endl; 
+//    }
+//  else
+//    {
+//      double myfrac = randomNum_->Gaus(1.0-meancor,sigmaR);
+//      frac = (1.0-meancor+fabs(1.0-meancor-myfrac));
+//      //std::cout << " Went Right Myfac is " << myfrac << " and final Frac is " << frac << std::endl; 
+//    }
+//
+//  return frac;
+//}
 
 
 
