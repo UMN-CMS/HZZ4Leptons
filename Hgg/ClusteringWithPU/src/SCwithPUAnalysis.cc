@@ -13,7 +13,7 @@
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id$
+// $Id: SCwithPUAnalysis.cc,v 1.1 2011/03/14 22:27:06 franzoni Exp $
 //
 //
 
@@ -74,11 +74,18 @@ class SCwithPUAnalysis : public edm::EDAnalyzer {
   TH1F *h_scet_endc;
   TH1F *h_EoverEtrue_barl;
   TH1F *h_EoverEtrue_endc;
-  TH1F *h_E5x5R9overEtrue_barl;
   TH1F *h_E5x5overEtrue_barl;
+  TH1F *h_E5x5overEtrue_endc;
+  TH1F *h_E5x5R9overEtrue_barl;
   TH1F *h_PhoER9overEtrue_barl;
+  TH1F *h_E5x5notR9overEtrue_barl;
+  TH1F *h_PhoEnotR9overEtrue_barl;
   TH1F *h_PhoEoverEtrue_barl;
   TH1F *h_PhoEoverEtrue_endc;
+  TH1F *h_E5x5R9overEtrue_endc;
+  TH1F *h_PhoER9overEtrue_endc;
+  TH1F *h_E5x5notR9overEtrue_endc;
+  TH1F *h_PhoEnotR9overEtrue_endc;
   TH1F *h_nVtx;
   TH1F *h_dzVtx;
   TH1F *h_mHiggs_EBEB;
@@ -88,6 +95,7 @@ class SCwithPUAnalysis : public edm::EDAnalyzer {
   TH1F *h_mHiggs_EBEE_trueVtx;
   TH1F *h_mHiggs_EEEE_trueVtx;
   TH2F *h_E5x5overEtrueVsEphoEtrue_barl;
+  TH2F *h_E5x5overEtrueVsEphoEtrue_endc;
   TH1F *h_phiWidth;
   TH2F *h_phiWidthVsE;
   TH1F *h_phiWidth_endc;
@@ -159,6 +167,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
   bool trueVtxFound=false;
   math::XYZPoint trueVtx(0.,0.,0.);
 
+  // loop over MC-truth particles
   for ( HepMC::GenEvent::particle_const_iterator p = myGenEvent->particles_begin(); p != myGenEvent->particles_end(); ++p ) {
     if ( !( (fabs((*p)->pdg_id())==11 || (*p)->pdg_id()==22) && (*p)->status()==1 )  )  continue;
 
@@ -180,22 +189,25 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	//cout << " " << trueVtx << " " << recoVtx << endl;
       }
 
+      
       float phi_true=(*p)->momentum().phi();
       float eta_true=(*p)->momentum().eta();
       float etaEcal_true = etaTransformation(eta_true, (*p)->production_vertex()->position().z()/10. );
       float et_true = (*p)->momentum().e()/cosh((*p)->momentum().eta());
 
-// Barrel SuperClusters
+      // Barrel SuperClusters
       for(SuperClusterCollection::const_iterator scIt = barrelSCCollection->begin(); scIt != barrelSCCollection->end(); scIt++) {
 	if (fabs(scIt->eta())<1.4442 && scIt->energy()/cosh(scIt->eta())>20.) {
+	  // perform SC-MCparticle matching
 	  float deltaPhi = scIt->phi()-phi_true;
 	  float deltaEta = scIt->eta()-etaEcal_true;
-	  float phiWidth = scIt->phiWidth();
+	  float phiWidth = scIt->phiWidth();          // covariance of cluster in phi
+	                                              // we want to look at the absolute extension too... phi_MAX-phi_min 
 
 	  if ( deltaPhi > pi ) deltaPhi -= twopi;
 	  if ( deltaPhi < -pi) deltaPhi += twopi;
 	  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);
-	  if ( delta<0.1) {
+	  if ( delta<0.1) { // match if dr<0.1
 	    h_scet_barl->Fill((scIt->energy()/cosh(scIt->eta()))/et_true);
 	    h_EoverEtrue_barl->Fill(scIt->energy()/(*p)->momentum().e());
 	    h_phiWidth->Fill(phiWidth);
@@ -203,8 +215,8 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  }
 	}
       }
-
-// Endcap SuperClusters
+      
+      // Endcap SuperClusters
       for(SuperClusterCollection::const_iterator scIt = endcapSCCollection->begin(); scIt != endcapSCCollection->end(); scIt++) {
 	if (fabs(scIt->eta())>1.566 && fabs(scIt->eta())<2.5 && scIt->energy()/cosh(scIt->eta())>20.) {
 	  float deltaPhi = scIt->phi()-phi_true;
@@ -214,7 +226,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  if ( deltaPhi > pi ) deltaPhi -= twopi;
 	  if ( deltaPhi < -pi) deltaPhi += twopi;
 	  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);
-	  if ( delta<0.1) {
+	  if ( delta<0.1) { // match if dr<0.1
 	    h_scet_endc->Fill((scIt->energy()/cosh(scIt->eta()))/et_true);
 	    h_EoverEtrue_endc->Fill(scIt->energy()/(*p)->momentum().e());
 	    h_phiWidth_endc->Fill(phiWidth);
@@ -222,7 +234,9 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  }
 	}
       }
-
+      
+      // special treatment if current MCparticle is a photon
+      // match also to photon object
       if ((*p)->pdg_id()==22) {
 	
 	for(PhotonCollection::const_iterator phoIt = photonCollection->begin(); phoIt != photonCollection->end(); phoIt++) {
@@ -237,15 +251,28 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	      h_PhoEoverEtrue_barl->Fill(phoIt->energy()/(*p)->momentum().e());
 	      h_E5x5overEtrue_barl->Fill(phoIt->e5x5()/(*p)->momentum().e());
 	      h_E5x5overEtrueVsEphoEtrue_barl->Fill(phoIt->e5x5()/(*p)->momentum().e(),phoIt->energy()/(*p)->momentum().e());
-	      if (phoIt->r9()>0.93) {
+	      if (phoIt->r9()>0.94) { // r9 cut is 0.94 for EB and 0.95 for EE  
 		h_E5x5R9overEtrue_barl->Fill(phoIt->e5x5()/(*p)->momentum().e());
 		h_PhoER9overEtrue_barl->Fill(phoIt->energy()/(*p)->momentum().e());
+	      } else {
+		h_E5x5notR9overEtrue_barl->Fill(phoIt->e5x5()/(*p)->momentum().e());
+		h_PhoEnotR9overEtrue_barl->Fill(phoIt->energy()/(*p)->momentum().e());
 	      }
 	      isEB++;
-	    } else if (phoIt->isEE()) {
-	      h_PhoEoverEtrue_endc->Fill(phoIt->energy()/(*p)->momentum().e());
 	    }
-	    if (mother2!=0 && mother2->pdg_id()==25) {
+	    else if (phoIt->isEE()) {
+	      h_PhoEoverEtrue_endc->Fill(phoIt->energy()/(*p)->momentum().e());
+	      h_E5x5overEtrue_endc->Fill(phoIt->e5x5()/(*p)->momentum().e());
+	      h_E5x5overEtrueVsEphoEtrue_endc->Fill(phoIt->e5x5()/(*p)->momentum().e(),phoIt->energy()/(*p)->momentum().e());
+	      if (phoIt->r9()>0.95) { // r9 cut is 0.94 for EB and 0.95 for EE  
+		h_E5x5R9overEtrue_endc->Fill(phoIt->e5x5()/(*p)->momentum().e());
+		h_PhoER9overEtrue_endc->Fill(phoIt->energy()/(*p)->momentum().e());
+	      } else {
+		h_E5x5notR9overEtrue_endc->Fill(phoIt->e5x5()/(*p)->momentum().e());
+		h_PhoEnotR9overEtrue_endc->Fill(phoIt->energy()/(*p)->momentum().e());
+	      }
+	    }
+	    if (mother2!=0 && mother2->pdg_id()==25) { // specifically look out for HIGGses
 	      if (phoIt->isEB() || phoIt->isEE()) {
 		higgsPhotons.push_back(*phoIt);
 		Photon localPho = Photon(*phoIt);
@@ -254,15 +281,15 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 		higgsPhotons_trueVtx.push_back(localPho);
 		//cout << phoIt->et() << " " << localPho.et() << " " << trueVtx << " " << recoVtx << endl;
 	      }
-	    }
-	  }
-	}
-
-      }
-
+	    } // if mother
+	  }// if matching between SC and photon
+	}// loop over photons
+	
+      }// if it's MC-truth photon
+      
     }
-  }
-
+  }// loop over all MC-truth particles
+  
   if (higgsPhotons.size()>1) {
     if ((higgsPhotons[0].et()>40. && higgsPhotons[1].et()>30.) ||
 	(higgsPhotons[0].et()>30. && higgsPhotons[1].et()>40.)) {
@@ -307,10 +334,17 @@ SCwithPUAnalysis::beginJob()
   h_EoverEtrue_barl = fs->make<TH1F>("h_EoverEtrue_barl","E_SC/Etrue, barrel",120,0.6,1.2);
   h_EoverEtrue_endc = fs->make<TH1F>("h_EoverEtrue_endc","E_SC/Etrue, endcap",120,0.6,1.2);
   h_E5x5overEtrue_barl = fs->make<TH1F>("h_E5x5overEtrue_barl","E5x5/Etrue, barrel",120,0.6,1.2);
-  h_E5x5R9overEtrue_barl = fs->make<TH1F>("h_E5x5R9overEtrue_barl","E5x5/Etrue for R9>0.93, barrel",120,0.6,1.2);
   h_PhoEoverEtrue_barl = fs->make<TH1F>("h_PhoEoverEtrue_barl","E_Photon/Etrue, barrel",120,0.6,1.2);
+  h_E5x5R9overEtrue_barl = fs->make<TH1F>("h_E5x5R9overEtrue_barl","E5x5/Etrue for R9>0.93, barrel",120,0.6,1.2);
   h_PhoER9overEtrue_barl = fs->make<TH1F>("h_PhoER9overEtrue_barl","E_Photon/Etrue for R9>0.93, barrel",120,0.6,1.2);
+  h_E5x5notR9overEtrue_barl = fs->make<TH1F>("h_E5x5notR9overEtrue_barl","E5x5/Etrue for R9<0.93, barrel",120,0.6,1.2);
+  h_PhoEnotR9overEtrue_barl = fs->make<TH1F>("h_PhoEnotR9overEtrue_barl","E_Photon/Etrue for R9<0.93, barrel",120,0.6,1.2);
+  h_E5x5overEtrue_endc = fs->make<TH1F>("h_E5x5overEtrue_endc","E5x5/Etrue, endcap",120,0.6,1.2);
   h_PhoEoverEtrue_endc = fs->make<TH1F>("h_PhoEoverEtrue_endc","E_Photon/Etrue, endcap",120,0.6,1.2);
+  h_E5x5R9overEtrue_endc = fs->make<TH1F>("h_E5x5R9overEtrue_endc","E5x5/Etrue for R9>0.93, endcap",120,0.6,1.2);
+  h_PhoER9overEtrue_endc = fs->make<TH1F>("h_PhoER9overEtrue_endc","E_Photon/Etrue for R9>0.93, endcap",120,0.6,1.2);
+  h_E5x5notR9overEtrue_endc = fs->make<TH1F>("h_E5x5notR9overEtrue_endc","E5x5/Etrue for R9<0.93, endcap",120,0.6,1.2);
+  h_PhoEnotR9overEtrue_endc = fs->make<TH1F>("h_PhoEnotR9overEtrue_endc","E_Photon/Etrue for R9<0.93, endcap",120,0.6,1.2);
   h_nVtx = fs->make<TH1F>("h_nVtx","no. of primary vertices",30,0.,30.);
   h_dzVtx = fs->make<TH1F>("h_dzVtx","delta_z for reconstructed PV w.r.t. true PV",200,-5.,5.);
   h_mHiggs_EBEB = fs->make<TH1F>("h_mHiggs_EBEB","2 photon invariant mass, EBEB",120,100.,140.);
@@ -320,6 +354,7 @@ SCwithPUAnalysis::beginJob()
   h_mHiggs_EBEE_trueVtx = fs->make<TH1F>("h_mHiggs_EBEE_trueVtx","2 photon invariant mass, EBEE, true PV",120,100.,140.);
   h_mHiggs_EEEE_trueVtx = fs->make<TH1F>("h_mHiggs_EEEE_trueVtx","2 photon invariant mass, EEEE, true PV",120,100.,140.);
   h_E5x5overEtrueVsEphoEtrue_barl = fs->make<TH2F>("h_E5x5overEtrueVsEphoEtrue_barl","E5x5/Etrue vs Epho/Etrue, barrel",120,0.6,1.2,120,0.6,1.2);
+  h_E5x5overEtrueVsEphoEtrue_endc = fs->make<TH2F>("h_E5x5overEtrueVsEphoEtrue_endc","E5x5/Etrue vs Epho/Etrue, endcap",120,0.6,1.2,120,0.6,1.2);
   h_phiWidth = fs->make<TH1F>("h_phiWidth_barrel","phi Width (barrel)", 100,0,0.2);
   h_phiWidthVsE = fs->make<TH2F>("h_phiWidthVsE_barrel","phi Width Vs. E (Barrel)", 100,0,0.2,200,0,200);
   h_phiWidth_endc = fs->make<TH1F>("h_phiWidth_endc","phi Width (Endcap)", 100,0,0.2);
@@ -335,6 +370,7 @@ void
 SCwithPUAnalysis::endJob() {
 }
 
+// compute eta at detector, given physics eta and location of primary vertex
 float SCwithPUAnalysis::etaTransformation(  float EtaParticle , float Zvertex)  {
 
   //---Definitions
@@ -342,7 +378,7 @@ float SCwithPUAnalysis::etaTransformation(  float EtaParticle , float Zvertex)  
   //UNUSED const float TWOPI = 2.0*PI;
 
   //---Definitions for ECAL
-  const float R_ECAL           = 136.5;
+  const float R_ECAL           = 136.5;  // radius of maximum containement
   const float Z_Endcap         = 328.0;
   const float etaBarrelEndcap  = 1.479;
 
@@ -352,8 +388,8 @@ float SCwithPUAnalysis::etaTransformation(  float EtaParticle , float Zvertex)  
   float ZEcal = R_ECAL*sinh(EtaParticle)+Zvertex;
 
   if(ZEcal != 0.0) Theta = atan(R_ECAL/ZEcal);
-  if(Theta<0.0) Theta = Theta+PI ;
-  float ETA = - log(tan(0.5*Theta));
+  if(Theta<0.0)    Theta = Theta+PI ;
+  float ETA =      - log(tan(0.5*Theta));
 
   if( fabs(ETA) > etaBarrelEndcap )
     {
