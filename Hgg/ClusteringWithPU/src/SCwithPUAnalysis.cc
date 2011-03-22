@@ -13,7 +13,7 @@
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.1 2011/03/14 22:27:06 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.2 2011/03/21 15:50:48 franzoni Exp $
 //
 //
 
@@ -408,4 +408,4 @@ float SCwithPUAnalysis::etaTransformation(  float EtaParticle , float Zvertex)  
 
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(SCwithPUAnalysis);
+//DEFINE_FWK_MODULE(SCwithPUAnalysis);
