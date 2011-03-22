@@ -12,7 +12,7 @@ process.options = cms.untracked.PSet(
 
 
 process.maxEvents = cms.untracked.PSet(
-        input = cms.untracked.int32(10000)
+        input = cms.untracked.int32(3000)
         )
 
 process.TFileService = cms.Service("TFileService",
@@ -25,8 +25,8 @@ process.source = cms.Source("PoolSource",
                             duplicateCheckMode = cms.untracked.string("noDuplicateCheck"),
                             fileNames = cms.untracked.vstring(
 #        'file:/data2/kubota/CMSSW_3_9_4/src/H120GGgluonfusion_PU20_1.root',
-#        'file:/data/franzoni/data/superClusterPU/H120GGgluonfusion_PU20_9.root'
-        'rfio:/castor/cern.ch/user/f/futyand/SCwithPU/H120GGgluonfusion_PU20_1.root'
+        'file:/data/franzoni/data/superClusterPU/H120GGgluonfusion_PU20_9.root'
+#        'rfio:/castor/cern.ch/user/f/futyand/SCwithPU/H120GGgluonfusion_PU20_1.root'
 #        'rfio:/castor/cern.ch/user/f/futyand/SCwithPU/H120GGgluonfusion_PU20_2.root',
     )
 )
