@@ -13,7 +13,7 @@
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.2 2011/03/21 15:50:48 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.3 2011/03/22 23:12:09 franzoni Exp $
 //
 //
 
@@ -329,8 +329,8 @@ SCwithPUAnalysis::beginJob()
 
   edm::Service<TFileService> fs;
 
-  h_scet_barl = fs->make<TH1F>("h_scet_barl","SC ET, barrel",120,0.6,1.2);
-  h_scet_endc = fs->make<TH1F>("h_scet_endc","SC ET, endcap",120,0.6,1.2);
+  h_scet_barl = fs->make<TH1F>("h_scet_barl","SC ET over true, barrel",120,0.6,1.2);
+  h_scet_endc = fs->make<TH1F>("h_scet_endc","SC ET over true, endcap",120,0.6,1.2);
   h_EoverEtrue_barl = fs->make<TH1F>("h_EoverEtrue_barl","E_SC/Etrue, barrel",120,0.6,1.2);
   h_EoverEtrue_endc = fs->make<TH1F>("h_EoverEtrue_endc","E_SC/Etrue, endcap",120,0.6,1.2);
   h_E5x5overEtrue_barl = fs->make<TH1F>("h_E5x5overEtrue_barl","E5x5/Etrue, barrel",120,0.6,1.2);
