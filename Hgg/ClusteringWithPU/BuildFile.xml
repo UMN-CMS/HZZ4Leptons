@@ -6,6 +6,7 @@
 <use name="SimDataFormats/GeneratorProducts"/>
 <use name="DataFormats/EgammaReco"/>
 <use name="DataFormats/EgammaCandidates"/>
+<use   name="DataFormats/EcalDetId"/>
 <export>
   <lib   name="1"/>
 </export>
