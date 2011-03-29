@@ -13,7 +13,7 @@
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.4 2011/03/23 16:41:24 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.5 2011/03/24 19:18:44 franzoni Exp $
 //
 //
 
@@ -50,6 +50,7 @@
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 #include "DataFormats/Candidate/interface/Particle.h"
+#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
 
 #include "TFile.h"
 #include "TH1.h"
@@ -58,6 +59,12 @@
 
 #define PI    3.14159
 #define TWOPI 6.28318539
+
+#define R_ECAL           136.5  // radius of maximum containement
+#define Z_Endcap         328.0
+#define etaBarrelEndcap  1.479
+#define eeCrySize        2.5
+
 
 //
 // class declaration
@@ -111,6 +118,14 @@ class SCwithPUAnalysis : public edm::EDAnalyzer {
   TH2F *h_phiSizeVsE;
   TH1F *h_phiSize_endc;
   TH2F *h_phiSizeVsE_endc;
+  TH1F *h_phiShape_barl; 
+  TH1F *h_absPhiShape_barl; 
+  TH1F *h_phiShape_endc; 
+  TH1F *h_absPhiShape_endc; 
+  TH2F *h_phiShapeVsE_barl; 
+  TH2F *h_absPhiShapeVsE_barl; 
+  TH2F *h_phiShapeVsE_endc; 
+  TH2F *h_absPhiShapeVsE_endc; 
 };
 
 //
@@ -137,8 +152,59 @@ SCwithPUAnalysis::~SCwithPUAnalysis()
 {
 }
 
-// PhiSize is in unit of crystals for EB 
-//                       radiants for EE (change this to crystals too)             
+
+
+
+
+// returns distance between two crystals, in units of crystal size (both  for EB and EE)
+float getPhiDistance(DetId theSeed, DetId theCry ){
+
+  if ( theSeed.subdetId()==EcalBarrel && theCry.subdetId()==EcalBarrel)     // the barrel case
+    {
+      float theSeedPhi = EBDetId ( theSeed.rawId() ).iphi();
+      float theCryPhi  = EBDetId ( theCry.rawId() ).iphi();
+      // std::cout << "theSeedPhi: " << theSeedPhi << " theCryPhi: " << theCryPhi;
+      if (fabs( theCryPhi - theSeedPhi ) > 180 )                            // this means cluster is crossing the iphi==1 <--> iphi==360 boundary
+	{
+	  theCryPhi -= 360 * signum( theCryPhi - theSeedPhi );
+	}
+      // std::cout << " theCryPhiAFTER: " << theCryPhi << " theDifference: " << (theCryPhi-theSeedPhi) << std::endl;
+      return (theCryPhi-theSeedPhi);    // this is in units of EB crystals
+    }
+  else if ( theSeed.subdetId()==EcalEndcap && theCry.subdetId()==EcalEndcap) // the endcap case
+    {
+      float theSeedX = EEDetId ( theSeed.rawId() ).ix() -50;
+      float theSeedY = EEDetId ( theSeed.rawId() ).iy() -50;
+      float theSeedPhi = atan2( theSeedX , theSeedY); 
+      float theCryX  = EEDetId ( theCry.rawId() ).ix()  -50;
+      float theCryY  = EEDetId ( theCry.rawId() ).iy()  -50;
+      float theCryPhi  = atan2( theCryX , theCryY); 
+      
+      // std::cout << "EE theSeedPhi: " << theSeedPhi << " theCryPhi: " << theCryPhi;
+      if ( fabs( theCryPhi - theSeedPhi ) > PI ) // this means cluster is crossing the phi==-pi <--> phi==pi boundary
+	{
+	  theCryPhi -= TWOPI * signum ( theCryPhi - theSeedPhi );
+	}
+      // std::cout << " ee theCryPhiAFTER: " << theCryPhi << " theDifference: " << (theCryPhi-theSeedPhi) << " returning: " << ( (theCryPhi - theSeedPhi) * pow( theSeedX*theSeedX + theSeedY*theSeedY, 0.5) )   << std::endl;
+      //        angular span              radius in units of EE crystal size 
+      return ( (theCryPhi - theSeedPhi) * pow( theSeedX*theSeedX + theSeedY*theSeedY, 0.5) ) ;
+    }
+  else // unsupported mixed case
+    {
+      return -9999;
+    }
+  
+}
+
+
+
+
+
+
+
+
+// PhiSize is in unit of: crystals for EB 
+//                        radiants for EE (change this to crystals too)             
 float getPhiSize(reco::SuperClusterCollection::const_iterator scIt , float isBarrel ){
   // scIt is an iterator pointing to a supercluster
   // isBarrel has to be passed from outside - resolve there the clusters across EB and EE
@@ -196,10 +262,6 @@ float getPhiSize(reco::SuperClusterCollection::const_iterator scIt , float isBar
     }
 
   float thePhiSize = phiHigh-phiLow;
-  //if(isBarrel && thePhiSize>180)                    thePhiSize-=180;
-  //else if ((!isBarrel) && thePhiSize>3.1415927 )    thePhiSize-=3.1415927;
-  //if (!isBarrel)    thePhiSize *= (360. / 3.1415927);
-
   // std::cout << "thePhiSize: " << thePhiSize << std::endl;
 
   // PhiSize is in unit of crystals for EB 
@@ -238,6 +300,16 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
   const VertexCollection * vertexCollection = vertexHandle.product();
   math::XYZPoint recoVtx(0.,0.,0.);
   if (vertexCollection->size()>0) recoVtx = vertexCollection->begin()->position();
+
+  Handle<EcalRecHitCollection> ebRecHitsHandle;
+  ev.getByLabel("ecalRecHit", "EcalRecHitsEB", ebRecHitsHandle);
+  const EcalRecHitCollection * ebRecHits = ebRecHitsHandle.product();
+  //std::cout << "ebRecHits size: " << ebRecHits->size() << std::endl;
+  Handle<EcalRecHitCollection> eeRecHitsHandle;
+  ev.getByLabel("ecalRecHit", "EcalRecHitsEE", eeRecHitsHandle);
+  const EcalRecHitCollection * eeRecHits = eeRecHitsHandle.product();
+  //std::cout << "eeRecHits size: " << eeRecHits->size() << std::endl;
+
 
   h_nVtx->Fill(vertexCollection->size());
 
@@ -286,7 +358,9 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  float deltaEta = scIt->eta()-etaEcal_true;
 	  float phiWidth = scIt->phiWidth();          // covariance of cluster in phi
 	                                              // we want to look at the absolute extension too... phi_MAX-phi_min 
-	  
+	  float energySC = scIt->energy();
+	  float energySCtoCheck=0;
+
 	  float phiSize = getPhiSize(scIt,true);
 	  if ( deltaPhi > pi ) deltaPhi -= twopi;
 	  if ( deltaPhi < -pi) deltaPhi += twopi;
@@ -298,9 +372,25 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	    h_phiWidthVsE->Fill(phiWidth,(*p)->momentum().e());	  
 	    h_phiSize->Fill(phiSize);
 	    h_phiSizeVsE->Fill(phiSize,(*p)->momentum().e());	  
-	  }
-	}
-      }
+
+	    std::vector< std::pair<DetId, float> >    theHitsAndFractions =  scIt->hitsAndFractions();  
+	    for(std::vector< std::pair<DetId, float> >::const_iterator idsIt = theHitsAndFractions.begin(); 
+		idsIt != theHitsAndFractions.end(); ++idsIt) 
+	      {
+		float thePhiDistance = getPhiDistance( (*scIt->seed()).seed() , 
+						      (*idsIt).first );
+		float currEbEnergy   = (ebRecHits->find( (*idsIt).first ))->energy();
+		energySCtoCheck      += currEbEnergy;
+		h_phiShape_barl       -> Fill(thePhiDistance, currEbEnergy/energySC);
+		h_absPhiShape_barl    -> Fill(fabs(thePhiDistance), currEbEnergy/energySC);
+		h_phiShapeVsE_barl    -> Fill(thePhiDistance, scIt->energy() , currEbEnergy/energySC);   
+		h_absPhiShapeVsE_barl -> Fill(fabs(thePhiDistance), scIt->energy() , currEbEnergy/energySC);   
+	      } // loop over crystals of the SC
+	    //std::cout << "EB energySC: " << energySC << " energySCtoCheck: " << energySCtoCheck << std::endl;
+	    // unresolved: energySC > energySCtoCheck???
+	  }// if matching
+	}// if EB and Et>20
+      }// loop over superclusters
       
       // Endcap SuperClusters
       for(SuperClusterCollection::const_iterator scIt = endcapSCCollection->begin(); scIt != endcapSCCollection->end(); scIt++) {
@@ -308,6 +398,8 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  float deltaPhi = scIt->phi()-phi_true;
 	  float deltaEta = scIt->eta()-etaEcal_true;
 	  float phiWidth = scIt->phiWidth();
+	  float energySC = scIt->energy();
+	  float energySCtoCheck=0;
 
 	  float phiSize = getPhiSize(scIt,false);
 
@@ -321,7 +413,24 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	    h_phiWidthVsE_endc->Fill(phiWidth,(*p)->momentum().e());	  
 	    h_phiSize_endc->Fill(phiSize);
 	    h_phiSizeVsE_endc->Fill(phiSize,(*p)->momentum().e());	  
-	  }
+
+	    std::vector< std::pair<DetId, float> >    theHitsAndFractions =  scIt->hitsAndFractions();  
+	    for(std::vector< std::pair<DetId, float> >::const_iterator idsIt = theHitsAndFractions.begin(); 
+		idsIt != theHitsAndFractions.end(); ++idsIt) 
+	      {
+		float thePhiDistance = getPhiDistance( (*scIt->seed()).seed() , 
+						      (*idsIt).first );
+		float currEeEnergy   = (eeRecHits->find( (*idsIt).first ))->energy();
+		energySCtoCheck      += currEeEnergy;
+		h_phiShape_endc       -> Fill(thePhiDistance, currEeEnergy/energySC);
+		h_absPhiShape_endc    -> Fill(fabs(thePhiDistance), currEeEnergy/energySC);
+		h_phiShapeVsE_endc    -> Fill(thePhiDistance, scIt->energy() , currEeEnergy/energySC);   
+		h_absPhiShapeVsE_endc -> Fill(fabs(thePhiDistance), scIt->energy(), currEeEnergy/energySC );   
+
+	      } // loop over crystals of the SC
+	    // std::cout << "EE energySC: " << energySC << " energySCtoCheck: " << energySCtoCheck << std::endl;
+	    // unresolved: energySC > energySCtoCheck???
+	  }// if matching
 	}
       }
       
@@ -445,14 +554,22 @@ SCwithPUAnalysis::beginJob()
   h_mHiggs_EEEE_trueVtx = fs->make<TH1F>("h_mHiggs_EEEE_trueVtx","2 photon invariant mass, EEEE, true PV",120,100.,140.);
   h_E5x5overEtrueVsEphoEtrue_barl = fs->make<TH2F>("h_E5x5overEtrueVsEphoEtrue_barl","E5x5/Etrue vs Epho/Etrue, barrel",120,0.6,1.2,120,0.6,1.2);
   h_E5x5overEtrueVsEphoEtrue_endc = fs->make<TH2F>("h_E5x5overEtrueVsEphoEtrue_endc","E5x5/Etrue vs Epho/Etrue, endcap",120,0.6,1.2,120,0.6,1.2);
-  h_phiWidth = fs->make<TH1F>("h_phiWidth_barrel","phi Width (barrel)", 100,0,0.2);
-  h_phiWidthVsE = fs->make<TH2F>("h_phiWidthVsE_barrel","phi Width Vs. E (Barrel)", 100,0,0.2,200,0,200);
+  h_phiWidth = fs->make<TH1F>("h_phiWidth_barl","phi Width (barrel)", 100,0,0.2);
+  h_phiWidthVsE = fs->make<TH2F>("h_phiWidthVsE_barl","phi Width Vs. E (Barrel)", 100,0,0.2,100,0,200);
   h_phiWidth_endc = fs->make<TH1F>("h_phiWidth_endc","phi Width (Endcap)", 100,0,0.2);
-  h_phiWidthVsE_endc = fs->make<TH2F>("h_phiWidthVsE_endc","phi Width Vs. E (Endcap)", 100,0,0.2,200,0,200);
-  h_phiSize         = fs->make<TH1F>("h_phiSize_barrel","phi Size (barrel)", 50,0,50);
-  h_phiSizeVsE      = fs->make<TH2F>("h_phiSizeVsE_barrel","phi Size Vs. E (Barrel)", 50,0,50.,200,0,200);
+  h_phiWidthVsE_endc = fs->make<TH2F>("h_phiWidthVsE_endc","phi Width Vs. E (Endcap)", 100,0,0.2,100,0,200);
+  h_phiSize         = fs->make<TH1F>("h_phiSize_barl","phi Size (barrel)", 50,0,50);
+  h_phiSizeVsE      = fs->make<TH2F>("h_phiSizeVsE_barl","phi Size Vs. E (Barrel)", 50,0,50.,100,0,200);
   h_phiSize_endc    = fs->make<TH1F>("h_phiSize_endc","phi Size (Endcap)", 50,0,1);
-  h_phiSizeVsE_endc = fs->make<TH2F>("h_phiSizeVsE_endc","phi Size Vs. E (Endcap)", 50,0,1.,200,0,200);
+  h_phiSizeVsE_endc = fs->make<TH2F>("h_phiSizeVsE_endc","phi Size Vs. E (Endcap)", 50,0,1.,100,0,200);
+  h_phiShape_barl       = fs->make<TH1F>("h_phiShape_barl","phi Shape (barrel)", 35,-17,18); 
+  h_absPhiShape_barl    = fs->make<TH1F>("h_absPhiShape_barl","phi AbsShape (barrel)", 18,0,18); 
+  h_phiShape_endc       = fs->make<TH1F>("h_phiShape_endc","phi Shape (endcap)", 35,-17,18); 
+  h_absPhiShape_endc    = fs->make<TH1F>("h_absPhiShape_endc","phi AbsShape (endcap)", 18,0,18); 
+  h_phiShapeVsE_barl    = fs->make<TH2F>("h_phiShapeVsE_barl","phi Shape Vs E (barrel)", 35,-17,18,100,0,200); 
+  h_absPhiShapeVsE_barl = fs->make<TH2F>("h_absPhiShapeVsE_barl","phi AbsShape Vs E (barrel)", 18,0,18,100,0,200); 
+  h_phiShapeVsE_endc    = fs->make<TH2F>("h_phiShapeVsE_endc","phi Shape Vs E (endcap)", 35,-17,18,100,0,200); 
+  h_absPhiShapeVsE_endc = fs->make<TH2F>("h_absPhiShapeVsE_endc","phi AbsShape Vs E (endcap)", 18,0,18,100,0,200); 
 
 }
 
@@ -465,9 +582,9 @@ SCwithPUAnalysis::endJob() {
 float SCwithPUAnalysis::etaTransformation(  float EtaParticle , float Zvertex)  {
 
   //---Definitions for ECAL
-  const float R_ECAL           = 136.5;  // radius of maximum containement
-  const float Z_Endcap         = 328.0;
-  const float etaBarrelEndcap  = 1.479;
+  // const float R_ECAL           = 136.5;  // radius of maximum containement
+  // const float Z_Endcap         = 328.0;
+  // const float etaBarrelEndcap  = 1.479;
 
   //---ETA correction
 
