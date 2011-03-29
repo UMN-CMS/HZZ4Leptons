@@ -42,28 +42,29 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.284.2.2 $'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
     annotation = cms.untracked.string('H120GGgluonfusion_7TeV_cfi.py nevts:10'),
     name = cms.untracked.string('PyReleaseValidation')
 )
 
 # Output definition
 
-process.RECOSIMoutput = cms.OutputModule("PoolOutputModule",
-    splitLevel = cms.untracked.int32(0),
-    outputCommands = process.RECOSIMEventContent.outputCommands,
-    fileName = cms.untracked.string('test-H120GGgluonfusion_7TeV_cfi_py_GEN_FASTSIM_HLT.root'),
-    dataset = cms.untracked.PSet(
-        filterName = cms.untracked.string(''),
-        dataTier = cms.untracked.string('GEN-SIM-DIGI-RECO')
-    ),
-    SelectEvents = cms.untracked.PSet(
-        SelectEvents = cms.vstring('generation_step')
-    )
-)
+#process.RECOSIMoutput = cms.OutputModule("PoolOutputModule",
+#    splitLevel = cms.untracked.int32(0),
+#    outputCommands = process.RECOSIMEventContent.outputCommands,
+#    fileName = cms.untracked.string('test-H120GGgluonfusion_7TeV_cfi_py_GEN_FASTSIM_HLT.root'),
+#    dataset = cms.untracked.PSet(
+#        filterName = cms.untracked.string(''),
+#        dataTier = cms.untracked.string('GEN-SIM-DIGI-RECO')
+#    ),
+#    SelectEvents = cms.untracked.PSet(
+#        SelectEvents = cms.vstring('generation_step')
+#    )
+#)
 
 process.TFileService = cms.Service("TFileService",
-    fileName = cms.string('gf2_SCwithPUAnalysis_Hgg_PU20_testCoffee.root')
+    fileName = cms.string('PU_scluster.root')
+    #fileName = cms.string('gf2_SCwithPUAnalysis_Hgg_PU20_testCoffee.root')
 )
 
 # Additional output definition
@@ -149,7 +150,7 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
 process.generation_step = cms.Path(process.pgen_genonly)
 process.reconstruction = cms.Path(process.reconstructionWithFamos)
 process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
-process.RECOSIMoutput_step = cms.EndPath(process.RECOSIMoutput)
+#process.RECOSIMoutput_step = cms.EndPath(process.RECOSIMoutput)
 
 process.scwithpuanalyzer = cms.EDAnalyzer('SCwithPUAnalysis')
 process.analysisPath = cms.Path(process.scwithpuanalyzer)
