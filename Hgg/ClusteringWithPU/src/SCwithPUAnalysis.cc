@@ -13,7 +13,7 @@
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.5 2011/03/24 19:18:44 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.6 2011/03/29 15:19:15 franzoni Exp $
 //
 //
 
@@ -126,6 +126,8 @@ class SCwithPUAnalysis : public edm::EDAnalyzer {
   TH2F *h_absPhiShapeVsE_barl; 
   TH2F *h_phiShapeVsE_endc; 
   TH2F *h_absPhiShapeVsE_endc; 
+  TH1F *h_etaShape_barl;
+  TH2F *h_etaPhiShape_barl;
 };
 
 //
@@ -154,6 +156,29 @@ SCwithPUAnalysis::~SCwithPUAnalysis()
 
 
 
+// returns distance between two crystals, in units of crystal size (both  for EB and EE)
+float getEtaDistance(DetId theSeed, DetId theCry ){
+
+  if ( theSeed.subdetId()==EcalBarrel && theCry.subdetId()==EcalBarrel)     // the barrel case
+    {
+      float theSeedEta = EBDetId ( theSeed.rawId() ).ieta();
+      float theCryEta  = EBDetId ( theCry.rawId() ).ieta();
+
+      if ( theSeedEta * theCryEta < 0 ) 
+	{
+	  if (theSeedEta<0) return (theCryEta - theSeedEta -1);
+	  else              return (theCryEta - theSeedEta +1);
+	}
+    }
+  else if ( theSeed.subdetId()==EcalEndcap && theCry.subdetId()==EcalEndcap) // the endcap case
+    {
+      // to be implemented w/ geometry...
+      return -9999;
+    }
+
+  return -9999;
+
+}
 
 
 // returns distance between two crystals, in units of crystal size (both  for EB and EE)
@@ -378,13 +403,18 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 		idsIt != theHitsAndFractions.end(); ++idsIt) 
 	      {
 		float thePhiDistance = getPhiDistance( (*scIt->seed()).seed() , 
-						      (*idsIt).first );
-		float currEbEnergy   = (ebRecHits->find( (*idsIt).first ))->energy();
-		energySCtoCheck      += currEbEnergy;
+						       (*idsIt).first );
+		float currEbEnergy    = (ebRecHits->find( (*idsIt).first ))->energy();
+		energySCtoCheck       += currEbEnergy;
 		h_phiShape_barl       -> Fill(thePhiDistance, currEbEnergy/energySC);
 		h_absPhiShape_barl    -> Fill(fabs(thePhiDistance), currEbEnergy/energySC);
 		h_phiShapeVsE_barl    -> Fill(thePhiDistance, scIt->energy() , currEbEnergy/energySC);   
 		h_absPhiShapeVsE_barl -> Fill(fabs(thePhiDistance), scIt->energy() , currEbEnergy/energySC);   
+
+		float theEtaDistance = getEtaDistance( (*scIt->seed()).seed() , 
+						       (*idsIt).first );
+		h_etaShape_barl       -> Fill(theEtaDistance, currEbEnergy/energySC);
+		h_etaPhiShape_barl    -> Fill(theEtaDistance, thePhiDistance, currEbEnergy/energySC);
 	      } // loop over crystals of the SC
 	    //std::cout << "EB energySC: " << energySC << " energySCtoCheck: " << energySCtoCheck << std::endl;
 	    // unresolved: energySC > energySCtoCheck???
@@ -570,6 +600,8 @@ SCwithPUAnalysis::beginJob()
   h_absPhiShapeVsE_barl = fs->make<TH2F>("h_absPhiShapeVsE_barl","phi AbsShape Vs E (barrel)", 18,0,18,100,0,200); 
   h_phiShapeVsE_endc    = fs->make<TH2F>("h_phiShapeVsE_endc","phi Shape Vs E (endcap)", 35,-17,18,100,0,200); 
   h_absPhiShapeVsE_endc = fs->make<TH2F>("h_absPhiShapeVsE_endc","phi AbsShape Vs E (endcap)", 18,0,18,100,0,200); 
+  h_etaShape_barl       = fs->make<TH1F>("h_etaShape_barl","eta Shape (barrel)", 7,-3,3); 
+  h_etaPhiShape_barl    = fs->make<TH2F>("h_etaPhiShape_barl","eta Shape (barrel)", 7,-3,3,35,-17,18); 
 
 }
 
