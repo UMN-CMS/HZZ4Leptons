@@ -13,7 +13,7 @@
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.6 2011/03/29 15:19:15 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.7 2011/03/29 21:36:06 franzoni Exp $
 //
 //
 
@@ -127,7 +127,15 @@ class SCwithPUAnalysis : public edm::EDAnalyzer {
   TH2F *h_phiShapeVsE_endc; 
   TH2F *h_absPhiShapeVsE_endc; 
   TH1F *h_etaShape_barl;
+  TH1F *h_etaShape_barlPLus;
+  TH1F *h_etaShape_barlMinus;
+  TH1F *h_etaShape_barlSymm;
   TH2F *h_etaPhiShape_barl;
+  TH2F *h_etaPhiShape_barlPLus;
+  TH2F *h_etaPhiShape_barlMinus;
+  TH2F *h_etaPhiShape_barlSymm;
+  TH1F *h_maxCryInDomino_barl;
+  TH2F *h_maxCryInDominoVsPhi_barl;
 };
 
 //
@@ -163,8 +171,12 @@ float getEtaDistance(DetId theSeed, DetId theCry ){
     {
       float theSeedEta = EBDetId ( theSeed.rawId() ).ieta();
       float theCryEta  = EBDetId ( theCry.rawId() ).ieta();
-
-      if ( theSeedEta * theCryEta < 0 ) 
+      
+      if ( theSeedEta * theCryEta > 0 )     // crystal and seed are on the same side of EB
+	{ 
+	  return (theCryEta - theSeedEta);
+	}
+      else	                           // crystal and seed are on opposite sides of EB
 	{
 	  if (theSeedEta<0) return (theCryEta - theSeedEta -1);
 	  else              return (theCryEta - theSeedEta +1);
@@ -383,7 +395,8 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  float deltaEta = scIt->eta()-etaEcal_true;
 	  float phiWidth = scIt->phiWidth();          // covariance of cluster in phi
 	                                              // we want to look at the absolute extension too... phi_MAX-phi_min 
-	  float energySC = scIt->energy();
+	  // float energySC = scIt->energy();
+	  float energySC = scIt->rawEnergy();
 	  float energySCtoCheck=0;
 
 	  float phiSize = getPhiSize(scIt,true);
@@ -398,7 +411,17 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	    h_phiSize->Fill(phiSize);
 	    h_phiSizeVsE->Fill(phiSize,(*p)->momentum().e());	  
 
+	    int   whereIsMaxInDomino[35];
+	    float whatIsMaxInDomino[35];
+	    for(int u=0; u<35; u++) {
+	      whereIsMaxInDomino[u]=-999;
+	      whatIsMaxInDomino[u] =-999;
+	    } 
+
+	    //std::cout << "\n\nnew cluster " << std::endl;
+
 	    std::vector< std::pair<DetId, float> >    theHitsAndFractions =  scIt->hitsAndFractions();  
+	    // loop over all the components of this supercluster	    
 	    for(std::vector< std::pair<DetId, float> >::const_iterator idsIt = theHitsAndFractions.begin(); 
 		idsIt != theHitsAndFractions.end(); ++idsIt) 
 	      {
@@ -408,14 +431,45 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 		energySCtoCheck       += currEbEnergy;
 		h_phiShape_barl       -> Fill(thePhiDistance, currEbEnergy/energySC);
 		h_absPhiShape_barl    -> Fill(fabs(thePhiDistance), currEbEnergy/energySC);
-		h_phiShapeVsE_barl    -> Fill(thePhiDistance, scIt->energy() , currEbEnergy/energySC);   
-		h_absPhiShapeVsE_barl -> Fill(fabs(thePhiDistance), scIt->energy() , currEbEnergy/energySC);   
+		h_phiShapeVsE_barl    -> Fill(thePhiDistance, energySC , currEbEnergy/energySC);   
+		h_absPhiShapeVsE_barl -> Fill(fabs(thePhiDistance), energySC , currEbEnergy/energySC);   
 
 		float theEtaDistance = getEtaDistance( (*scIt->seed()).seed() , 
 						       (*idsIt).first );
-		h_etaShape_barl       -> Fill(theEtaDistance, currEbEnergy/energySC);
-		h_etaPhiShape_barl    -> Fill(theEtaDistance, thePhiDistance, currEbEnergy/energySC);
+		float theSeedEta = EBDetId ( (*scIt->seed()).seed().rawId() ).ieta();
+		// treat EB+ and EB- separately, give the sign of ieta; and make a symmetrized plot
+		h_etaShape_barl        -> Fill(theEtaDistance, currEbEnergy/energySC);
+		h_etaShape_barlSymm    -> Fill( signum(theSeedEta) *theEtaDistance, currEbEnergy/energySC);
+		h_etaPhiShape_barl     -> Fill(theEtaDistance, thePhiDistance, currEbEnergy/energySC);
+		h_etaPhiShape_barlSymm -> Fill( signum(theSeedEta) *theEtaDistance, thePhiDistance, currEbEnergy/energySC);
+		if ( theSeedEta>0 )  {
+		  h_etaShape_barlPLus    -> Fill(theEtaDistance, currEbEnergy/energySC);
+		  h_etaPhiShape_barlPLus -> Fill(theEtaDistance, thePhiDistance, currEbEnergy/energySC);
+		}
+		else{
+		  h_etaShape_barlMinus    -> Fill(theEtaDistance, currEbEnergy/energySC);
+		  h_etaPhiShape_barlMinus -> Fill(theEtaDistance, thePhiDistance, currEbEnergy/energySC);
+		}
+
+		// at each given phi [0... 34], heck where in eta max energy crystal occurs
+		// phi=17 is the seed by construction, in order to allow +-17
+		int theIntegerPhiDistance = ((int)thePhiDistance) +17;
+		int theIntegerEtaDistance = ((int)theEtaDistance);
+		//std::cout << "theIntegerPhiDistance "  << theIntegerPhiDistance << " theIntegerEtaDistance " << theIntegerEtaDistance << " currEbEnergy: " << currEbEnergy; 
+		if (currEbEnergy > whatIsMaxInDomino[theIntegerPhiDistance]){
+		  whatIsMaxInDomino[theIntegerPhiDistance]  = currEbEnergy;
+		  whereIsMaxInDomino[theIntegerPhiDistance] = theIntegerEtaDistance;
+		  // std::cout << "\t new max in domino";
+		}
+		// std::cout << std::endl;
 	      } // loop over crystals of the SC
+	    
+	    for(int u=0; u<35; u++) {
+	      if (whereIsMaxInDomino[u]<-100) continue;
+	      h_maxCryInDomino_barl        -> Fill(whereIsMaxInDomino[u]);
+	      h_maxCryInDominoVsPhi_barl   -> Fill(u-17, whereIsMaxInDomino[u]);
+	    }
+
 	    //std::cout << "EB energySC: " << energySC << " energySCtoCheck: " << energySCtoCheck << std::endl;
 	    // unresolved: energySC > energySCtoCheck???
 	  }// if matching
@@ -428,7 +482,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  float deltaPhi = scIt->phi()-phi_true;
 	  float deltaEta = scIt->eta()-etaEcal_true;
 	  float phiWidth = scIt->phiWidth();
-	  float energySC = scIt->energy();
+	  float energySC = scIt->rawEnergy();//gf
 	  float energySCtoCheck=0;
 
 	  float phiSize = getPhiSize(scIt,false);
@@ -454,8 +508,8 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 		energySCtoCheck      += currEeEnergy;
 		h_phiShape_endc       -> Fill(thePhiDistance, currEeEnergy/energySC);
 		h_absPhiShape_endc    -> Fill(fabs(thePhiDistance), currEeEnergy/energySC);
-		h_phiShapeVsE_endc    -> Fill(thePhiDistance, scIt->energy() , currEeEnergy/energySC);   
-		h_absPhiShapeVsE_endc -> Fill(fabs(thePhiDistance), scIt->energy(), currEeEnergy/energySC );   
+		h_phiShapeVsE_endc    -> Fill(thePhiDistance, energySC , currEeEnergy/energySC);   
+		h_absPhiShapeVsE_endc -> Fill(fabs(thePhiDistance), energySC, currEeEnergy/energySC );   
 
 	      } // loop over crystals of the SC
 	    // std::cout << "EE energySC: " << energySC << " energySCtoCheck: " << energySCtoCheck << std::endl;
@@ -601,8 +655,15 @@ SCwithPUAnalysis::beginJob()
   h_phiShapeVsE_endc    = fs->make<TH2F>("h_phiShapeVsE_endc","phi Shape Vs E (endcap)", 35,-17,18,100,0,200); 
   h_absPhiShapeVsE_endc = fs->make<TH2F>("h_absPhiShapeVsE_endc","phi AbsShape Vs E (endcap)", 18,0,18,100,0,200); 
   h_etaShape_barl       = fs->make<TH1F>("h_etaShape_barl","eta Shape (barrel)", 7,-3,3); 
+  h_etaShape_barlPLus   = fs->make<TH1F>("h_etaShape_barlPLus","eta Shape (barrel plus)", 7,-3,3); 
+  h_etaShape_barlMinus  = fs->make<TH1F>("h_etaShape_barlMinus","eta Shape (barrel minus)", 7,-3,3); 
+  h_etaShape_barlSymm   = fs->make<TH1F>("h_etaShape_barlSymm","eta Shape (barrel symm)", 7,-3,3); 
   h_etaPhiShape_barl    = fs->make<TH2F>("h_etaPhiShape_barl","eta Shape (barrel)", 7,-3,3,35,-17,18); 
-
+  h_etaPhiShape_barlPLus  = fs->make<TH2F>("h_etaPhiShape_barlPlus","eta Shape (barrel plus)", 7,-3,3,35,-17,18); 
+  h_etaPhiShape_barlMinus = fs->make<TH2F>("h_etaPhiShape_barlMinus","eta Shape (barrel minus)", 7,-3,3,35,-17,18); 
+  h_etaPhiShape_barlSymm  = fs->make<TH2F>("h_etaPhiShape_barlSymm","eta Shape (barrel symm)", 7,-3,3,35,-17,18); 
+  h_maxCryInDomino_barl = fs->make<TH1F>("h_maxCryInDomino_barl","max Cry In Domino (barrel)", 5,-2,3); 
+  h_maxCryInDominoVsPhi_barl = fs->make<TH2F>("h_maxCryInDominoVsPhi_barl","max Cry In Domino Vs Phi (barrel)", 35,-17,18,5,-2,3); 
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

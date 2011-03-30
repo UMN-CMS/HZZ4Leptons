@@ -11,15 +11,11 @@ process.options = cms.untracked.PSet(
         )
 
 
-process.maxEvents = cms.untracked.PSet(
-        input = cms.untracked.int32(3000)
-        )
-
 process.TFileService = cms.Service("TFileService",
     fileName = cms.string('SCwithPUAnalysis_Hgg_PU20_v2.root')
 )
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500) )
 
 process.source = cms.Source("PoolSource",
                             duplicateCheckMode = cms.untracked.string("noDuplicateCheck"),
