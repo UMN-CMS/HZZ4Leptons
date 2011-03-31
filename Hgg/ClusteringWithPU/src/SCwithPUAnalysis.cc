@@ -13,7 +13,7 @@
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.7 2011/03/29 21:36:06 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.8 2011/03/30 16:24:10 franzoni Exp $
 //
 //
 
@@ -470,6 +470,20 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	      h_maxCryInDominoVsPhi_barl   -> Fill(u-17, whereIsMaxInDomino[u]);
 	    }
 
+	    // looping on basic clusters within the Supercluster
+	    for(CaloCluster_iterator bcIt = scIt->clustersBegin(); bcIt!=scIt->clustersEnd(); bcIt++){
+	      std::cout << "BC number: "<< (bcIt-scIt->clustersBegin()) << std::endl;
+	      EBDetId theBCSeed  = EBDetId((*bcIt)->seed().rawId());
+	      int     ebSeedIeta = theBCSeed.ieta();
+	      std::vector< std::pair<DetId, float> >  theBCHitsAndFractions =  (*bcIt)->hitsAndFractions();
+	      for(std::vector< std::pair<DetId, float> >::const_iterator idsIt = theBCHitsAndFractions.begin(); 
+		  idsIt != theBCHitsAndFractions.end(); ++idsIt) {
+		std::cout << "pippo" << std::endl;
+	      }
+	      
+	    }
+
+
 	    //std::cout << "EB energySC: " << energySC << " energySCtoCheck: " << energySCtoCheck << std::endl;
 	    // unresolved: energySC > energySCtoCheck???
 	  }// if matching
@@ -612,58 +626,58 @@ SCwithPUAnalysis::beginJob()
 
   edm::Service<TFileService> fs;
 
-  h_scet_barl = fs->make<TH1F>("h_scet_barl","SC ET over true, barrel",120,0.6,1.2);
-  h_scet_endc = fs->make<TH1F>("h_scet_endc","SC ET over true, endcap",120,0.6,1.2);
-  h_EoverEtrue_barl = fs->make<TH1F>("h_EoverEtrue_barl","E_SC/Etrue, barrel",120,0.6,1.2);
-  h_EoverEtrue_endc = fs->make<TH1F>("h_EoverEtrue_endc","E_SC/Etrue, endcap",120,0.6,1.2);
-  h_E5x5overEtrue_barl = fs->make<TH1F>("h_E5x5overEtrue_barl","E5x5/Etrue, barrel",120,0.6,1.2);
-  h_PhoEoverEtrue_barl = fs->make<TH1F>("h_PhoEoverEtrue_barl","E_Photon/Etrue, barrel",120,0.6,1.2);
-  h_E5x5R9overEtrue_barl = fs->make<TH1F>("h_E5x5R9overEtrue_barl","E5x5/Etrue for R9>0.93, barrel",120,0.6,1.2);
-  h_PhoER9overEtrue_barl = fs->make<TH1F>("h_PhoER9overEtrue_barl","E_Photon/Etrue for R9>0.93, barrel",120,0.6,1.2);
-  h_E5x5notR9overEtrue_barl = fs->make<TH1F>("h_E5x5notR9overEtrue_barl","E5x5/Etrue for R9<0.93, barrel",120,0.6,1.2);
-  h_PhoEnotR9overEtrue_barl = fs->make<TH1F>("h_PhoEnotR9overEtrue_barl","E_Photon/Etrue for R9<0.93, barrel",120,0.6,1.2);
-  h_E5x5overEtrue_endc = fs->make<TH1F>("h_E5x5overEtrue_endc","E5x5/Etrue, endcap",120,0.6,1.2);
-  h_PhoEoverEtrue_endc = fs->make<TH1F>("h_PhoEoverEtrue_endc","E_Photon/Etrue, endcap",120,0.6,1.2);
-  h_E5x5R9overEtrue_endc = fs->make<TH1F>("h_E5x5R9overEtrue_endc","E5x5/Etrue for R9>0.93, endcap",120,0.6,1.2);
-  h_PhoER9overEtrue_endc = fs->make<TH1F>("h_PhoER9overEtrue_endc","E_Photon/Etrue for R9>0.93, endcap",120,0.6,1.2);
-  h_E5x5notR9overEtrue_endc = fs->make<TH1F>("h_E5x5notR9overEtrue_endc","E5x5/Etrue for R9<0.93, endcap",120,0.6,1.2);
-  h_PhoEnotR9overEtrue_endc = fs->make<TH1F>("h_PhoEnotR9overEtrue_endc","E_Photon/Etrue for R9<0.93, endcap",120,0.6,1.2);
-  h_nVtx = fs->make<TH1F>("h_nVtx","no. of primary vertices",30,0.,30.);
+  h_scet_barl = fs->make<TH1F>("h_scet_barl","SC ET over true, barrel; EB: E_{T,superC}/E_{T,true}",120,0.6,1.2);
+  h_scet_endc = fs->make<TH1F>("h_scet_endc","SC ET over true, endcap; EE: E_{T,superC}/E_{T,true}",120,0.6,1.2);
+  h_EoverEtrue_barl = fs->make<TH1F>("h_EoverEtrue_barl","E_SC/Etrue, barrel; EB: E_{superC}/E_{true}",120,0.6,1.2);
+  h_EoverEtrue_endc = fs->make<TH1F>("h_EoverEtrue_endc","E_SC/Etrue, endcap; EB: E_{superC}/E_{true}",120,0.6,1.2);
+  h_E5x5overEtrue_barl = fs->make<TH1F>("h_E5x5overEtrue_barl","E5x5/Etrue, barrel; EB: E_{5x5}/E_{true}",120,0.6,1.2);
+  h_PhoEoverEtrue_barl = fs->make<TH1F>("h_PhoEoverEtrue_barl","E_Photon/Etrue, barrel; EB: E_{photon}/E_{true}",120,0.6,1.2);
+  h_E5x5R9overEtrue_barl = fs->make<TH1F>("h_E5x5R9overEtrue_barl","E5x5/Etrue for R9>0.94, barrel; EB: E_{5x5, r9>0.94}/E_{true}",120,0.6,1.2);
+  h_PhoER9overEtrue_barl = fs->make<TH1F>("h_PhoER9overEtrue_barl","E_Photon/Etrue for R9>0.94, barrel; EB: E_{photon, r9>0.94}/E_{true}",120,0.6,1.2);
+  h_E5x5notR9overEtrue_barl = fs->make<TH1F>("h_E5x5notR9overEtrue_barl","E5x5/Etrue for R9<0.94, barrel; EB: E_{5x5, r9<0.94}/E_{true}",120,0.6,1.2);
+  h_PhoEnotR9overEtrue_barl = fs->make<TH1F>("h_PhoEnotR9overEtrue_barl","E_Photon/Etrue for R9<0.94, barrel; EB: E_{photon, r9<0.94}/E_{true}",120,0.6,1.2);
+  h_E5x5overEtrue_endc = fs->make<TH1F>("h_E5x5overEtrue_endc","E5x5/Etrue, endcap; EE: E_{5x5}/E_{true}",120,0.6,1.2);
+  h_PhoEoverEtrue_endc = fs->make<TH1F>("h_PhoEoverEtrue_endc","E_Photon/Etrue, endcap; EE: E_{photon}/E_{true}",120,0.6,1.2);
+  h_E5x5R9overEtrue_endc = fs->make<TH1F>("h_E5x5R9overEtrue_endc","E5x5/Etrue for R9>0.95, endcap; EE: E_{5x5, r9>0.95}/E_{true}",120,0.6,1.2);
+  h_PhoER9overEtrue_endc = fs->make<TH1F>("h_PhoER9overEtrue_endc","E_Photon/Etrue for R9>0.95, endcap; EE: E_{photon, r9>0.95}/E_{true}",120,0.6,1.2);
+  h_E5x5notR9overEtrue_endc = fs->make<TH1F>("h_E5x5notR9overEtrue_endc","E5x5/Etrue for R9<0.95, endcap; EE: E_{5x5, r9<0.95}/E_{true}",120,0.6,1.2);
+  h_PhoEnotR9overEtrue_endc = fs->make<TH1F>("h_PhoEnotR9overEtrue_endc","E_Photon/Etrue for R9<0.95, endcap; EE: E_{photon, r9<0.95}/E_{true}",120,0.6,1.2);
+  h_nVtx = fs->make<TH1F>("h_nVtx","no. of primary vertices; num vertices reco",30,0.,30.);
   h_dzVtx = fs->make<TH1F>("h_dzVtx","delta_z for reconstructed PV w.r.t. true PV",200,-5.,5.);
-  h_mHiggs_EBEB = fs->make<TH1F>("h_mHiggs_EBEB","2 photon invariant mass, EBEB",120,100.,140.);
-  h_mHiggs_EBEE = fs->make<TH1F>("h_mHiggs_EBEE","2 photon invariant mass, EBEE",120,100.,140.);
-  h_mHiggs_EEEE = fs->make<TH1F>("h_mHiggs_EEEE","2 photon invariant mass, EEEE",120,100.,140.);
-  h_mHiggs_EBEB_trueVtx = fs->make<TH1F>("h_mHiggs_EBEB_trueVtx","2 photon invariant mass, EBEB, true PV",120,100.,140.);
-  h_mHiggs_EBEE_trueVtx = fs->make<TH1F>("h_mHiggs_EBEE_trueVtx","2 photon invariant mass, EBEE, true PV",120,100.,140.);
-  h_mHiggs_EEEE_trueVtx = fs->make<TH1F>("h_mHiggs_EEEE_trueVtx","2 photon invariant mass, EEEE, true PV",120,100.,140.);
-  h_E5x5overEtrueVsEphoEtrue_barl = fs->make<TH2F>("h_E5x5overEtrueVsEphoEtrue_barl","E5x5/Etrue vs Epho/Etrue, barrel",120,0.6,1.2,120,0.6,1.2);
-  h_E5x5overEtrueVsEphoEtrue_endc = fs->make<TH2F>("h_E5x5overEtrueVsEphoEtrue_endc","E5x5/Etrue vs Epho/Etrue, endcap",120,0.6,1.2,120,0.6,1.2);
-  h_phiWidth = fs->make<TH1F>("h_phiWidth_barl","phi Width (barrel)", 100,0,0.2);
-  h_phiWidthVsE = fs->make<TH2F>("h_phiWidthVsE_barl","phi Width Vs. E (Barrel)", 100,0,0.2,100,0,200);
-  h_phiWidth_endc = fs->make<TH1F>("h_phiWidth_endc","phi Width (Endcap)", 100,0,0.2);
-  h_phiWidthVsE_endc = fs->make<TH2F>("h_phiWidthVsE_endc","phi Width Vs. E (Endcap)", 100,0,0.2,100,0,200);
-  h_phiSize         = fs->make<TH1F>("h_phiSize_barl","phi Size (barrel)", 50,0,50);
-  h_phiSizeVsE      = fs->make<TH2F>("h_phiSizeVsE_barl","phi Size Vs. E (Barrel)", 50,0,50.,100,0,200);
-  h_phiSize_endc    = fs->make<TH1F>("h_phiSize_endc","phi Size (Endcap)", 50,0,1);
-  h_phiSizeVsE_endc = fs->make<TH2F>("h_phiSizeVsE_endc","phi Size Vs. E (Endcap)", 50,0,1.,100,0,200);
-  h_phiShape_barl       = fs->make<TH1F>("h_phiShape_barl","phi Shape (barrel)", 35,-17,18); 
-  h_absPhiShape_barl    = fs->make<TH1F>("h_absPhiShape_barl","phi AbsShape (barrel)", 18,0,18); 
-  h_phiShape_endc       = fs->make<TH1F>("h_phiShape_endc","phi Shape (endcap)", 35,-17,18); 
-  h_absPhiShape_endc    = fs->make<TH1F>("h_absPhiShape_endc","phi AbsShape (endcap)", 18,0,18); 
-  h_phiShapeVsE_barl    = fs->make<TH2F>("h_phiShapeVsE_barl","phi Shape Vs E (barrel)", 35,-17,18,100,0,200); 
-  h_absPhiShapeVsE_barl = fs->make<TH2F>("h_absPhiShapeVsE_barl","phi AbsShape Vs E (barrel)", 18,0,18,100,0,200); 
-  h_phiShapeVsE_endc    = fs->make<TH2F>("h_phiShapeVsE_endc","phi Shape Vs E (endcap)", 35,-17,18,100,0,200); 
-  h_absPhiShapeVsE_endc = fs->make<TH2F>("h_absPhiShapeVsE_endc","phi AbsShape Vs E (endcap)", 18,0,18,100,0,200); 
-  h_etaShape_barl       = fs->make<TH1F>("h_etaShape_barl","eta Shape (barrel)", 7,-3,3); 
-  h_etaShape_barlPLus   = fs->make<TH1F>("h_etaShape_barlPLus","eta Shape (barrel plus)", 7,-3,3); 
-  h_etaShape_barlMinus  = fs->make<TH1F>("h_etaShape_barlMinus","eta Shape (barrel minus)", 7,-3,3); 
-  h_etaShape_barlSymm   = fs->make<TH1F>("h_etaShape_barlSymm","eta Shape (barrel symm)", 7,-3,3); 
-  h_etaPhiShape_barl    = fs->make<TH2F>("h_etaPhiShape_barl","eta Shape (barrel)", 7,-3,3,35,-17,18); 
-  h_etaPhiShape_barlPLus  = fs->make<TH2F>("h_etaPhiShape_barlPlus","eta Shape (barrel plus)", 7,-3,3,35,-17,18); 
-  h_etaPhiShape_barlMinus = fs->make<TH2F>("h_etaPhiShape_barlMinus","eta Shape (barrel minus)", 7,-3,3,35,-17,18); 
-  h_etaPhiShape_barlSymm  = fs->make<TH2F>("h_etaPhiShape_barlSymm","eta Shape (barrel symm)", 7,-3,3,35,-17,18); 
-  h_maxCryInDomino_barl = fs->make<TH1F>("h_maxCryInDomino_barl","max Cry In Domino (barrel)", 5,-2,3); 
-  h_maxCryInDominoVsPhi_barl = fs->make<TH2F>("h_maxCryInDominoVsPhi_barl","max Cry In Domino Vs Phi (barrel)", 35,-17,18,5,-2,3); 
+  h_mHiggs_EBEB = fs->make<TH1F>("h_mHiggs_EBEB","2 photon invariant mass, EBEB; EB-EB: m_{#gamma#gamma} GeV/c^{2}",120,100.,140.);
+  h_mHiggs_EBEE = fs->make<TH1F>("h_mHiggs_EBEE","2 photon invariant mass, EBEE; EB-EE: m_{#gamma#gamma} GeV/c^{2}",120,100.,140.);
+  h_mHiggs_EEEE = fs->make<TH1F>("h_mHiggs_EEEE","2 photon invariant mass, EEEE; EE-EE: m_{#gamma#gamma} GeV/c^{2}",120,100.,140.);
+  h_mHiggs_EBEB_trueVtx = fs->make<TH1F>("h_mHiggs_EBEB_trueVtx","2 photon invariant mass, EBEB, true PV; EB-EB: m_{#gamma#gamma} GeV/c^{2} (true vtx)",120,100.,140.);
+  h_mHiggs_EBEE_trueVtx = fs->make<TH1F>("h_mHiggs_EBEE_trueVtx","2 photon invariant mass, EBEE, true PV; EB-EE: m_{#gamma#gamma} GeV/c^{2} (true vtx)",120,100.,140.);
+  h_mHiggs_EEEE_trueVtx = fs->make<TH1F>("h_mHiggs_EEEE_trueVtx","2 photon invariant mass, EEEE, true PV; EE-EE: m_{#gamma#gamma} GeV/c^{2} (true vtx)",120,100.,140.);
+  h_E5x5overEtrueVsEphoEtrue_barl = fs->make<TH2F>("h_E5x5overEtrueVsEphoEtrue_barl","E5x5/Etrue vs Epho/Etrue, barrel;EB: E_{5x5}/E_{true}; EB: E_{photon}/E_{true}",120,0.6,1.2,120,0.6,1.2);
+  h_E5x5overEtrueVsEphoEtrue_endc = fs->make<TH2F>("h_E5x5overEtrueVsEphoEtrue_endc","E5x5/Etrue vs Epho/Etrue, endcap;EE: E_{5x5}/E_{true}; EE: E_{photon}/E_{true}",120,0.6,1.2,120,0.6,1.2);
+  h_phiWidth = fs->make<TH1F>("h_phiWidth_barl","phi Width (barrel); EB: i#phi width", 100,0,0.2);
+  h_phiWidthVsE = fs->make<TH2F>("h_phiWidthVsE_barl","phi Width Vs. E (Barrel); EB: i#phi width; EB: E [GeV]", 100,0,0.2,100,0,200);
+  h_phiWidth_endc = fs->make<TH1F>("h_phiWidth_endc","phi Width (Endcap); EE: i#phi width", 100,0,0.2);
+  h_phiWidthVsE_endc = fs->make<TH2F>("h_phiWidthVsE_endc","phi Width Vs. E (Endcap); EB: i#phi width; EB: E [GeV]", 100,0,0.2,100,0,200);
+  h_phiSize         = fs->make<TH1F>("h_phiSize_barl","phi Size (barrel); EB: i#phi size", 50,0,50);
+  h_phiSizeVsE      = fs->make<TH2F>("h_phiSizeVsE_barl","phi Size Vs. E (Barrel); EB: i#phi size; EB: E [GeV]", 50,0,50.,100,0,200);
+  h_phiSize_endc    = fs->make<TH1F>("h_phiSize_endc","phi Size (Endcap); EE: i#phi size", 50,0,1);
+  h_phiSizeVsE_endc = fs->make<TH2F>("h_phiSizeVsE_endc","phi Size Vs. E (Endcap); EB: i#phi size; EB: E [GeV]", 50,0,1.,100,0,200);
+  h_phiShape_barl       = fs->make<TH1F>("h_phiShape_barl","phi Shape (barrel); EB i#phi - i#phi_{seed}", 35,-17,18); 
+  h_absPhiShape_barl    = fs->make<TH1F>("h_absPhiShape_barl","phi AbsShape (barrel); EB  abs(i#phi - i#phi_{seed})", 18,0,18); 
+  h_phiShape_endc       = fs->make<TH1F>("h_phiShape_endc","phi Shape (endcap) EE i#phi - i#phi_{seed}", 35,-17,18); 
+  h_absPhiShape_endc    = fs->make<TH1F>("h_absPhiShape_endc","phi AbsShape (endcap); EE  abs(i#phi - i#phi_{seed})", 18,0,18); 
+  h_phiShapeVsE_barl    = fs->make<TH2F>("h_phiShapeVsE_barl","phi Shape Vs E (barrel); EB i#phi - i#phi_{seed}; EB E [GeV]", 35,-17,18,100,0,200); 
+  h_absPhiShapeVsE_barl = fs->make<TH2F>("h_absPhiShapeVsE_barl","phi AbsShape Vs E (barrel); EB  abs(i#phi - i#phi_{seed}); EB E [GeV]", 18,0,18,100,0,200); 
+  h_phiShapeVsE_endc    = fs->make<TH2F>("h_phiShapeVsE_endc","phi Shape Vs E (endcap); EE i#phi - i#phi_{seed}; EE E [GeV]", 35,-17,18,100,0,200); 
+  h_absPhiShapeVsE_endc = fs->make<TH2F>("h_absPhiShapeVsE_endc","phi AbsShape Vs E (endcap); EE  abs(i#phi - i#phi_{seed}); EE E [GeV] ", 18,0,18,100,0,200); 
+  h_etaShape_barl       = fs->make<TH1F>("h_etaShape_barl","eta Shape (barrel); EB i#eta - i#eta_{seed}", 7,-3,3); 
+  h_etaShape_barlPLus   = fs->make<TH1F>("h_etaShape_barlPLus","eta Shape (barrel plus); EB i#eta - i#eta_{seed}", 7,-3,3); 
+  h_etaShape_barlMinus  = fs->make<TH1F>("h_etaShape_barlMinus","eta Shape (barrel minus); EB i#eta - i#eta_{seed}", 7,-3,3); 
+  h_etaShape_barlSymm   = fs->make<TH1F>("h_etaShape_barlSymm","eta Shape (barrel symm); EB i#eta - i#eta_{seed}", 7,-3,3); 
+  h_etaPhiShape_barl    = fs->make<TH2F>("h_etaPhiShape_barl","eta Shape (barrel); EB i#eta - i#eta_{seed}; EB i#phi - phi_{seed}", 7,-3,3,35,-17,18); 
+  h_etaPhiShape_barlPLus  = fs->make<TH2F>("h_etaPhiShape_barlPlus","eta Shape (barrel plus); EB+ i#eta - i#eta_{seed}; EB+ i#phi - phi_{seed}", 7,-3,3,35,-17,18); 
+  h_etaPhiShape_barlMinus = fs->make<TH2F>("h_etaPhiShape_barlMinus","eta Shape (barrel minus); EB- i#eta - i#eta_{seed}; EB- i#phi - phi_{seed}", 7,-3,3,35,-17,18); 
+  h_etaPhiShape_barlSymm  = fs->make<TH2F>("h_etaPhiShape_barlSymm","eta Shape (barrel symm); EBsymm i#eta - i#eta_{seed}; EBsymm i#phi - phi_{seed}", 7,-3,3,35,-17,18); 
+  h_maxCryInDomino_barl = fs->make<TH1F>("h_maxCryInDomino_barl","max Cry In Domino (barrel); i#eta", 5,-2,3); 
+  h_maxCryInDominoVsPhi_barl = fs->make<TH2F>("h_maxCryInDominoVsPhi_barl","max Cry In Domino Vs Phi (barrel); EBsymm i#eta - i#eta_{seed}; EBsymm i#phi - i#phi_{seed}", 35,-17,18,5,-2,3); 
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
