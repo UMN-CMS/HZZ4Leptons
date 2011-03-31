@@ -13,7 +13,7 @@
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.8 2011/03/30 16:24:10 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.9 2011/03/31 13:11:23 franzoni Exp $
 //
 //
 
@@ -136,6 +136,12 @@ class SCwithPUAnalysis : public edm::EDAnalyzer {
   TH2F *h_etaPhiShape_barlSymm;
   TH1F *h_maxCryInDomino_barl;
   TH2F *h_maxCryInDominoVsPhi_barl;
+  TH1F *h_maxCryInLocMax_barlPLus;
+  TH2F *h_maxCryInLocMaxVsPhi_barlPLus;
+  TH1F *h_maxCryInLocMax_barlMinus;
+  TH2F *h_maxCryInLocMaxVsPhi_barlMinus;
+  TH1F *h_maxCryInLocMax_barlSymm;
+  TH2F *h_maxCryInLocMaxVsPhi_barlSymm;
 };
 
 //
@@ -470,23 +476,48 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	      h_maxCryInDominoVsPhi_barl   -> Fill(u-17, whereIsMaxInDomino[u]);
 	    }
 
+	    
 	    // looping on basic clusters within the Supercluster
 	    for(CaloCluster_iterator bcIt = scIt->clustersBegin(); bcIt!=scIt->clustersEnd(); bcIt++){
-	      std::cout << "BC number: "<< (bcIt-scIt->clustersBegin()) << std::endl;
-	      EBDetId theBCSeed  = EBDetId((*bcIt)->seed().rawId());
-	      int     ebSeedIeta = theBCSeed.ieta();
+	      // std::cout << "BC number: "<< (bcIt-scIt->clustersBegin()) << std::endl;
+	      EBDetId theBCSeed           = EBDetId((*bcIt)->seed().rawId());  // this is always SCseed? FIXme
+	      int     etaOfMaxInsidBC     =-999; 
+	      int     phiOfMaxInsidBC     =-999; 
+	      float   energyOfMaxInsideBC =-888;
+
 	      std::vector< std::pair<DetId, float> >  theBCHitsAndFractions =  (*bcIt)->hitsAndFractions();
 	      for(std::vector< std::pair<DetId, float> >::const_iterator idsIt = theBCHitsAndFractions.begin(); 
 		  idsIt != theBCHitsAndFractions.end(); ++idsIt) {
-		std::cout << "pippo" << std::endl;
-	      }
-	      
-	    }
 
+		float currCryEnergy    = (ebRecHits->find( (*idsIt).first ))->energy();
+		if (currCryEnergy > energyOfMaxInsideBC){
+		  etaOfMaxInsidBC         = (   (int)getEtaDistance ( (*scIt->seed()).seed() , EBDetId( (*idsIt).first.rawId() ) )  );
+		  phiOfMaxInsidBC         = (   (int)getPhiDistance ( (*scIt->seed()).seed() , EBDetId( (*idsIt).first.rawId() ) )  );
+		  energyOfMaxInsideBC     = currCryEnergy;
+		  std::cout << "eta distance from SC seed is: " << etaOfMaxInsidBC << " phiOfMaxInsidBC  " << phiOfMaxInsidBC << std::endl;
+		} // if energy surpassed
+	      } // loop over theBCHitsAndFractions of BC
 
+	      // fill the histograms with the location of the BC maximum, w.r.t. to SC seed
+	      if(fabs(theBCSeed.ieta()) >2)
+		{
+		  h_maxCryInLocMax_barlSymm           ->Fill( etaOfMaxInsidBC * signum( theBCSeed.ieta()) );
+		  h_maxCryInLocMaxVsPhi_barlSymm      ->Fill( phiOfMaxInsidBC , etaOfMaxInsidBC * signum( theBCSeed.ieta()) );
+		}
+	      if(theBCSeed.ieta() >2)
+		{
+		  h_maxCryInLocMax_barlPLus           ->Fill( etaOfMaxInsidBC );
+		  h_maxCryInLocMaxVsPhi_barlPLus      ->Fill( phiOfMaxInsidBC , phiOfMaxInsidBC );
+		} else if (theBCSeed.ieta() <-2)
+		{
+		  h_maxCryInLocMax_barlMinus          ->Fill( etaOfMaxInsidBC );
+		  h_maxCryInLocMaxVsPhi_barlMinus     ->Fill( phiOfMaxInsidBC , phiOfMaxInsidBC );
+		}
+	    }// loop over the BC's 
 	    //std::cout << "EB energySC: " << energySC << " energySCtoCheck: " << energySCtoCheck << std::endl;
-	    // unresolved: energySC > energySCtoCheck???
-	  }// if matching
+	    // unresolved: energySC > energySCtoCheck ==> it's because of the clustering corrections. FIXED.
+	    
+	  }// if SC matches photons
 	}// if EB and Et>20
       }// loop over superclusters
       
@@ -668,6 +699,7 @@ SCwithPUAnalysis::beginJob()
   h_absPhiShapeVsE_barl = fs->make<TH2F>("h_absPhiShapeVsE_barl","phi AbsShape Vs E (barrel); EB  abs(i#phi - i#phi_{seed}); EB E [GeV]", 18,0,18,100,0,200); 
   h_phiShapeVsE_endc    = fs->make<TH2F>("h_phiShapeVsE_endc","phi Shape Vs E (endcap); EE i#phi - i#phi_{seed}; EE E [GeV]", 35,-17,18,100,0,200); 
   h_absPhiShapeVsE_endc = fs->make<TH2F>("h_absPhiShapeVsE_endc","phi AbsShape Vs E (endcap); EE  abs(i#phi - i#phi_{seed}); EE E [GeV] ", 18,0,18,100,0,200); 
+
   h_etaShape_barl       = fs->make<TH1F>("h_etaShape_barl","eta Shape (barrel); EB i#eta - i#eta_{seed}", 7,-3,3); 
   h_etaShape_barlPLus   = fs->make<TH1F>("h_etaShape_barlPLus","eta Shape (barrel plus); EB i#eta - i#eta_{seed}", 7,-3,3); 
   h_etaShape_barlMinus  = fs->make<TH1F>("h_etaShape_barlMinus","eta Shape (barrel minus); EB i#eta - i#eta_{seed}", 7,-3,3); 
@@ -676,8 +708,16 @@ SCwithPUAnalysis::beginJob()
   h_etaPhiShape_barlPLus  = fs->make<TH2F>("h_etaPhiShape_barlPlus","eta Shape (barrel plus); EB+ i#eta - i#eta_{seed}; EB+ i#phi - phi_{seed}", 7,-3,3,35,-17,18); 
   h_etaPhiShape_barlMinus = fs->make<TH2F>("h_etaPhiShape_barlMinus","eta Shape (barrel minus); EB- i#eta - i#eta_{seed}; EB- i#phi - phi_{seed}", 7,-3,3,35,-17,18); 
   h_etaPhiShape_barlSymm  = fs->make<TH2F>("h_etaPhiShape_barlSymm","eta Shape (barrel symm); EBsymm i#eta - i#eta_{seed}; EBsymm i#phi - phi_{seed}", 7,-3,3,35,-17,18); 
-  h_maxCryInDomino_barl = fs->make<TH1F>("h_maxCryInDomino_barl","max Cry In Domino (barrel); i#eta", 5,-2,3); 
-  h_maxCryInDominoVsPhi_barl = fs->make<TH2F>("h_maxCryInDominoVsPhi_barl","max Cry In Domino Vs Phi (barrel); EBsymm i#eta - i#eta_{seed}; EBsymm i#phi - i#phi_{seed}", 35,-17,18,5,-2,3); 
+
+  h_maxCryInDomino_barl           = fs->make<TH1F>("h_maxCryInDomino_barl","max Cry In Domino (barrel); i#eta", 5,-2,3); 
+  h_maxCryInDominoVsPhi_barl      = fs->make<TH2F>("h_maxCryInDominoVsPhi_barl","max Cry In Domino Vs i#phi (barrel); EB i#eta - i#eta_{seed}; EB i#phi - i#phi_{seed}", 35,-17,18,5,-2,3); 
+
+  h_maxCryInLocMax_barlSymm       = fs->make<TH1F>("h_maxCryInLocalMax_barlSymm","max Cry In Local Max (EB); i#eta - i#eta_{seed}", 5,-2,3); 
+  h_maxCryInLocMaxVsPhi_barlSymm  = fs->make<TH2F>("h_maxCryInLocalMaxVsPhi_barlSymm","max Cry In Local Max Vs i#phi (EB); EB  i#eta - i#eta_{seed}; EB i#phi - i#phi_{seed}", 35,-17,18,5,-2,3); 
+  h_maxCryInLocMax_barlPLus       = fs->make<TH1F>("h_maxCryInLocalMax_barlPLus","max Cry In Local Max (EB+); i#eta - i#eta_{seed}", 5,-2,3); 
+  h_maxCryInLocMaxVsPhi_barlPLus  = fs->make<TH2F>("h_maxCryInLocalMaxVsPhi_barlPlus","max Cry In Local Max Vs i#phi (EB+); EB+  i#eta - i#eta_{seed}; EB i#phi - i#phi_{seed}", 35,-17,18,5,-2,3); 
+  h_maxCryInLocMax_barlMinus      = fs->make<TH1F>("h_maxCryInLocalMax_barlMinus","max Cry In Local Max (EB-); i#eta - i#eta_{seed}", 5,-2,3); 
+  h_maxCryInLocMaxVsPhi_barlMinus = fs->make<TH2F>("h_maxCryInLocalMaxVsPhi_barlMinus","max Cry In Local Max Vs i#phi (EB-); EB-  i#eta - i#eta_{seed}; EB i#phi - i#phi_{seed}", 35,-17,18,5,-2,3); 
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
