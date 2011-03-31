@@ -31,7 +31,7 @@ int main( int argc, char **argv ) {
   char str [50000];
   while ( ifn.getline(str,50000)){
     std::string mystr = str; //me likes strings, easy to use predefined algos to manipulate!
-    uint pos = mystr.find(parameter);
+    std::string::size_type pos = mystr.find(parameter);
     if (pos != std::string::npos) 
       {
 	//I really should first output the mystr.substr(0,pos) and at the end the mystr.substr(pos+parameter.size()) at the end

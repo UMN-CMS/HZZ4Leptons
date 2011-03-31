@@ -1,0 +1,4 @@
+<use   name="ZShape/EffAcc"/>
+<library   file="*.cc" name="ZShapeEffAccPlugins">
+  <flags   EDM_PLUGIN="1"/>
+</library>

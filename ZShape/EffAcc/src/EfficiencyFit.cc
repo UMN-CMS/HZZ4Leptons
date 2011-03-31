@@ -689,7 +689,7 @@ void EfficiencyFit::produceConfig(std::string myconfig, std::string mytemplate,s
 
 	//find the xxbinxx thing first, and take the first part
 	
-	uint pos = mystr.find("xxbinxx");
+	std::string::size_type pos = mystr.find("xxbinxx");
 	if (pos != string::npos && !yup) 
 	  {
 	    yup = 1;
