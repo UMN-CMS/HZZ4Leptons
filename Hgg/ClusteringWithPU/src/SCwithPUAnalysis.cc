@@ -13,7 +13,7 @@
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.10 2011/03/31 15:54:56 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.11 2011/03/31 18:42:09 franzoni Exp $
 //
 //
 
@@ -688,33 +688,33 @@ SCwithPUAnalysis::beginJob()
   h_phiSizeVsE      = fs->make<TH2F>("h_phiSizeVsE_barl","phi Size Vs. E (Barrel); EB: i#phi size; EB: E [GeV]", 50,0,50.,100,0,200);
   h_phiSize_endc    = fs->make<TH1F>("h_phiSize_endc","phi Size (Endcap); EE: i#phi size", 50,0,1);
   h_phiSizeVsE_endc = fs->make<TH2F>("h_phiSizeVsE_endc","phi Size Vs. E (Endcap); EB: i#phi size; EB: E [GeV]", 50,0,1.,100,0,200);
-  h_phiShape_barl       = fs->make<TH1F>("h_phiShape_barl","phi Shape (barrel); EB i#phi - i#phi_{seed}", 35,-17,18); 
-  h_absPhiShape_barl    = fs->make<TH1F>("h_absPhiShape_barl","phi AbsShape (barrel); EB  abs(i#phi - i#phi_{seed})", 18,0,18); 
-  h_phiShape_endc       = fs->make<TH1F>("h_phiShape_endc","phi Shape (endcap) EE i#phi - i#phi_{seed}", 35,-17,18); 
-  h_absPhiShape_endc    = fs->make<TH1F>("h_absPhiShape_endc","phi AbsShape (endcap); EE  abs(i#phi - i#phi_{seed})", 18,0,18); 
-  h_phiShapeVsE_barl    = fs->make<TH2F>("h_phiShapeVsE_barl","phi Shape Vs E (barrel); EB i#phi - i#phi_{seed}; EB E [GeV]", 35,-17,18,100,0,200); 
-  h_absPhiShapeVsE_barl = fs->make<TH2F>("h_absPhiShapeVsE_barl","phi AbsShape Vs E (barrel); EB  abs(i#phi - i#phi_{seed}); EB E [GeV]", 18,0,18,100,0,200); 
-  h_phiShapeVsE_endc    = fs->make<TH2F>("h_phiShapeVsE_endc","phi Shape Vs E (endcap); EE i#phi - i#phi_{seed}; EE E [GeV]", 35,-17,18,100,0,200); 
-  h_absPhiShapeVsE_endc = fs->make<TH2F>("h_absPhiShapeVsE_endc","phi AbsShape Vs E (endcap); EE  abs(i#phi - i#phi_{seed}); EE E [GeV] ", 18,0,18,100,0,200); 
+  h_phiShape_barl       = fs->make<TH1F>("h_phiShape_barl","phi Shape (barrel); EB i#phi - i#phi_{SCseed}", 35,-17,18); 
+  h_absPhiShape_barl    = fs->make<TH1F>("h_absPhiShape_barl","phi AbsShape (barrel); EB  abs(i#phi - i#phi_{SCseed})", 18,0,18); 
+  h_phiShape_endc       = fs->make<TH1F>("h_phiShape_endc","phi Shape (endcap) EE i#phi - i#phi_{SCseed}", 35,-17,18); 
+  h_absPhiShape_endc    = fs->make<TH1F>("h_absPhiShape_endc","phi AbsShape (endcap); EE  abs(i#phi - i#phi_{SCseed})", 18,0,18); 
+  h_phiShapeVsE_barl    = fs->make<TH2F>("h_phiShapeVsE_barl","phi Shape Vs E (barrel); EB i#phi - i#phi_{SCseed}; EB E [GeV]", 35,-17,18,100,0,200); 
+  h_absPhiShapeVsE_barl = fs->make<TH2F>("h_absPhiShapeVsE_barl","phi AbsShape Vs E (barrel); EB  abs(i#phi - i#phi_{SCseed}); EB E [GeV]", 18,0,18,100,0,200); 
+  h_phiShapeVsE_endc    = fs->make<TH2F>("h_phiShapeVsE_endc","phi Shape Vs E (endcap); EE i#phi - i#phi_{SCseed}; EE E [GeV]", 35,-17,18,100,0,200); 
+  h_absPhiShapeVsE_endc = fs->make<TH2F>("h_absPhiShapeVsE_endc","phi AbsShape Vs E (endcap); EE  abs(i#phi - i#phi_{SCseed}); EE E [GeV] ", 18,0,18,100,0,200); 
 
-  h_etaShape_barl       = fs->make<TH1F>("h_etaShape_barl","eta Shape (barrel); EB i#eta - i#eta_{seed}", 7,-3,3); 
-  h_etaShape_barlPLus   = fs->make<TH1F>("h_etaShape_barlPLus","eta Shape (barrel plus); EB i#eta - i#eta_{seed}", 7,-3,3); 
-  h_etaShape_barlMinus  = fs->make<TH1F>("h_etaShape_barlMinus","eta Shape (barrel minus); EB i#eta - i#eta_{seed}", 7,-3,3); 
-  h_etaShape_barlSymm   = fs->make<TH1F>("h_etaShape_barlSymm","eta Shape (barrel symm); EB i#eta - i#eta_{seed}", 7,-3,3); 
-  h_etaPhiShape_barl    = fs->make<TH2F>("h_etaPhiShape_barl","eta Shape (barrel); EB i#phi - phi_{seed}; EB i#eta - i#eta_{seed}", 7,-3,3,35,-17,18); 
-  h_etaPhiShape_barlPLus  = fs->make<TH2F>("h_etaPhiShape_barlPlus","eta Shape (barrel plus); EB+ i#phi - phi_{seed}; EB+ i#eta - i#eta_{seed}", 7,-3,3,35,-17,18); 
-  h_etaPhiShape_barlMinus = fs->make<TH2F>("h_etaPhiShape_barlMinus","eta Shape (barrel minus); EB- i#phi - phi_{seed}; EB- i#eta - i#eta_{seed}", 7,-3,3,35,-17,18); 
-  h_etaPhiShape_barlSymm  = fs->make<TH2F>("h_etaPhiShape_barlSymm","eta Shape (barrel symm); EBsymm i#phi - phi_{seed}; EBsymm i#eta - i#eta_{seed}", 7,-3,3,35,-17,18); 
+  h_etaShape_barl       = fs->make<TH1F>("h_etaShape_barl","eta Shape (barrel); EB i#eta_{BC} - i#eta_{SCseed}", 7,-3,3); 
+  h_etaShape_barlPLus   = fs->make<TH1F>("h_etaShape_barlPLus","eta Shape (barrel plus); EB i#eta_{BC} - i#eta_{SCseed}", 7,-3,3); 
+  h_etaShape_barlMinus  = fs->make<TH1F>("h_etaShape_barlMinus","eta Shape (barrel minus); EB i#eta_{BC} - i#eta_{SCseed}", 7,-3,3); 
+  h_etaShape_barlSymm   = fs->make<TH1F>("h_etaShape_barlSymm","eta Shape (barrel symm); EB i#eta_{BC} - i#eta_{SCseed}", 7,-3,3); 
+  h_etaPhiShape_barl    = fs->make<TH2F>("h_etaPhiShape_barl","eta Shape (barrel); EB i#phi_{BC} - phi_{SCseed}; EB i#eta_{BC} - i#eta_{SCseed}", 7,-3,3,35,-17,18); 
+  h_etaPhiShape_barlPLus  = fs->make<TH2F>("h_etaPhiShape_barlPlus","eta Shape (barrel plus); EB+ i#phi_{BC} - phi_{SCseed}; EB+ i#eta_{BC} - i#eta_{SCseed}", 7,-3,3,35,-17,18); 
+  h_etaPhiShape_barlMinus = fs->make<TH2F>("h_etaPhiShape_barlMinus","eta Shape (barrel minus); EB- i#phi_{BC} - phi_{SCseed}; EB- i#eta_{BC} - i#eta_{SCseed}", 7,-3,3,35,-17,18); 
+  h_etaPhiShape_barlSymm  = fs->make<TH2F>("h_etaPhiShape_barlSymm","eta Shape (barrel symm); EBsymm i#phi_{BC} - phi_{SCseed}; EBsymm i#eta_{BC} - i#eta_{SCseed}", 7,-3,3,35,-17,18); 
 
   h_maxCryInDomino_barl           = fs->make<TH1F>("h_maxCryInDomino_barl","max Cry In Domino (barrel); i#eta", 5,-2,3); 
-  h_maxCryInDominoVsPhi_barl      = fs->make<TH2F>("h_maxCryInDominoVsPhi_barl","max Cry In Domino Vs i#phi (barrel); EB i#eta - i#eta_{seed}; EB i#phi - i#phi_{seed}", 35,-17,18,5,-2,3); 
+  h_maxCryInDominoVsPhi_barl      = fs->make<TH2F>("h_maxCryInDominoVsPhi_barl","max Cry In Domino Vs i#phi (barrel); EB i#eta_{BC} - i#eta_{SCseed}; EB i#phi_{BC} - i#phi_{SCseed}", 35,-17,18,5,-2,3); 
 
-  h_maxCryInLocMax_barlSymm       = fs->make<TH1F>("h_maxCryInLocalMax_barlSymm","max Cry In Local Max (EB); i#eta - i#eta_{seed}", 5,-2,3); 
-  h_maxCryInLocMaxVsPhi_barlSymm  = fs->make<TH2F>("h_maxCryInLocalMaxVsPhi_barlSymm","max Cry In Local Max Vs i#phi (EB); EB i#phi - i#phi_{seed}; EB  i#eta - i#eta_{seed};", 35,-17,18,5,-2,3); 
-  h_maxCryInLocMax_barlPLus       = fs->make<TH1F>("h_maxCryInLocalMax_barlPLus","max Cry In Local Max (EB+); i#eta - i#eta_{seed}", 5,-2,3); 
-  h_maxCryInLocMaxVsPhi_barlPLus  = fs->make<TH2F>("h_maxCryInLocalMaxVsPhi_barlPlus","max Cry In Local Max Vs i#phi (EB+); EB i#phi - i#phi_{seed}; EB+  i#eta - i#eta_{seed}", 35,-17,18,5,-2,3); 
-  h_maxCryInLocMax_barlMinus      = fs->make<TH1F>("h_maxCryInLocalMax_barlMinus","max Cry In Local Max (EB-); i#eta - i#eta_{seed}", 5,-2,3); 
-  h_maxCryInLocMaxVsPhi_barlMinus = fs->make<TH2F>("h_maxCryInLocalMaxVsPhi_barlMinus","max Cry In Local Max Vs i#phi (EB-); EB i#phi - i#phi_{seed}; EB-  i#eta - i#eta_{seed}", 35,-17,18,5,-2,3); 
+  h_maxCryInLocMax_barlSymm       = fs->make<TH1F>("h_maxCryInLocalMax_barlSymm","max Cry In Local Max (EB); i#eta_{BC} - i#eta_{SCseed}", 5,-2,3); 
+  h_maxCryInLocMaxVsPhi_barlSymm  = fs->make<TH2F>("h_maxCryInLocalMaxVsPhi_barlSymm","max Cry In Local Max Vs i#phi (EB); EB i#phi_{BC} - i#phi_{SCseed}; EB  i#eta_{BC} - i#eta_{SCseed};", 35,-17,18,5,-2,3); 
+  h_maxCryInLocMax_barlPLus       = fs->make<TH1F>("h_maxCryInLocalMax_barlPLus","max Cry In Local Max (EB+); i#eta_{BC} - i#eta_{SCseed}", 5,-2,3); 
+  h_maxCryInLocMaxVsPhi_barlPLus  = fs->make<TH2F>("h_maxCryInLocalMaxVsPhi_barlPlus","max Cry In Local Max Vs i#phi (EB+); EB i#phi_{BC} - i#phi_{SCseed}; EB+  i#eta_{BC} - i#eta_{SCseed}", 35,-17,18,5,-2,3); 
+  h_maxCryInLocMax_barlMinus      = fs->make<TH1F>("h_maxCryInLocalMax_barlMinus","max Cry In Local Max (EB-); i#eta_{BC} - i#eta_{SCseed}", 5,-2,3); 
+  h_maxCryInLocMaxVsPhi_barlMinus = fs->make<TH2F>("h_maxCryInLocalMaxVsPhi_barlMinus","max Cry In Local Max Vs i#phi (EB-); EB i#phi_{BC} - i#phi_{SCseed}; EB-  i#eta - i#eta_{SCseed}", 35,-17,18,5,-2,3); 
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
