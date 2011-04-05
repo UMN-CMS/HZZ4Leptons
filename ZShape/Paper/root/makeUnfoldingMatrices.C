@@ -20,8 +20,24 @@
 
 #include "tdrstyle.C"
 #include "zrapidityStandard.C"
+
+
+
+template <class T> const T& max ( const T& a, const T& b ) {
+  //std::cout << "max of " << a<< " and " << b << std::endl;
+  return (b<a)?a:b;     // or: return comp(b,a)?a:b; for the comp version
+}
+
+template <class T> const T& min ( const T& a, const T& b ) {
+  //std::cout << "min of " << a<< " and " << b << std::endl;
+  return (b>a)?a:b;     // or: return comp(b,a)?a:b; for the comp version
+}
+
+
+
 int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfoldingMatrixOutPutFile, std::string variable) 
 {
+
   bool isRapidity(true);
   if (variable==std::string("Y")){
 	std::cout << "\n\tyou have chosen Y. \n\tI'll make Y and |Y| unfolding matrices." << std::endl;
@@ -37,7 +53,7 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
 
   setTDRStyle();
   zrap_colors();
-  
+
   //gStyle->SetPalette(1);
   gStyle->SetPaintTextFormat(".2f");
   gStyle->SetOptStat(0);
@@ -80,7 +96,7 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
   float xmaxEcalEcal = histoMigration->GetXaxis()->GetXmax();
   float yMinEcalEcal = histoMigration->GetYaxis()->GetXmin();
   float yMaxEcalEcal = histoMigration->GetYaxis()->GetXmax();
-  
+
    if(isRapidity){
    histoMigration->GetXaxis()->SetTitle("Y_{reco}");
    histoMigration->GetYaxis()->SetTitle("Y_{ZtreeLevel}");
@@ -108,23 +124,28 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
 				   theY,
 				   histoMigration->GetBinContent(v,u) );
        if ( histoMigration->GetBinContent(v,u) > 0){
-	 std::cout << v << "\t"<< u<< "\tfoldedX: " << foldedX << "\tfoldedY: " << foldedY 
-		   << "\t" <<  theX << "\t" << theY
-		   << "\t content: " <<  histoMigration->GetBinContent(v,u)<< "\t" <<  histoMigrationFolded->GetBinContent(v,u)
-		   << std::endl;       }
-     }}
-   } else
+	 //	 std::cout << v << "\t"<< u<< "\tfoldedX: " << foldedX << "\tfoldedY: " << foldedY 
+	 //		   << "\t" <<  theX << "\t" << theY
+	 //		   << "\t content: " <<  histoMigration->GetBinContent(v,u)<< "\t" <<  histoMigrationFolded->GetBinContent(v,u)
+	 //		   << std::endl;       
+       }
+     }
+   }
+   }
+   else
      {
        histoMigration->GetXaxis()->SetTitle("q_{T,reco} [GeV/c]");
        histoMigration->GetYaxis()->SetTitle("q_{T,ZtreeLevel} [GeV/c]");
        histoMigration->GetXaxis()->SetTitleOffset(1.3);
        histoMigration->GetYaxis()->SetTitleOffset(1.4);
      }
-   
+
    TH2F * histoMigrationTotal_toBeSaved       = histoMigration->Clone();
-   TH2F * histoMigrationTotalFolded_toBeSaved = histoMigrationFolded->Clone();
    histoMigrationTotal_toBeSaved->Write("originalHistoMigrationTotal");
+   if(isRapidity){
+     TH2F * histoMigrationTotalFolded_toBeSaved = histoMigrationFolded->Clone();
    histoMigrationTotalFolded_toBeSaved->Write("originalHistoMigrationTotalFolded");
+   }
 
    // build verification histograms
    std::string histoMigrationTitle("");
@@ -148,8 +169,8 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
      histoMigrationFolded->SetTitle("RapidityTreeLevelFolded");  
      h_RapidityTreeLevelFolded = histoMigrationFolded->ProjectionY(histoMigrationFoldedTitle.c_str(),0,-1,"");
    }
-   else   histoMigration->SetTitle("PtTreeLevel");
-
+   else  { histoMigration->SetTitle("PtTreeLevel");}
+   
    TH1D * h_RapidityTreeLevel_toSave =  h_RapidityTreeLevel->Clone();  
    TH1D * h_RapidityTreeLevelFolded_toSave;  
    if(isRapidity) {
@@ -157,7 +178,7 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
      h_RapidityTreeLevelFolded_toSave =  (TH1D*)h_RapidityTreeLevelFolded->Clone();
      h_RapidityTreeLevelFolded_toSave ->Write("original1dTreeLevelRapidityFolded");
    }
-   else           h_RapidityTreeLevel_toSave->Write("original1dTreeLevelPt");
+   else      {     h_RapidityTreeLevel_toSave->Write("original1dTreeLevelPt");}
 
    TH1D * h_RapiditySmeared   = histoMigration->ProjectionX("Rapidity Smeared",0,-1,"");
    TH1D * h_RapiditySmearedFolded;
@@ -165,11 +186,14 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
      h_RapiditySmeared       ->SetTitle("RapiditySmeared");
      h_RapiditySmearedFolded = (TH1D*)histoMigrationFolded->ProjectionX("Rapidity Smeared Folded",0,-1,"");
      h_RapiditySmearedFolded   ->SetTitle("RapiditySmearedFolded");
+     h_RapiditySmeared      ->SetLineColor(2);
+     h_RapiditySmearedFolded->SetLineColor(2);   
    }
    else           h_RapiditySmeared->SetTitle("PtSmeared");
-   h_RapiditySmeared      ->SetLineColor(2);
-   h_RapiditySmearedFolded->SetLineColor(2);
 
+
+   //h_RapiditySmeared      ->SetLineColor(2);
+   //h_RapiditySmearedFolded->SetLineColor(2);
    TH1D * h_RapiditySmeared_toSave =  h_RapiditySmeared->Clone();
    TH1D * h_RapiditySmearedFolded_toSave;
    if(isRapidity) {
@@ -178,8 +202,8 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
      h_RapiditySmearedFolded_toSave->Write("original1dSmearedRapidityFolded");
      h_RapiditySmearedFolded_toSave->Write("original1dSmearedRapidityFolded");
    }
-   else           h_RapiditySmeared_toSave->Write("original1dSmearedPt");
-
+   else  {         h_RapiditySmeared_toSave->Write("original1dSmearedPt");}
+   
    //TH1D * h_effect = new TH1D("Y migration","Y migration",binsXMatrixEcalEcal,xminEcalEcal,xmaxEcalEcal); 
    TH1D * h_effect = h_RapiditySmeared->Clone(theEffectTitle.c_str());
    h_effect->Reset();
@@ -207,8 +231,7 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
    histoMatrixFolded->Reset();
    histoMatrixFolded->GetXaxis()->SetTitle("|Y_{ZtreeLevel}|");
    histoMatrixFolded->GetYaxis()->SetTitle("|Y_{ZtreeLevel}|");
-   } else
-   {
+   } else   {
    histoMatrix->GetXaxis()->SetTitle("q_{T,reco} [GeV/c]");
    histoMatrix->GetYaxis()->SetTitle("q_{T,true} [GeV/c]");
    histoMatrix->GetXaxis()->SetTitleOffset(1.3);
@@ -245,12 +268,40 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
     }// binY
    
 
+   int limitNumberBinX(50); // number of bins which are kept for |Y| 
+   int limitNumberBinY(50); // for Y, bins will be the double, automatically
+   if(isRapidity){// pipp0
+     limitNumberBinX=35;
+     limitNumberBinY=35;
+     //limitNumberBinX=50;
+     //limitNumberBinY=50;
+     int a=313;
+   } else {
+     limitNumberBinX=19;
+     limitNumberBinY=19;
+   }
+
+   int lowestBinX      = histoMatrix->GetNbinsX()/2 - min(histoMatrix->GetNbinsX()/2, limitNumberBinX);
+   int highestBinX     = histoMatrix->GetNbinsX()/2 + min(histoMatrix->GetNbinsX()/2, limitNumberBinX);
+   int lowestBinY      = histoMatrix->GetNbinsY()/2 - min(histoMatrix->GetNbinsY()/2, limitNumberBinY);
+   int highestBinY     = histoMatrix->GetNbinsY()/2 + min(histoMatrix->GetNbinsY()/2, limitNumberBinY);
+   if(!isRapidity){
+     lowestBinX = 0;     lowestBinY = 0;
+     highestBinX =limitNumberBinX;      highestBinY = limitNumberBinY; 
+   }
+   std::cout << "\n++ limitNumberBinX: " << limitNumberBinX << " lowestBinX: " << lowestBinX << " highestBinX: " << highestBinX << std::endl;
+   std::cout << "++ limitNumberBinY: " << limitNumberBinY << " lowestBinY: " << lowestBinY << " highestBinY: " << highestBinY << std::endl;
+
+
    int counter(0);
    // double migration[1936];//array reordering histoMatrix, to construct TMatrix
    double migration[10000];    //array reordering histoMatrix, to construct TMatrix
                                // this has to be hard-coded
-     for (int u=0; u<histoMatrix->GetNbinsX(); u++){//rows
-     for (int v=0; v<histoMatrix->GetNbinsX(); v++){//col
+   //for (int u=0; u<histoMatrix->GetNbinsX(); u++){//rows
+   //for (int v=0; v<histoMatrix->GetNbinsX(); v++){//col
+
+     for (int u=lowestBinX; u<highestBinX; u++){//rows
+     for (int v=lowestBinY; v<highestBinY; v++){//col
 
        migration[counter]=histoMatrix->GetBinContent(u+1,v+1);
 
@@ -262,12 +313,13 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
        counter++;
 
        }	
-    }
-
-  //http://root.cern.ch/root/html/tutorials/matrix/invertMatrix.C.html
+     }
+     
+     //http://root.cern.ch/root/html/tutorials/matrix/invertMatrix.C.html
   //this is the smearing matrix: it multiplies the unsmeared vector to give the smeared vector
   gSystem->Load("libMatrix");
-  TMatrixD MigrationMatrix(0, histoMatrix->GetNbinsX()-1, 0, histoMatrix->GetNbinsX()-1, migration,"");
+  //TMatrixD MigrationMatrix(0, histoMatrix->GetNbinsX()-1, 0, histoMatrix->GetNbinsX()-1, migration,"");
+  TMatrixD MigrationMatrix(0, (highestBinX-lowestBinX)-1, 0, (highestBinY-lowestBinY)-1, migration,"");
 
   // directory where one saves the matrices
   TDirectory *unsmearMatrices = theunfoldingMatrixOutpuFile->mkdir("unsmearMatrices");
@@ -311,15 +363,16 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
 
     }// binY
    
-
+  
    counter=0;
    double migrationFolded[2500];    //array reordering histoMatrix, to construct TMatrix
                                // this has to be hard-coded
    for(int k=0; k<2500; k++) migrationFolded[k]=0; //reset the existing array
 
-   for (int u=0; u<histoMatrixFolded->GetNbinsX(); u++){//rows
-     for (int v=0; v<histoMatrixFolded->GetNbinsX(); v++){//col
-       
+   //for (int u=0; u<histoMatrixFolded->GetNbinsX(); u++){//rows
+   // for (int v=0; v<histoMatrixFolded->GetNbinsX(); v++){//col
+   for (int u=0; u<limitNumberBinX; u++){//rows
+     for (int v=0; v<limitNumberBinY; v++){//col
        migrationFolded[counter]=histoMatrixFolded->GetBinContent(u+1,v+1);
        
        // for matrix to be invertible, no diagonal elements can be 0
@@ -331,10 +384,11 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
        
      }	
    }
-   
+
   //http://root.cern.ch/root/html/tutorials/matrix/invertMatrix.C.html
   //this is the smearing matrix: it multiplies the unsmeared vector to give the smeared vector
-  TMatrixD MigrationMatrixFolded(0, histoMatrixFolded->GetNbinsX()-1, 0, histoMatrixFolded->GetNbinsX()-1, migrationFolded,"");
+   //TMatrixD MigrationMatrixFolded(0, histoMatrixFolded->GetNbinsX()-1, 0, histoMatrixFolded->GetNbinsX()-1, migrationFolded,"");
+  TMatrixD MigrationMatrixFolded(0, limitNumberBinX-1, 0, limitNumberBinX-1, migrationFolded,"");
   
   // directory where one saves the matrices
   unsmearMatrices->cd();
@@ -345,7 +399,9 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
 
   // this is the name I assign to the unfolding matrix for all Z candidates: ECAL-ECAL and ECAL-HF
   inverseMigrationMatrixFolded.Write("unfoldingMatrixTotalFolded");
-  }
+  }// end isRapidity
+  
+
   /////////////////////////////////////////////////////////////////////////
   
 
@@ -354,12 +410,14 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
   std::string tableFileName; 
   if(isRapidity) tableFileName=std::string("migration_table_Y.tex");
   else           tableFileName=std::string("migration_table_Pt.tex");
+
   //FILE* texTable=fopen("migration_table.tex","wt");
   FILE* texTable=fopen(tableFileName.c_str(),"wt");
   fprintf(texTable,"\\begin{tabular}{|cc||ccccc|} \\hline \n");
   if(isRapidity) fprintf(texTable,"$min(Y^\\mathrm{true}_i)$ & $max(Y^\\mathrm{true}_i)$ & $Y^\\mathrm{reco}_{i-2}$ & $Y^\\mathrm{reco}_{i-1}$ & $Y^\\mathrm{reco}_i$ & $Y^\\mathrm{reco}_{i+1}$ & $Y^\\mathrm{reco}_{i+2}$ \\\\ \\hline \n");
   else fprintf(texTable,"$min(q^\\mathrm{true}_{T,i})$ & $max(q^\\mathrm{true}_{T,i})$ & $q^\\mathrm{reco}_{T,i-2}$ & $q^\\mathrm{reco}_{T,i-1}$ & $q^\\mathrm{reco}_i$ & $q^\\mathrm{reco}_{T,i+1}$ & $q^\\mathrm{reco}_{T,i+2}$ \\\\ \\hline \n");
-  for (int i=0; i<histoMigration->GetNbinsX(); i++) {
+  //for (int i=0; i<histoMigration->GetNbinsX(); i++) {
+  for (int i=lowestBinX; i<highestBinX; i++) {
     double lv=histoMigration->GetXaxis()->GetBinLowEdge(i+1);
     double lh=histoMigration->GetXaxis()->GetBinUpEdge(i+1);
 
@@ -369,14 +427,15 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
     fprintf(texTable,"%5.2f & %5.2f & ",lv,lh);
 
     for (int j=-2; j<=2; j++) {
-      int ireco=i+j;
-      if (ireco<0 || ireco>=histoMigration->GetNbinsX()) {
+      int ireco=i+j-lowestBinX;
+      if ((ireco)<0 || (ireco)>=(highestBinX-lowestBinX-1) ) {
+      //      if ((ireco)<0 || (ireco)>=(70)) {
 	fprintf(texTable," -- ");
 	if (j!=2) fprintf(texTable," & ");
 	else fprintf(texTable,"\\\\\n");
 	continue;
-      } else {
-	fprintf(texTable,"%.2e",MigrationMatrix(ireco,i));
+    } else {
+      fprintf(texTable,"%.2e",MigrationMatrix(ireco,i-lowestBinY));
 	if (j!=2) fprintf(texTable," & ");
 	else fprintf(texTable,"\\\\\n");
       }
@@ -388,9 +447,7 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
   fprintf(texTable,"\\hline\n\\end{tabular}\n");  fclose(texTable);
   /////////////////////////////////////////////////////////////////////////
 
-
-
-
+  std::cout << "debug 100 " << std::endl;
 
   //checking whether the inversion is sound: multiply matrix and its inverse, anche check if unity
   TMatrixD isThisUnity(inverseMigrationMatrix,TMatrixD::kMult,MigrationMatrix);
@@ -400,33 +457,44 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
   cout << "\n\n\n  Verification that inversion was ok: maximum off-diagonal A * A^-1 = " << U1_max_offdiag << " is it SMALL?\n\n "<< endl;
 
   Double_t arrayRapiditySmeared[100]; // this needs be hardcoded...
-  for(int bin=1; bin<=binsXMatrixEcalEcal; bin++)
+  int      counter_arrayRapiditySmeared(0);
+  //  for(int bin=1; bin<=binsXMatrixEcalEcal; bin++)
+  for(int bin=lowestBinX; bin<highestBinX; bin++)
   {
-   arrayRapiditySmeared[bin-1]=h_RapiditySmeared->GetBinContent(bin);
+   arrayRapiditySmeared[counter_arrayRapiditySmeared]=h_RapiditySmeared->GetBinContent(bin+1);
+   counter_arrayRapiditySmeared++;
+   //arrayRapiditySmeared[bin-1]=h_RapiditySmeared->GetBinContent(bin);
   }
 
-  TVectorD vectorRapiditySmeared; vectorRapiditySmeared.Use(binsXMatrixEcalEcal,arrayRapiditySmeared);
+
+  std::cout << "debug 105 " << std::endl;
+  //TVectorD vectorRapiditySmeared; vectorRapiditySmeared.Use(binsXMatrixEcalEcal,arrayRapiditySmeared);
+  TVectorD vectorRapiditySmeared; vectorRapiditySmeared.Use( (highestBinX-lowestBinX) ,arrayRapiditySmeared);
 
   // this is the multiplication for clusure test
   TVectorD vectorRapidityUNSmeared = inverseMigrationMatrix * vectorRapiditySmeared;
 
   TH1D * h_RapidityUNSmeared = h_RapiditySmeared->Clone(theEffectTitle.c_str()); 
   h_RapidityUNSmeared->Reset();
+  std::cout << "debug 107 " << std::endl;
 
   // turning the unsmeared vector into a histogram
-  for(int bin=1; bin<=binsXMatrixEcalEcal; bin++)
+  //  for(int bin=1; bin<=binsXMatrixEcalEcal; bin++)
+  //    {
+  for(int bin=lowestBinX; bin<highestBinX; bin++)
     {
-      h_RapidityUNSmeared->SetBinContent(bin,vectorRapidityUNSmeared[bin-1]);
+      h_RapidityUNSmeared->SetBinContent(bin+1,vectorRapidityUNSmeared[bin-lowestBinX]);
       //std::cout << vectorRapidityUNSmeared[bin-1]<<std::endl;
     }
 
+  std::cout << "debug 110 " << std::endl;
 
 
 
 
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  if(1){
-    
+  if(1){//GF
+
     // http://ultrahigh.org/2007/08/20/making-pretty-root-color-palettes/
 
    TCanvas * c4 = new TCanvas("Migration histogram","Migration histogram",1050,750);
@@ -575,49 +643,55 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
    }
    c8->Print("UNsmeared-true-over-true-Closure.png");
 
-
-
-
    //////////////////////////////////////////////////////////////////////////////////////////////
-   //checking whether the FOLDED inversion is sound: multiply matrix and its inverse, anche check if unity
-  if(isRapidity) {
-    TMatrixD isThisUnityFolded(inverseMigrationMatrixFolded,TMatrixD::kMult,MigrationMatrixFolded);
-    // create reference to the diagonal and set the diagonal to 0
-    TMatrixDDiag diag1Folded(isThisUnityFolded); diag1Folded = 0.0;
-    const Double_t U1_max_offdiag_Folded = (isThisUnityFolded.Abs()).Max();
-    cout << "\n\n\n  Verification that FOLED inversion was ok: maximum off-diagonal A * A^-1 = " << U1_max_offdiag_Folded << " is it SMALL?\n\n "<< endl;
-    
-    Double_t arrayRapiditySmearedFolded[50]; // this needs be hardcoded...
-    for(int bin=1; bin<=binsXMatrixEcalEcal/2.; bin++)
-      {
+   //checking whether the FOLDED inversion is sound: multiply matrix and its inverse, anche check if unity    
+
+   TH1D * h_RapidityUNSmearedFolded;
+   if(isRapidity) {
+     TMatrixD isThisUnityFolded(inverseMigrationMatrixFolded,TMatrixD::kMult,MigrationMatrixFolded);
+   // create reference to the diagonal and set the diagonal to 0
+
+  TMatrixDDiag diag1Folded(isThisUnityFolded);
+  diag1Folded=0.0;
+  
+  
+  const Double_t U1_max_offdiag_Folded = (isThisUnityFolded.Abs()).Max();
+  
+  cout << "\n\n\n  Verification that FOLDED inversion was ok: maximum off-diagonal A * A^-1 = " << U1_max_offdiag_Folded << " is it SMALL?\n\n "<< endl;
+  
+  Double_t arrayRapiditySmearedFolded[50]; // this needs be hardcoded...
+  //for(int bin=1; bin<=binsXMatrixEcalEcal/2.; bin++)
+  for(int bin=1; bin<=limitNumberBinX; bin++)
+    {
 	arrayRapiditySmearedFolded[bin-1]=h_RapiditySmearedFolded->GetBinContent(bin);
-      }
-    
-    TVectorD vectorRapiditySmearedFolded; vectorRapiditySmearedFolded.Use(binsXMatrixEcalEcal/2.,arrayRapiditySmearedFolded);
-    
-    // this is the multiplication for clusure test
-    TVectorD vectorRapidityUNSmearedFolded = inverseMigrationMatrixFolded * vectorRapiditySmearedFolded;
-    
-    TH1D * h_RapidityUNSmearedFolded = h_RapiditySmearedFolded->Clone(theEffectTitleFolded.c_str()); 
-    h_RapidityUNSmearedFolded->Reset();
+    }
 
-    // turning the unsmeared vector into a histogram
-    for(int bin=1; bin<=binsXMatrixEcalEcal/2.; bin++)
-      {
-	h_RapidityUNSmearedFolded->SetBinContent(bin,vectorRapidityUNSmearedFolded[bin-1]);
-	//std::cout << vectorRapidityUNSmearedFolded[bin-1]<<std::endl;
-      }
-    
+  //TVectorD vectorRapiditySmearedFolded; vectorRapiditySmearedFolded.Use(binsXMatrixEcalEcal/2.,arrayRapiditySmearedFolded);
+  TVectorD vectorRapiditySmearedFolded; vectorRapiditySmearedFolded.Use(limitNumberBinX,arrayRapiditySmearedFolded);
+   
+   // this is the multiplication for clusure test
+   TVectorD vectorRapidityUNSmearedFolded = inverseMigrationMatrixFolded * vectorRapiditySmearedFolded;
+   
+   h_RapidityUNSmearedFolded = (TH1D *)h_RapiditySmearedFolded->Clone(theEffectTitleFolded.c_str()); 
+   h_RapidityUNSmearedFolded->Reset();
 
+   // turning the unsmeared vector into a histogram
+   for(int bin=1; bin<=limitNumberBinX; bin++)
+     {
+       h_RapidityUNSmearedFolded->SetBinContent(bin,vectorRapidityUNSmearedFolded[bin-1]);
+       //std::cout << vectorRapidityUNSmearedFolded[bin-1]<<std::endl;
+     }
+   }
 
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  if(1){
+    if(1){//GF
     
     // http://ultrahigh.org/2007/08/20/making-pretty-root-color-palettes/
 
    TCanvas * c4Folded = new TCanvas("Migration histogram Folded","Migration histogram Folded",1050,750);
    c4Folded->cd(1);  c4Folded->SetLogz();     
 
+   if(isRapidity) {
    histoMigrationFolded->SetTitle("Migration histogram Folded");
    histoMigrationFolded->SetTitle("Migration Total Folded");
    histoMigrationFolded->GetXaxis()->CenterTitle();
@@ -672,6 +746,7 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
    h_RapidityTreeLevelFolded->SetTitle(0);
    h_RapidityTreeLevelFolded->Draw("");
 
+   //   if(isRapidity) {
    h_RapidityUNSmearedFolded->SetMarkerColor(4);
    h_RapidityUNSmearedFolded->SetMarkerStyle(20);
    h_RapidityUNSmearedFolded->SetMarkerSize(0.7);
@@ -702,11 +777,12 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
    ///////////////////////////////////////////////////////
    c7preFolded->Print("rapdity-Tree-Smear-Unsmear-Closure-Folded.png");
    ///////////////////////////////////////////////////////
-
-  }// end of switch on/off plotting of many canvases
+   }
+   
+    }// end of switch on/off plotting of many canvases
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-
+   if(isRapidity) {
    TH1D * h_effectUnsmearingFolded       = new TH1D("Y unsmearing Folded","Y unsmearing Folded",binsXMatrixEcalEcal/2.,0,xmaxEcalEcal); 
    TH1D * h_effectUnsmearingByHandFolded = new TH1D("Y unsmearing BH Folded","Y unsmearing BH Folded",binsXMatrixEcalEcal/2.,0,xmaxEcalEcal); 
    h_RapidityUNSmearedFolded->Sumw2();
@@ -726,36 +802,9 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
      int i;
    }
    c8Folded->Print("UNsmeared-true-over-true-Closure.png");
+   }
 
-
-  }// end special operations in case of rapidity, for FOLDED distribution
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   //}// end special operations in case of rapidity, for FOLDED distribution
 
 
 
