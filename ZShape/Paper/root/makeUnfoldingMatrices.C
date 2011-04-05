@@ -447,8 +447,6 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
   fprintf(texTable,"\\hline\n\\end{tabular}\n");  fclose(texTable);
   /////////////////////////////////////////////////////////////////////////
 
-  std::cout << "debug 100 " << std::endl;
-
   //checking whether the inversion is sound: multiply matrix and its inverse, anche check if unity
   TMatrixD isThisUnity(inverseMigrationMatrix,TMatrixD::kMult,MigrationMatrix);
   // create reference to the diagonal and set the diagonal to 0
@@ -467,7 +465,6 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
   }
 
 
-  std::cout << "debug 105 " << std::endl;
   //TVectorD vectorRapiditySmeared; vectorRapiditySmeared.Use(binsXMatrixEcalEcal,arrayRapiditySmeared);
   TVectorD vectorRapiditySmeared; vectorRapiditySmeared.Use( (highestBinX-lowestBinX) ,arrayRapiditySmeared);
 
@@ -476,7 +473,6 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
 
   TH1D * h_RapidityUNSmeared = h_RapiditySmeared->Clone(theEffectTitle.c_str()); 
   h_RapidityUNSmeared->Reset();
-  std::cout << "debug 107 " << std::endl;
 
   // turning the unsmeared vector into a histogram
   //  for(int bin=1; bin<=binsXMatrixEcalEcal; bin++)
@@ -486,9 +482,6 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
       h_RapidityUNSmeared->SetBinContent(bin+1,vectorRapidityUNSmeared[bin-lowestBinX]);
       //std::cout << vectorRapidityUNSmeared[bin-1]<<std::endl;
     }
-
-  std::cout << "debug 110 " << std::endl;
-
 
 
 
