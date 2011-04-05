@@ -123,8 +123,9 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
       int ate, atetotal=0;
       int found=sscanf(line," %d %f %f %f %f %f",&i,&a,&b,&c,&d,&e);
 
-      errorsArray[errorsCounter] = sqrt(e*e+d*d); 
-      std::cout << i << "\t" << errorsArray[errorsCounter]  << std::endl;    
+      //errorsArray[errorsCounter] = sqrt(e*e+d*d); 
+      errorsArray[errorsCounter] = e*e+d*d; // sum statistical and syst in quadrature 
+      std::cout << "errors directly from Array: " << i << "\t" << errorsArray[errorsCounter]  << std::endl;    
       myfileData << progressive << "\t"
 	     << a << "\t" 
 	     << b << "\t" 
@@ -145,7 +146,7 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
   TMatrixDDiag diag1(errorsOnDiagonalMatrix); diag1 = totalErrorsVector;
   for(int i=0; i<errorsCounter; i++){
     for(int j=0; j<errorsCounter; j++){
-      if( errorsOnDiagonalMatrix(i,j) !=0){       std::cout << i << "\t" << j << "\t" << errorsOnDiagonalMatrix(i,j) << std::endl;       }
+      if( errorsOnDiagonalMatrix(i,j) !=0){       std::cout << "errorsOnDiagonal: " << i << "\t" << j << "\t" << errorsOnDiagonalMatrix(i,j) << std::endl;       }
     }}
   
   gStyle->SetPalette(1);
@@ -155,7 +156,7 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
   TCanvas * theErrorsCanvas = new TCanvas("theErrorsCanvas","theErrorsCanvas",200,200,1000,800);  
   theErrorsCanvas->cd();
   errorsOnDiagonalMatrix.Draw("colz");
-  //errorsOnDiagonalMatrix.Draw("text same");
+  errorsOnDiagonalMatrix.Draw("text same");
 
   TCanvas * theUnfoldingCanvas = new TCanvas("theUnfoldingCanvas","theUnfoldingCanvas",210,210,1000,800);  
   theUnfoldingCanvas->cd();
@@ -182,6 +183,7 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
     for(int j=0; j<errorsCounter; j++){
       //std::cout << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;     
       myfile << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;
+      if(i==j) std::cout << "cov matrix diagonal: " << covarianceMatrix(i,j) << std::endl;
     }
   }
  
