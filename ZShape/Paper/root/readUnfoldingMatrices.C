@@ -86,16 +86,24 @@ TH1* unfold(const TH1* source, TMatrixD * theUnfoldingMatrix)  {
   return h_RapidityUNSmeared;
 }
 
-
-//void makeCovarianceMatrix(const char* file, TMatrixD * theUnfoldingMatrix)  {
 void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
   
   setTDRStyle();
   zrap_colors();
 
   // get unfolding matrix and make its transpose
-  TMatrixD unfoldingMatrix        = *((TMatrixD*)theUnfoldingMatrix->Clone("theUnfoldingMatrix")) ;
+  TMatrixD unfoldingMatrix        = *((TMatrixD*) theUnfoldingMatrix->Clone("theUnfoldingMatrix")) ;
   TMatrixD transpUnfoldingMatrix  = *((TMatrixD*) theUnfoldingMatrix->Transpose((*theUnfoldingMatrix))  );
+  //if ( std::string(file) == (std::string("ZRapidity_fold_zee_matrix.txt") ) )
+  //    { 
+  //      std::cout << "this is rapidity " << std::endl;
+  //      unfoldingMatrix       = *( (TMatrixD*) theUnfoldingMatrix->GetSub(0,34,0,34) );
+  //transpUnfoldingMatrix = *( (TMatrixD*) unfoldingMatrix.Transpose(unfoldingMatrix) );
+  //    }
+
+  ofstream myfileData;
+  myfileData.open ("dataTextFile.txt");
+  int progressive=1;
 
   // import total errors
   Double_t errorsArray[1000];
@@ -114,13 +122,23 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
       float a,b,c,d,e;
       int ate, atetotal=0;
       int found=sscanf(line," %d %f %f %f %f %f",&i,&a,&b,&c,&d,&e);
-      std::cout << i << "\t" << e << std::endl;
-      errorsArray[errorsCounter] = e; 
+
+      errorsArray[errorsCounter] = sqrt(e*e+d*d); 
+      std::cout << i << "\t" << errorsArray[errorsCounter]  << std::endl;    
+      myfileData << progressive << "\t"
+	     << a << "\t" 
+	     << b << "\t" 
+	     << c << "\t" 
+	     << sqrt(e*e+d*d) 
+	     << std::endl;
+      progressive++;
       errorsCounter++;
       if (found!=3) continue;
   }
   fclose(f);
-    
+     
+  myfileData.close();
+
   TVectorD totalErrorsVector; totalErrorsVector.Use(errorsCounter,errorsArray);
 
   TMatrixD errorsOnDiagonalMatrix(errorsCounter,errorsCounter);  
@@ -137,7 +155,7 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
   TCanvas * theErrorsCanvas = new TCanvas("theErrorsCanvas","theErrorsCanvas",200,200,1000,800);  
   theErrorsCanvas->cd();
   errorsOnDiagonalMatrix.Draw("colz");
-  errorsOnDiagonalMatrix.Draw("text same");
+  //errorsOnDiagonalMatrix.Draw("text same");
 
   TCanvas * theUnfoldingCanvas = new TCanvas("theUnfoldingCanvas","theUnfoldingCanvas",210,210,1000,800);  
   theUnfoldingCanvas->cd();
@@ -155,7 +173,19 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
   theCovarianceCanvas->cd();
   covarianceMatrix.Draw("colz");
   covarianceMatrix.Draw("text same");
+
+  ofstream myfile;
+  myfile.open ("covarianceTextFile.txt");
+
+  std::cout << "\n\n\n covariance matrix " << errorsCounter << " x " << errorsCounter << std::endl;
+  for(int i=0; i<errorsCounter; i++){
+    for(int j=0; j<errorsCounter; j++){
+      //std::cout << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;     
+      myfile << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;
+    }
+  }
  
+  myfile.close();
   
   // export formulas from here:
   // http://en.wikipedia.org/wiki/Propagation_of_uncertainty#Linear_combinations
