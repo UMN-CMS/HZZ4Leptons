@@ -1,4 +1,5 @@
 #include "tdrstyle.C"
+#include "zrapidityStandard.C"
 
 int colorFor(int i) {
   switch (i) {
@@ -26,7 +27,7 @@ void plotAcc(TFile* f, const char* var="Z0_Y") {
   TCanvas* c1=new TCanvas("c1","c1",700,600);
   
   TLegend* tl;
-  tl=new TLegend(0.35,0.15,0.70,0.35,"Pythia 6.422");
+  tl=new TLegend(0.35,0.15,0.75,0.40,"POWHEG + Tune Z2 + CT10");
 
   c1->SetTopMargin(0.05);
   c1->SetRightMargin(0.05);
@@ -50,9 +51,13 @@ void plotAcc(TFile* f, const char* var="Z0_Y") {
   w2f/=w2fn;
 
   work2->Scale(1.0/w2f);
-  work->Divide(work,base);
+  //  work->Divide(work,base);
+  for (int iii=1; iii<=100; iii++)
+    work->SetBinContent(iii+5,work->GetBinContent(iii+5)/base->GetBinContent(iii));
+
   work->SetLineColor(colorFor(n));
   work->SetLineWidth(2);
+  work->GetXaxis()->SetTitle(y_xaxis_label);
   work->GetYaxis()->SetTitle("Geometrical Acceptance");
   work->GetYaxis()->SetTitleOffset(1.2);
   work->SetTitle(0);
@@ -80,19 +85,12 @@ void plotAcc(TFile* f, const char* var="Z0_Y") {
   tl->SetFillColor(0);
   tl->Draw("SAME");
 
-  TText* tt=new TText(0.8,0.92,"Preliminary");
-  tt->SetNDC();
-  tt->SetTextSize(0.03);
-  tt->Draw();
-  TDatime now;
-  TText* tt2=new TText(0.8,0.90,now.AsString());
-  tt2->SetNDC();
-  tt2->SetTextSize(0.013);
-  tt2->Draw();
+
+  zrap_Prelim(0.80,0.90);
 
   char stuff[1024];
-  sprintf(stuff,"acc_%s.png",var);
-  c1->Print(stuff);
+  //  sprintf(stuff,"acc_%s.png",var);
+  // c1->Print(stuff);
   sprintf(stuff,"acc_%s.eps",var);
   c1->Print(stuff);
 

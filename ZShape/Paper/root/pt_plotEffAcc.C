@@ -14,10 +14,10 @@ EColor colorFor(int i) {
 
 const char* labelFor(int i) {
   switch (i) {
-  case(0) : return "Acceptance";
+  case(0) : return "Geometrical Acceptance";
   case(1) : return "Supercluster";
-  case(2) : return "P_{T}>20 GeV";
-  case(3) : return "GSF Track Match";
+  case(2) : return "Supercluster with E_{T}>20 GeV";
+  case(3) : return "Electron Reconstruction (Track)";
   case(4) : return "SKIPME";
   case(5) : return "Electron ID";
   case(6) : return "HLT";
@@ -28,16 +28,21 @@ const char* labelFor(int i) {
 #include "tdrstyle.C"
 #include "zrapidityStandard.C"
 
-void pt_plotEffAcc(TFile* f, const char* post=0, const char* var="Z0_Pt_masscut") {
+void pt_plotEffAcc(TFile* f, int mode=1) {
+
+  const char* var="Z0_Pt_masscut";
   TDirectory* basedir=f->Get("mcEff");
 
-  TH1* base=((TDirectory*)basedir->Get("MUON-MUON/Acceptance"))->Get(var);
-  //   TH1* base=((TDirectory*)basedir->Get("MUON-MUON/Acceptance"))->Get("Z0_PtTL_masscut");
+  TH1* base=0, *base0=0;
 
+  if (mode==1) {
+    base=(TH1*)(((TDirectory*)basedir->Get("MUON-MUON-G20/C01-GPT20"))->Get(var));
+    base0=(TH1*)(((TDirectory*)basedir->Get("MUON-MUON-G20/Acceptance"))->Get(var));
+  } else
+    base=(TH1*)(((TDirectory*)basedir->Get("MUON-MUON/Acceptance"))->Get("Z0_PtTL_masscut"));
 
   TDirectory* zdir=basedir->Get("ECAL80-ECAL95-MUO");
  
-
   TList* cutz=zdir->GetListOfKeys();
  
 
@@ -49,13 +54,15 @@ void pt_plotEffAcc(TFile* f, const char* post=0, const char* var="Z0_Pt_masscut"
   c1->cd();
 
   TLegend* tl;
-  tl=new TLegend(0.20,0.2,0.50,0.32);
+  tl=new TLegend(0.15,0.2,0.75,0.45);
   tl->SetFillStyle(0);
 
   TLegend* tl2=new TLegend(0.50,0.2,0.92,0.32);
   tl2->SetFillStyle(0);
   c1->SetTopMargin(0.05);
   c1->SetRightMargin(0.05);
+  c1->SetBottomMargin(0.15);
+  //  c1->SetRightMargin(0.05);
 
   TH1* final=0,*finalt=0;
 
@@ -77,8 +84,12 @@ void pt_plotEffAcc(TFile* f, const char* post=0, const char* var="Z0_Pt_masscut"
     TH1* work=zpt_rebinForPlot(stage);
     TH1* rebase=zpt_rebinForPlot(base);
     final=(TH1*)(stage->Clone());
-    final->Divide(final,base);
-
+    if (i==0)  {
+      final->Divide(final,base0);
+      rebase=zpt_rebinForPlot(base0);
+    } else {
+      final->Divide(final,base);
+    }
 
 
 
@@ -97,13 +108,13 @@ void pt_plotEffAcc(TFile* f, const char* post=0, const char* var="Z0_Pt_masscut"
     work->SetLineColor(colorFor(n));
     work->SetLineWidth(2);
     if (i==0) {
-      work->GetYaxis()->SetTitle("Efficiency");
-      work->GetXaxis()->SetTitle("Pt_{Z}");
-      work->GetYaxis()->SetTitleOffset(1.2);
+      work->GetYaxis()->SetTitle("Efficiency #times Acceptance");
+      work->GetXaxis()->SetTitle(qt_xaxis_label);
+      work->GetYaxis()->SetTitleOffset(1.05);
       work->SetTitle(0);
       work->SetStats(false);
-      work->SetMaximum(1.0);
-      work->SetMinimum(0.4);
+      work->SetMaximum(1.00);
+      work->SetMinimum(0.5);
       if (strstr(var,"Y")!=0) {
 	work->GetXaxis()->SetRangeUser(-4.5,4.5);
       } else {
@@ -111,32 +122,36 @@ void pt_plotEffAcc(TFile* f, const char* post=0, const char* var="Z0_Pt_masscut"
       }
       work->GetXaxis()->CenterTitle(true);
       work->GetYaxis()->CenterTitle(true);
-      work->Draw("HIST");
-    } else if (n!=4) 
-      work->Draw("SAMEHIST");
+      work->GetXaxis()->SetNoExponent(true);
+      work->GetXaxis()->SetMoreLogLabels(false);
+      work->Draw("HIST ][");
+    } else if (n!=4 && n!=1) 
+      work->Draw("SAMEHIST ][");
 
-    if (n==4 || n==4) { 
+    if (n==4 || n==1) { 
     } else if (n<3) 
-      tl->AddEntry(work,labelFor(n));
+      tl->AddEntry(work,labelFor(n),"L");
     else
-      tl2->AddEntry(work,labelFor(n));
+      tl->AddEntry(work,labelFor(n),"L");
     
     n++;
     finalt=(TH1*)(work->Clone());
   }
   tl->SetFillColor(0);
   tl->Draw("SAME");
-  tl2->SetFillColor(0);
-  tl2->Draw("SAME");
+  //  tl2->SetFillColor(0);
+  //tl2->Draw("SAME");
 
   c1->SetLogx();
 
-  zrap_Prelim(0.8,0.77,0.8,0.74);
+  zrap_Prelim(0.84,0.975,0.8,0.74);
+  zqt_Cut(0.73,0.23,"e");
 
   char stuff[1024];
-  sprintf(stuff,"eff_pt_bycut.png");
-  c1->Print(stuff);
-  sprintf(stuff,"eff_pt_bycut.eps");
+  //  sprintf(stuff,"eff_pt_bycut.png");
+  //c1->Print(stuff);
+  if (mode==1) sprintf(stuff,"eff_pt_bycut_smear.eps");
+  if (mode==2) sprintf(stuff,"eff_pt_bycut_denomtl.eps");
   c1->Print(stuff);
 
   /*
@@ -188,7 +203,12 @@ void pt_plotEffAcc(TFile* f, const char* post=0, const char* var="Z0_Pt_masscut"
 
   */
 
-  sprintf(stuff,"eff_pt.txt");
+
+  if (mode==1) {
+    sprintf(stuff,"effAcc_pt_massCutdenom.txt");
+  } else if (mode==2) {
+    sprintf(stuff,"effAcc_pt_TLdenom.txt");
+  } else return;
   FILE* stats=fopen(stuff,"wt");
 
   TDatime now;

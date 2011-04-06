@@ -6,6 +6,7 @@
 #include "TStyle.h"
 #include "../root/tdrstyle.C"
 #include "../root/zrapidityStandard.C"
+#include <math.h>
 
 // In this example, you pick up an unfolding matrix (made with makeUnfoldingMatrices.C) from a file (unfoldingMatrix_theOutPut.root)
 // and apply to a rapidity/pt distribution you get from an effAcc file (effAccSource.root)
@@ -120,7 +121,7 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
     if (strlen(line)<5 || line[0]=='#') continue;
     int i;
       float a,b,c,d,e;
-      int ate, atetotal=0;
+      //      int ate, atetotal=0;
       int found=sscanf(line," %d %f %f %f %f %f",&i,&a,&b,&c,&d,&e);
 
       //errorsArray[errorsCounter] = sqrt(e*e+d*d); 
@@ -249,9 +250,9 @@ int readUnfoldingMatrices(std::string unfoldingMatrixFileInputFile, std::string 
   plotName = plotName + std::string("/");    plotName = plotName + cut;
   plotName = plotName + std::string("/");    plotName = plotName + plot;
   if(isRapidity){
-    std::cout << "\tUsing directly the total smeared Y plot:     "<< plotName << endl;}
+    std::cout << "\tUsing directly the total smeared Y plot:     "<< plotName << std::endl;}
   else {
-    std::cout << "\tUsing directly the total smeared Pt plot:     "<< plotName << endl;  }
+    std::cout << "\tUsing directly the total smeared Pt plot:     "<< plotName << std::endl;  }
   TH1F * h_fullTest_smeared = (TH1F*) theEffAccInpuntFile->Get(plotName.c_str());
 
 
@@ -259,10 +260,10 @@ int readUnfoldingMatrices(std::string unfoldingMatrixFileInputFile, std::string 
   plotName = plotName + std::string("/");    plotName = plotName + cut;
   if(isRapidity){
     plot=std::string("Z0_YTL"); // tree-level Y before Eff&Acc
-    std::cout << "\tComparing against the total tree-Level Y plot:     "<< plotName << endl;}
+    std::cout << "\tComparing against the total tree-Level Y plot:     "<< plotName << std::endl;}
   else{
     plot=std::string("Z0_PtTL"); 
-    std::cout << "\tComparing against the total tree-Level Pt plot:     "<< plotName << endl;  }
+    std::cout << "\tComparing against the total tree-Level Pt plot:     "<< plotName << std::endl;  }
   plotName = plotName + std::string("/");    plotName = plotName + plot;
 
 

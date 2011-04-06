@@ -53,7 +53,7 @@ void finalBackground(int mode) {
     qcd->SetMinimum(0.01);
     if (mode==2)     qcd->SetMaximum(50);
     if (mode==1)     qcd->SetMaximum(100);
-    qcd->GetXaxis()->SetTitle("y");
+    qcd->GetXaxis()->SetTitle(y_xaxis_label);
     qcd->GetXaxis()->CenterTitle();
     qcd->GetYaxis()->SetTitle("Events/0.1 Units of Rapidity");
   }
@@ -62,7 +62,7 @@ void finalBackground(int mode) {
     qcd->SetMinimum(0.005);
     qcd->SetMaximum(200);
 
-    qcd->GetXaxis()->SetTitle("q_{T} [GeV/c]");
+    qcd->GetXaxis()->SetTitle(qt_xaxis_label);
     qcd->GetXaxis()->CenterTitle();
     qcd->GetYaxis()->SetTitle("Events/Bin");
   }

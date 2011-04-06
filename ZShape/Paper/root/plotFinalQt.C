@@ -6,7 +6,7 @@
 #include "TLegend.h"
 #include "TH2.h"
 #include "readUnfoldingMatrices.C"
-
+#include "TMath.h"
 
 static const int    pt_bins=19;
 static const double pt_binning[]={ 0.0, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 30, 40, 50, 70, 90, 110, 150, 190, 250, 600, 3500 };
@@ -142,15 +142,18 @@ void plotFinalQt(TFile* mctruth, int mode) {
   if (mode==1) {
     effAcc=DataSeries("effAcc_pt_massCutdenom.txt");
     postfix="_smear";
-    truth=(TH1*)(mctruth->Get("mcEff/MUON-MUON/Acceptance/Z0_Pt_masscut")->Clone("truth"));
+    //    truth=(TH1*)(mctruth->Get("mcEff/MUON-MUON/Acceptance/Z0_Pt_masscut")->Clone("truth"));
+    truth=(TH1*)(mctruth->Get("mcEff/MUON-MUON-G20/C01-GPT20/Z0_Pt_masscut")->Clone("truth"));
   } else if (mode==2) {
     effAcc=DataSeries("effAcc_pt_TLdenom.txt");
     postfix="_avemig";
-    truth=(TH1*)(mctruth->Get("mcEff/MUON-MUON/Acceptance/Z0_PtTL_masscut")->Clone("truth"));
+    //    truth=(TH1*)(mctruth->Get("mcEff/MUON-MUON/Acceptance/Z0_PtTL_masscut")->Clone("truth"));
+    truth=(TH1*)(mctruth->Get("mcEff/MUON-MUON-G20/C01-GPT20/Z0_PtTL_masscut")->Clone("truth"));
   } else if (mode==3) {
     effAcc=DataSeries("effAcc_pt_massCutdenom.txt");
     postfix="_matrix";
-    truth=(TH1*)(mctruth->Get("mcEff/MUON-MUON/Acceptance/Z0_PtTL_masscut")->Clone("truth"));
+    //    truth=(TH1*)(mctruth->Get("mcEff/MUON-MUON/Acceptance/Z0_PtTL_masscut")->Clone("truth"));
+    truth=(TH1*)(mctruth->Get("mcEff/MUON-MUON-G20/C01-GPT20/Z0_PtTL_masscut")->Clone("truth"));
   }
 
   truth->SetDirectory(0);
@@ -373,10 +376,10 @@ void plotFinalQt(TFile* mctruth, int mode) {
     ybinage[i]=1e-6+0.07/20.0*i;
   }
 
-  TH2* dummy=new TH2F("dummy","dummy",18,pt_binning_vis,20,ybinage);
+  TH2* dummy=new TH2F("dummy","",18,pt_binning_vis,20,ybinage);
 
-  dummy->GetYaxis()->SetTitle("1/#sigma d#sigma(Z#rightarrowee)/dq_{T} [GeV^{-1}]");
-  dummy->GetXaxis()->SetTitle("q_{T,Z} [GeV]");
+  dummy->GetYaxis()->SetTitle("1/#sigma d#sigma/dp_{T} [GeV^{-1}]");
+  dummy->GetXaxis()->SetTitle(qt_xaxis_label);
   dummy->GetXaxis()->SetTitleOffset(1.2);
   dummy->GetXaxis()->CenterTitle();
   
@@ -404,21 +407,23 @@ void plotFinalQt(TFile* mctruth, int mode) {
   corrdsysb->SetMarkerStyle(0);
   corrdsysb->Draw("PSAME");
 
-  truth_vis->Draw("SAMEHIST");
+  truth_vis->Draw("SAMEHIST ][");
 
   TLegend* tl=new TLegend(0.55,0.45,0.94,0.70);
+  tl->SetFillStyle(0);
   tl->AddEntry(corrd,"Corrected Data","P");
   tl->AddEntry(rawdb,"Raw Data","P");
   tl->AddEntry(rawd,"Background-Subtracted Data","P");
-  tl->AddEntry(truth_vis,"POWHEG+CT10+TuneZ2 Prediction","l");
+  tl->AddEntry(truth_vis,"POWHEG+CT10 Prediction","l");
   tl->Draw();
 
-  zrap_Prelim(0.82,0.90,0.82,0.82);
-  zrap_Lumi(0.82,0.86,lumi);
+
+  zrap_Prelim(0.22,0.97,0.82,0.17);
+  zrap_Lumi(0.85,0.97,lumi);
 
   sprintf(fnamework,"ZQt_final%s.eps",postfix);
   c1->Print(fnamework);
-  sprintf(fnamework,"ZQt_final%s.png",postfix);
+  sprintf(fnamework,"ZQt_final%s.C",postfix);
   c1->Print(fnamework);
 
   TCanvas* c1l=new TCanvas("finalZQtLog","finalZQtLog",800,600);
@@ -449,34 +454,39 @@ void plotFinalQt(TFile* mctruth, int mode) {
   corrdsysbl->Draw("PSAME");
   
   TH1* truth_visl=(TH1*)(truth_vis->Clone("truth log"));
-  truth_visl->Draw("SAMEHIST");
+  truth_visl->Draw("SAMEHIST ][");
   
   
   TLegend* tl2=new TLegend(0.2,0.20,0.62,0.38);
+  tl2->SetFillStyle(0);
+
   tl2->AddEntry(corrdbkgdl,"Corrected Data","P");
   tl2->AddEntry(rawdbl,"Raw Data","P");
   tl2->AddEntry(rawdl,"Background-Subtracted Data","P");
-    tl2->AddEntry(truth_visl,"POWHEG+CT10+TuneZ2 Prediction","l");
+    tl2->AddEntry(truth_visl,"POWHEG+CT10 Prediction","l");
   tl2->Draw();
   
-  zrap_Prelim(0.82,0.90,0.82,0.82);
-  zrap_Lumi(0.82,0.86,lumi);
+  zrap_Prelim(0.22,0.97,0.82,0.17);
+  zrap_Lumi(0.85,0.97,lumi);
 
   sprintf(fnamework,"ZQt_final-log%s.eps",postfix);
   c1l->Print(fnamework);
-  sprintf(fnamework,"ZQt_final-log%s.png",postfix);
+  sprintf(fnamework,"ZQt_final-log%s.C",postfix);
   c1l->Print(fnamework);
 
 
   TCanvas* c3=new TCanvas("finalZQtErrors","finalZQtErrors",800,600);
-  TH1* dummy3=new TH1F("dummy3","dummy3",10,0.7,600);
+  TH1* dummy3=new TH1F("dummy3","",10,0.7,600);
+  c3->SetBottomMargin(0.15);
   dummy3->SetDirectory(0);
   c3->SetLogy();
   c3->SetLogx();
   dummy3->SetMaximum(1.0);
   dummy3->SetMinimum(0.001);
   dummy3->GetYaxis()->SetTitle("Fractional Error");
-  dummy3->GetXaxis()->SetTitle("q_{T,Z}");
+  dummy3->GetXaxis()->SetTitle(qt_xaxis_label);
+  dummy3->GetXaxis()->CenterTitle();
+  dummy3->GetXaxis()->SetTitleOffset(1.05);
 
   
   TH1* effacc_stat_gr=ea_statErr.makeTH1("eff stat");
@@ -515,16 +525,18 @@ void plotFinalQt(TFile* mctruth, int mode) {
   gr_systotal->SetLineWidth(2);
   
 
-  effacc_stat_gr->Draw("HSAME");
-  effacc_syst_gr->Draw("HSAME");
-  gr_dataStatError->Draw("HSAME");
-  gr_bkgd_unc->Draw("HSAME");
-  gr_energyscale->Draw("HSAME");
-  gr_pdf->Draw("HSAME");
-  gr_unfolding->Draw("HSAME");
-  gr_systotal->Draw("HISTSAME");
+  effacc_stat_gr->Draw("HSAME ][");
+  effacc_syst_gr->Draw("HSAME ][");
+  gr_dataStatError->Draw("HSAME ][");
+  gr_bkgd_unc->Draw("HSAME ][");
+  gr_energyscale->Draw("HSAME ][");
+  gr_pdf->Draw("HSAME ][");
+  gr_unfolding->Draw("HSAME ][");
+  gr_systotal->Draw("HISTSAME ][");
 
-  tl=new TLegend(0.35,0.70,0.75,0.94,"Error Source Contributions");
+  tl=new TLegend(0.15,0.75,0.75,0.94,"");
+  tl->SetFillStyle(0);
+  tl->SetNColumns(2);
   tl->AddEntry(gr_dataStatError,"Data Statistics","L");
   tl->AddEntry(gr_systotal,"Total Systematic Error","L");
   tl->AddEntry(gr_bkgd_unc,"Background Uncertainty","L");
@@ -535,12 +547,14 @@ void plotFinalQt(TFile* mctruth, int mode) {
   tl->AddEntry(effacc_syst_gr,"Efficiency Systematics","L");
   tl->Draw();
   
-  zrap_Prelim(0.82,0.26,0.82,0.17);
-  zrap_Lumi(0.82,0.21,lumi);
+  zrap_Prelim(0.85,0.975,0.82,0.17);
+  zrap_Lumi(0.25,0.18,lumi);
 
   sprintf(fnamework,"ZQt_final_errors%s.eps",postfix);
   c3->Print(fnamework);
-  sprintf(fnamework,"ZQt_final_errors%s.png",postfix);
+  //  sprintf(fnamework,"ZQt_final_errors%s.png",postfix);
+  // c3->Print(fnamework);
+  sprintf(fnamework,"ZQt_final_errors%s.C",postfix);
   c3->Print(fnamework);
 
   sprintf(fnamework,"ZQt_final_errtable%s.tex",postfix);
@@ -575,18 +589,29 @@ void plotFinalQt(TFile* mctruth, int mode) {
   fclose(ftable);
 
 
+  double chi2=0;
+  int ndof=0;
+
   sprintf(fnamework,"dsdqt_zee_final%s.csv",postfix);
   FILE* outFile = fopen(fnamework, "wt");
 
   fprintf(outFile, "#%9s %9s %9s %9s %12s %12s\n", "bin", "lower", "upper", "data", "stat error", "syst error");
-  for(int i = 0; i < BINCOUNT; i++)
+  for(int i = 0; i < BINCOUNT-1; i++)
     {
       fprintf(outFile, "%9i %9.1f %9.1f %9f %12.10f %12.10f\n", i+1, pt_binning[i], pt_binning[i+1], corrData.y[i], corrData.ey[i], sqrt(pow(corrDataSyst.ey[i],2)-pow(corrData.ey[i],2)));
+
+      double toadd=pow(corrData.y[i]-truth_vis->GetBinContent(i+1),2)/pow(corrDataSyst.ey[i],2);
+      //      printf("%d %f %f %f %f\n",i,corrData.y[i],truth_vis->GetBinContent(i+1),corrDataSyst.ey[i],toadd);
+      if (i>5) {
+	chi2+=toadd;
+	ndof++;
+      }
     }
-  
+
+  ndof--;
   fclose(outFile);
   
 
-  //  printf(" Two models: %f %f \n",chi2_0,chi2_1);
+  printf(" Comparison: %f/%d %f \n",chi2,ndof,TMath::Prob(chi2,ndof));
 
 }

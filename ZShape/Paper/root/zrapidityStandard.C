@@ -1,8 +1,14 @@
+#ifndef ZRAPIDITY_STANDARD_INCLUDED
+#define ZRAPIDITY_STANDARD_INCLUDED
+
 #include "TText.h"
 #include "TLatex.h"
 #include "TDatime.h"
 
 static bool dotime=false;
+static const char* y_xaxis_label="y_{ee}";
+static const char* qt_xaxis_label="p_{T,ee} [GeV/c]";
+static const char* qt_xaxis_ll_label="p_{T} [GeV/c]";
 
 TH1* zpt_rebinForPlot(TH1* original) {
   char name[125];
@@ -38,15 +44,15 @@ void zrap_Prelim(double px, double py, double tx=-1, double ty=-1) {
 
   TText *plabel = new TText();
   plabel-> SetNDC();
-  plabel -> SetTextFont(522);
+  plabel -> SetTextFont(42);
   plabel -> SetTextColor(1);
-  plabel -> SetTextSize(0.035);
+  plabel -> SetTextSize(0.040);
   plabel -> SetTextAlign(22);
   plabel -> SetTextAngle(0);
 
   
   //Then for each plot, pick a nice spot and draw
-  plabel -> DrawText(px, py, "CMS preliminary 2010"); // 'ala VBTF'
+  plabel -> DrawText(px, py, "CMS preliminary"); // 'ala VBTF'
   if (tx>=0 && ty>=0 && dotime) {
     TText *tlabel = new TText();
     tlabel-> SetNDC();
@@ -62,13 +68,13 @@ void zrap_Prelim(double px, double py, double tx=-1, double ty=-1) {
 
 void zrap_Lumi(double px, double py, int val) {
   char text[40];
-  sprintf(text,"%d pb^{-1}",val);
+  sprintf(text,"%d pb^{-1} at #sqrt{s}=7 TeV",val);
 
   TLatex *plabel = new TLatex(px,py,text);
   plabel-> SetNDC();
   plabel -> SetTextFont(42);
   plabel -> SetTextColor(1);
-  plabel -> SetTextSize(0.040);
+  plabel -> SetTextSize(0.035);
   plabel -> SetTextAlign(22);
   plabel -> SetTextAngle(0);
 
@@ -77,3 +83,22 @@ void zrap_Lumi(double px, double py, int val) {
   plabel -> Draw();
 
 }
+
+void zqt_Cut(double px, double py, const char* lept="l",double sizef=1.0) {
+  char text[40];
+  sprintf(text,"|#eta_{%s}|<2.1, p_{T,%s}>20 GeV/c",lept,lept);
+
+  TLatex *plabel = new TLatex(px,py,text);
+  plabel-> SetNDC();
+  plabel -> SetTextFont(42);
+  plabel -> SetTextColor(kBlue);
+  plabel -> SetTextSize(0.045*sizef);
+  plabel -> SetTextAlign(22);
+  plabel -> SetTextAngle(0);
+
+
+  //Then for each plot, pick a nice spot and draw
+  plabel -> Draw();
+
+}
+#endif // ZRAPIDITY_STANDARD_INCLUDED

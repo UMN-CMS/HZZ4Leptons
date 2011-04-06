@@ -1,4 +1,5 @@
 #include "TH1.h"
+#include "TMath.h"
 #include "TCanvas.h"
 #include "TFile.h"
 #include "TGraph.h"
@@ -136,6 +137,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
   if (mode==2) {
     effAcc=DataSeries("effAcc_smearOverTrue.csv");
     postfix="_avemig";
+    label="Average Bin Migration Correction";
   }
   if (mode==3) {
     effAcc=DataSeries("effAcc_combined.csv");
@@ -145,7 +147,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
   if (mode==4) {
     effAcc=DataSeries("effAcc_combined.csv");
     postfix="_foldMatrix";
-    label="Folded Matrix-based Unsmearing";
+    //    label="Folded Matrix-based Unsmearing";
   }
   DataSeries ea_statErr("effStatError.csv");
 
@@ -380,7 +382,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
   TH2* dummy=new TH2F("dummy","dummy",20,-3.5,3.5,30,0,700);
 
   dummy->GetYaxis()->SetTitle("Events/0.1 Units of Rapidity");
-  dummy->GetXaxis()->SetTitle("y_{Z}");
+  dummy->GetXaxis()->SetTitle(y_xaxis_label);
   dummy->GetXaxis()->CenterTitle();
   dummy->GetYaxis()->CenterTitle();
   
@@ -409,14 +411,15 @@ void plotFinal(TFile* mctruth, int mode=1) {
   truth->Draw("SAMEHIST");
 
   TLegend* tl=new TLegend(0.4,0.16,0.72,0.34,label);
+  tl->SetFillStyle(0);
   tl->AddEntry(corrd,"Corrected Data","P");
   tl->AddEntry(rawdb,"Raw Data","P");
   tl->AddEntry(rawd,"Background-Subtracted Data","P");
   tl->AddEntry(truth,"POWHEG+CT10 Prediction","l");
   tl->Draw();
 
-  zrap_Prelim(0.82,0.90,0.82,0.80);
-  zrap_Lumi(0.82,0.86,lumi);
+  zrap_Prelim(0.85,0.975,0.82,0.80);
+  zrap_Lumi(0.81,0.89,lumi);
 
   sprintf(fnamework,"ZRapidity_final%s.eps",postfix);
   c1->Print(fnamework);
@@ -433,26 +436,6 @@ void plotFinal(TFile* mctruth, int mode=1) {
   truth2->SetDirectory(0);
   truthalt->SetDirectory(0);
 
-  double chi2_0=0;
-  double chi2_1=0;
-  double fudge=1.00;
-
-  for (int i=0; i<=(lasti-firsti)/2+2; i++) {
-
-    int j=izero+i-1;
-    int jadd=izero-i-2;
-
-    truth2->SetBinContent(j+1,(truth2->GetBinContent(j+1)+truth2->GetBinContent(jadd+1))/sumtotal/binwidth*fudge);
-    /*
-    double factor=1+(pdfSens25.y[i-1]+pdfSens25.y[BINCOUNT-i])/2.0;
-    truthalt->SetBinContent(i,truth2->GetBinContent(i)*factor);
-    if (corrDataSystFold.ey[i-1]<=0) continue;
-    printf("AltUniv: %d %f %f\n",i,factor,truthalt->GetBinContent(i));
-    chi2_0+=pow(truth2->GetBinContent(i)-corrDataFold.y[i-1],2)/pow(corrDataSystFold.ey[i-1],2);
-    chi2_1+=pow(truthalt->GetBinContent(i)-corrDataFold.y[i-1],2)/pow(corrDataSystFold.ey[i-1],2);
-    */
-  }
-  
 
   // this is where you unfold |Y|, if mode==4
   DataSeries corrDataFoldClone(corrDataFold);
@@ -485,9 +468,28 @@ void plotFinal(TFile* mctruth, int mode=1) {
   }
   
 
+  double chi2=0;
+  int ndof=0;
+  for (int i=0; i<=(lasti-firsti)/2+2; i++) {
+
+    int j=izero+i-1;
+    int jadd=izero-i-2;
+
+    truth2->SetBinContent(j+1,(truth2->GetBinContent(j+1)+truth2->GetBinContent(jadd+1))/sumtotal/binwidth);
+
+    double toadd=pow(truth2->GetBinContent(j+1)-corrDataFold.y[j],2)/pow(corrDataSystFold.ey[j],2);
+    printf("%d %f\n",i,toadd);
+    if (corrDataFold.y[j]>0) {
+      ndof++;
+      chi2+=toadd;
+    }
+  }
+  ndof--; // because of normalization
+
+
   c2->cd();
-  dummy2->GetYaxis()->SetTitle("1/#sigma d#sigma/dy");
-  dummy2->GetXaxis()->SetTitle("|y_{Z}|");
+  dummy2->GetYaxis()->SetTitle("1/#sigma d#sigma/d|y|");
+  dummy2->GetXaxis()->SetTitle("|y_{ee}|");
   dummy2->GetXaxis()->CenterTitle();
   dummy2->GetYaxis()->CenterTitle();
 
@@ -504,8 +506,8 @@ void plotFinal(TFile* mctruth, int mode=1) {
   truthalt->SetLineColor(kRed);
   truthalt->Draw("SAMEHIST");
 
-  zrap_Prelim(0.32,0.24,0.32,0.15);
-  zrap_Lumi(0.32,0.195,lumi);
+  zrap_Prelim(0.85,0.975,0.32,0.15);
+  zrap_Lumi(0.82,0.89,lumi);
 
   if (strlen(label)>2) {
       TLatex *plabel = new TLatex(0.7,0.17,label);
@@ -530,7 +532,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
   dummy3->SetMaximum(1.0);
   dummy3->SetMinimum(0.001);
   dummy3->GetYaxis()->SetTitle("Fractional Error");
-  dummy3->GetXaxis()->SetTitle("y_{Z}");
+  dummy3->GetXaxis()->SetTitle(y_xaxis_label);
   dummy3->GetXaxis()->CenterTitle();
 
   
@@ -587,23 +589,25 @@ void plotFinal(TFile* mctruth, int mode=1) {
   gr_systotal->Draw("HISTSAME");
 
 
-  tl=new TLegend(0.25,0.75,0.55,0.94,"Error Source Contributions");
-  TLegend* tl2=new TLegend(0.55,0.75,0.85,0.94,label);
+  tl=new TLegend(0.18,0.73,0.48,0.92);
+  tl->SetFillStyle(0);
+  TLegend* tl2=new TLegend(0.47,0.73,0.73,0.92,label);
+  tl2->SetFillStyle(0);
    //  tl->AddEntry(binmiggr,"Bin Migration","L");
-  tl2->AddEntry(gr_dataStatError,"Data Statistics","L");
-  tl2->AddEntry(gr_systotal,"Total Systematic Error","L");
+  tl->AddEntry(gr_dataStatError,"Data Statistics","L");
+  tl->AddEntry(gr_systotal,"Total Systematic Error","L");
   tl->AddEntry(gr_bkgd_unc,"Background Uncertainty","L");
   tl->AddEntry(effacc_stat_gr,"Efficiency Statistics","L");
-  tl->AddEntry(gr_pdf,"PDF (#epsilon #times A) Uncertainty","L");
   tl2->AddEntry(gr_energyscale,"Energy Scale Uncertainty","L");
+  tl2->AddEntry(gr_pdf,"PDF (#epsilon #times A) Uncertainty","L");
   if (mode==2)
     tl2->AddEntry(gr_unfold,"Unfolding Uncertainty","L");
   tl2->AddEntry(effacc_syst_gr,"Efficiency Systematics","L");
   tl->Draw();
   tl2->Draw();
   
-  zrap_Prelim(0.32,0.24,0.3,0.16);
-  zrap_Lumi(0.32,0.20,lumi);
+  zrap_Prelim(0.85,0.975,0.3,0.16);
+  zrap_Lumi(0.84,0.90,lumi);
 
   sprintf(fnamework,"ZRapidity_final_errors%s.eps",postfix);
   c3->Print(fnamework);
@@ -660,6 +664,6 @@ void plotFinal(TFile* mctruth, int mode=1) {
   fclose(ftable);
   fclose(ftxt);
 
-  //  printf(" Two models: %f %f \n",chi2_0,chi2_1);
+  printf(" Consistency: %f/%d %f \n",chi2,ndof,TMath::Prob(chi2,ndof));
 
 }

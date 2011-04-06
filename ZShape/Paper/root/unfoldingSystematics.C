@@ -119,8 +119,8 @@ int unfoldingSystematics(std::string variable){
   leg->AddEntry(baseUnfoldedRapidity,"Y_{Z,reco} after effAcc and unsmearing","lp");
   leg->AddEntry(theInitialTreeLevelHisto,"Y_{Z,tree level}","pl");
   } else {
-    leg->AddEntry(baseUnfoldedRapidity,"q_{T,Zreco} after effAcc and unsmearing","lp");
-    leg->AddEntry(theInitialTreeLevelHisto,"q_{T,Z tree level}","pl");
+    leg->AddEntry(baseUnfoldedRapidity,"p_{T,ee reco} after effAcc and unsmearing","lp");
+    leg->AddEntry(theInitialTreeLevelHisto,"q_{T,ee tree level}","pl");
   }
   leg->SetFillColor(0); leg->SetShadowColor(0); leg->SetTextSize(0.03); 
   leg->Draw();  
@@ -157,10 +157,10 @@ int unfoldingSystematics(std::string variable){
   TH1F*  RecoOverTLBis = RecoOverTL->Clone(); 
   RecoOverTL->GetYaxis()->SetTitle("#rho=Evt(true)/Evt(reco)");
   if(isRapidity)    {     
-    RecoOverTL->GetXaxis()->SetTitle("Y_{Z0}"); }
+    RecoOverTL->GetXaxis()->SetTitle(y_axis_label); }
   else              {
-    RecoOverTL->GetXaxis()->SetTitle("q_{T,Z} [GeV/c]"); 
-    RecoOverTLBis->GetXaxis()->SetTitle("q_{T,Z} [GeV/c]"); 
+    RecoOverTL->GetXaxis()->SetTitle(qt_xaxis_label);
+    RecoOverTLBis->GetXaxis()->SetTitle(qt_xaxis_label); 
     RecoOverTL->SetTitleOffset(1.2);
     RecoOverTLBis->SetTitleOffset(1.2);
     CanvasRecoOverTL->SetLogx();
@@ -183,12 +183,12 @@ int unfoldingSystematics(std::string variable){
   if(isRapidity)    {     
     RecoOverTLKevin = (TH1D*)RecoOverTL;
     RecoOverTLBisKevin =(TH1D*)RecoOverTLBis;
-    RecoOverTLKevin->GetXaxis()->SetTitle("Y_{Z0}"); }
+    RecoOverTLKevin->GetXaxis()->SetTitle(y_xaxis_label); }
   else              {
     RecoOverTLKevin  = (TH1D*)zpt_rebinForPlot(RecoOverTL);
     RecoOverTLBisKevin=  (TH1D*)zpt_rebinForPlot(RecoOverTLBis);
-    RecoOverTLKevin->GetXaxis()->SetTitle("q_{T,Z}     [GeV/c]"); 
-    RecoOverTLBisKevin->GetXaxis()->SetTitle("q_{T,Z}     [GeV/c]"); 
+    RecoOverTLKevin->GetXaxis()->SetTitle(qt_xaxis_label);
+    RecoOverTLBisKevin->GetXaxis()->SetTitle(qt_xaxis_label); 
     RecoOverTLKevin->GetXaxis()->SetTitleOffset(0.98);
     RecoOverTLBisKevin->GetXaxis()->SetTitleOffset(0.98);
     RecoOverTLBisKevin->GetXaxis()->CenterTitle();
@@ -222,11 +222,11 @@ int unfoldingSystematics(std::string variable){
   TH2D * theEarlyDummy;
   if(isRapidity)    { 
     theEarlyDummy = new TH2D("EarlyDummy","EarlyDummy",100,-3.6,3.6,2,-0.01,0.01); 
-    theEarlyDummy->GetXaxis()->SetTitle("Y_{Z0}");
+    theEarlyDummy->GetXaxis()->SetTitle(y_xaxis_label);
     theEarlyDummy->GetXaxis()->CenterTitle();
   } else {
     theEarlyDummy = new TH2D("EarlyDummy","EarlyDummy",100,0,3500,2,-0.025,0.025);
-    theEarlyDummy->GetXaxis()->SetTitle("q_{T,Z} [GeV/c]");
+    theEarlyDummy->GetXaxis()->SetTitle(qt_xaxis_label);
     theEarlyDummy->GetXaxis()->CenterTitle();
   }
   theEarlyDummy->GetYaxis()->SetTitle("(events_{varied unfolding}/events_{base unfolding}) -1");
@@ -391,7 +391,7 @@ int unfoldingSystematics(std::string variable){
   } else {
     TH2D* theDummy = new TH2D("EarlyDummy","EarlyDummy",100,0.7,600,2,-0.01,0.01);
     //    theDummy=(TH2)zpt_rebinForPlot(theDummyPrelim);
-    theDummy->GetXaxis()->SetTitle("q_{T,Z}        [GeV/c]");
+    theDummy->GetXaxis()->SetTitle(qt_xaxis_label);
     //theDummy->GetXaxis()->CenterTitle();
     theDummy->GetXaxis()->SetTitleOffset(0.96);
     theControlCanvasBis->SetLogx(); 
@@ -621,10 +621,10 @@ int unfoldingSystematicsRatios(std::string variable){
   TH2D * theEarlyDummy;
   if(isRapidity)    { 
     theEarlyDummy = new TH2D("EarlyDummy","EarlyDummy",100,-3.6,3.6,2,-0.01,0.01); 
-    theEarlyDummy->GetXaxis()->SetTitle("Y_{Z0}");
+    theEarlyDummy->GetXaxis()->SetTitle(y_axis_label);
   } else {
     theEarlyDummy = new TH2D("EarlyDummy","EarlyDummy",100,0,3500,2,-0.025,0.025);
-    theEarlyDummy->GetXaxis()->SetTitle("q_{t,Z0}    [GeV/c]");
+    theEarlyDummy->GetXaxis()->SetTitle(qt_xaxis_label);
   }
   theEarlyDummy->GetYaxis()->SetTitle("(#rho_{varied smearing}/#rho_{base}) -1");
   theEarlyDummy->GetXaxis()->CenterTitle();
@@ -772,11 +772,11 @@ int unfoldingSystematicsRatios(std::string variable){
   TH2D * theDummy;
   if(isRapidity)    { 
     theDummy = new TH2D("EarlyDummy","EarlyDummy",100,-3.6,3.6,2,-0.01,0.01); 
-    theDummy->GetXaxis()->SetTitle("Y_{Z0}");
+    theDummy->GetXaxis()->SetTitle(y_xaxis_label);
     theDummy->GetXaxis()->CenterTitle();
   } else {
     theDummy = new TH2D("EarlyDummy","EarlyDummy",100,0.7,600,2,-0.025,0.025);
-    theDummy->GetXaxis()->SetTitle("q_{T,Z0}       [GeV/c]");
+    theDummy->GetXaxis()->SetTitle(qt_xaxis_label);
     theDummy->GetXaxis()->CenterTitle();
     theControlCanvasBis->SetLogx();
   }

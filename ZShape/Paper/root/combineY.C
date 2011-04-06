@@ -1,19 +1,27 @@
 #include "readStandardFile.C"
 #include "tdrstyle.C"
 #include "zrapidityStandard.C"
+#include "TMath.h"
 
-void combineY(TFile* theory) {
+void combineY(TFile* theory,int mode=0) {
   TH1* truth=(TH1*)(theory->Get("mcEff/All/Z0_YTL")->Clone("truth"));
   truth->SetDirectory(0);  
 
   setTDRStyle();
-
   TH1* pdf_sens_low=readStandardFile("pdf_frac_low","pdfSensitivitiesNeg_Y.txt");
   TH1* pdf_sens_high=readStandardFile("pdf_frac_high","pdfSensitivitiesPos_Y.txt");
 
+  TH1* elec_stat;
+  TH1* elec_syst;
+  if (mode==0) {
 
-  TH1* elec_stat=readStandardFile("elec_stat","ZRapidity_fold_zee_avemig.txt",0);
-  TH1* elec_syst=readStandardFile("elec_all","ZRapidity_fold_zee_avemig.txt",1);
+    elec_stat=readStandardFile("elec_stat","ZRapidity_fold_zee_foldMatrix.txt",0);
+    elec_syst=readStandardFile("elec_all","ZRapidity_fold_zee_foldMatrix.txt",1);
+  } else {
+    elec_stat=readStandardFile("elec_stat","ZRapidity_fold_zee_avemig.txt",0);
+    elec_syst=readStandardFile("elec_all","ZRapidity_fold_zee_avemig.txt",1);
+  }
+
   TH1* mu_stat=readStandardFile("mu_stat","dsdy_muons.txt",0);
   TH1* mu_syst=readStandardFile("mu_syst","dsdy_muons.txt",1);
 
@@ -35,6 +43,7 @@ void combineY(TFile* theory) {
     double pelec=0,pmu=0;
     if (mu_stat->GetBinContent(i)>0.001) {
       double total_err_mu=sqrt(pow(mu_stat->GetBinError(i),2)+pow(mu_syst->GetBinError(i),2));
+      if (mode==1) total_err_mu/=(1.05); // temporary hack for average-corrections
       mu_all->SetBinError(i,total_err_mu);      
       sumerr=1.0/(total_err_elec*total_err_elec)+1.0/(total_err_mu*total_err_mu);
     
@@ -72,6 +81,14 @@ void combineY(TFile* theory) {
 
   truth->Scale(1.0/(tt*0.1));
 
+  // chi2
+  double chi2=0;
+  int ndof=-1; // for normalization
+  for (int i=51;i<=85; i++) {
+    chi2+=pow(comb_all->GetBinContent(i)-truth->GetBinContent(i),2)/pow(comb_all->GetBinError(i),2);
+    ndof++;
+  }
+
   static const int npoints=(85-51+1+2)*2;
   double terrorsx[npoints];
   double terrorsy[npoints];
@@ -91,6 +108,7 @@ void combineY(TFile* theory) {
 
   TGraph* terrors=new TGraph(npoints,terrorsx,terrorsy);
   terrors->SetFillColor(kCyan);
+  terrors->SetFillStyle(1001);
 
   elec_all->GetXaxis()->SetRangeUser(0.0,3.45);
   comb_all->GetXaxis()->SetRangeUser(0.0,3.45);
@@ -101,10 +119,14 @@ void combineY(TFile* theory) {
 
   TCanvas* c1=new TCanvas("c1","c1",800,800);
 
+
+  c1->SetRightMargin(0.05);
+  c1->SetLeftMargin(0.17);
   comb_all->GetXaxis()->SetTitle("|y|");
   comb_all->GetXaxis()->CenterTitle();
 
   comb_all->GetYaxis()->SetTitle("1/#sigma d#sigma/d|y|");
+  comb_all->GetYaxis()->SetTitleOffset(1.3);
   comb_all->GetYaxis()->CenterTitle();
 
   comb_all->Draw("E");
@@ -112,14 +134,15 @@ void combineY(TFile* theory) {
 
   comb_all->Draw("SAME E");
 
-  truth->Draw("SAME HIST");
+  //  truth->Draw("SAME HIST");
 
-  zrap_Prelim(0.75,0.9,0.75,0.82);
-  zrap_Lumi(0.75,0.86,36);
+  zrap_Prelim(0.82,0.97,0.75,0.82);
+  zrap_Lumi(0.77,0.90,36);
 
   TLegend* tl=new TLegend(0.20,0.25,0.75,0.40);
-  tl->AddEntry(comb_all,"Z#rightarrow e^{+}e^{-} and Z#rightarrow #mu^{+}#mu^{-} combined","P");
-  tl->AddEntry(terrors,"POWHEG + CT10","LF");
+  tl->SetFillStyle(0);
+  tl->AddEntry(comb_all,"data (e and #mu combined)","P");
+  tl->AddEntry(terrors,"POWHEG + CT10","F");
 
   tl->Draw();
 
@@ -154,7 +177,7 @@ void combineY(TFile* theory) {
   c2->cd(2);
   pull_mu->Draw("HIST");
 
-  TCanvas* c3=new TCanvas("c3","c3",800,400);
+  TCanvas* c3=new TCanvas("c3","c3",800,550);
   c3->SetLeftMargin(0.14);
 
   pull_elec_y->SetMaximum(0.05);
@@ -165,22 +188,25 @@ void combineY(TFile* theory) {
 
   pull_elec_y->GetYaxis()->SetTitle("|y_{ll}|-|y_{combined}|");
   pull_elec_y->GetYaxis()->CenterTitle();  
-  pull_elec_y->GetYaxis()->SetTitleOffset(1.0);
+  pull_elec_y->GetYaxis()->SetTitleOffset(1.08);
   
   pull_mu_y->SetMarkerStyle(24);
 
   pull_elec_y->Draw("E");
   pull_mu_y->Draw("E SAME");
 
-  TLegend* tlp=new TLegend(0.7,0.32,0.9,0.18);
-  tlp->AddEntry(pull_elec_y,"Z#rightarrowe^{+}e^{-}","P");
-  tlp->AddEntry(pull_mu_y,"Z#rightarrow#mu^{+}#mu^{-}","P");
+  TLegend* tlp=new TLegend(0.15,0.12,0.6,0.26);
+  tlp->SetFillStyle(0);
+  tlp->AddEntry(pull_elec_y,"e channel","P");
+  tlp->AddEntry(pull_mu_y,"#mu channel","P");
+  tlp->SetNColumns(2);
   tlp->Draw();
 
-  zrap_Prelim(0.75,0.9,0.75,0.82);
-  zrap_Lumi(0.75,0.86,36);
+  zrap_Prelim(0.85,0.97,0.75,0.82);
+  zrap_Lumi(0.55,0.90,36);
   
-  c3->Print("dsday_combined_deltas.png");
+  c3->Print("dsday_combined_deltas.C");
   c3->Print("dsday_combined_deltas.eps");
 
+  printf("Theory check: %f/%d (%f)\n",chi2,ndof,TMath::Prob(chi2,ndof));
 }

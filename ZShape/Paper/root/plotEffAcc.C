@@ -2,11 +2,11 @@ EColor colorFor(int i) {
   switch (i) {
   case (0): return kBlack;
   case (1): return kRed;
-  case (2): return kGreen+1;
-  case (3): return kBlue;
+  case (2): return kBlue;
+  case (3): return kRed;
   case (4): return kOrange;
   case (5): return kViolet-5;
-  case (6): return kRed-6;
+  case (6): return kOrange;
   default: return i+1;
   };
 
@@ -14,10 +14,10 @@ EColor colorFor(int i) {
 
 const char* labelFor(int i) {
   switch (i) {
-  case(0) : return "Acceptance";
+  case(0) : return "Geometrical Acceptance";
   case(1) : return "Supercluster";
-  case(2) : return "P_{T}>20 GeV";
-  case(3) : return "GSF Track Match";
+  case(2) : return "Supercluster P_{T}>20 GeV";
+  case(3) : return "Electron Reconstruction (Track)";
   case(5) : return "Electron Id";
   case(6) : return "HLT";
     //  case(6) : return "HLT";
@@ -61,16 +61,16 @@ void plotEffAcc(TFile* f, int mode=0, const char* var="Z0_Y_masscut") {
   c1->cd();
 
   TLegend* tl;
-  tl=new TLegend(0.20,0.8,0.50,0.92);
+  tl=new TLegend(0.13,0.8,0.47,0.92);
   tl->SetFillStyle(0);
 
-  TLegend* tl2=new TLegend(0.50,0.8,0.92,0.92);
+  TLegend* tl2=new TLegend(0.50,0.8,0.95,0.92);
   tl2->SetFillStyle(0);
-  c1->SetTopMargin(0.02);
+  c1->SetTopMargin(0.05);
   c1->SetRightMargin(0.02);
   c1->SetLeftMargin(0.10);
   c1->SetBottomMargin(0.10);
-  c2->SetTopMargin(0.02);
+  c2->SetTopMargin(0.05);
   c2->SetRightMargin(0.02);
   c2->SetLeftMargin(0.10);
   c2->SetBottomMargin(0.10);
@@ -118,8 +118,8 @@ void plotEffAcc(TFile* f, int mode=0, const char* var="Z0_Y_masscut") {
     work->SetLineColor(colorFor(n));
     work->SetLineWidth(2);
     if (i==0) {
-      work->GetYaxis()->SetTitle("#epsilon #times A");
-      work->GetXaxis()->SetTitle("Y_{Z}");
+      work->GetYaxis()->SetTitle("Efficiency #times Acceptance");
+      work->GetXaxis()->SetTitle("y_{ee}");
       work->GetYaxis()->SetTitleOffset(1.2);
       work->SetTitle(0);
       work->SetStats(false);
@@ -133,9 +133,9 @@ void plotEffAcc(TFile* f, int mode=0, const char* var="Z0_Y_masscut") {
       work->GetXaxis()->CenterTitle(true);
       work->GetYaxis()->CenterTitle(true);
       work->Draw("HIST");
-    } else if (n!=4 && n!=7) work->Draw("SAMEHIST");
+    } else if (n!=4 && n!=7 && n!=1) work->Draw("SAMEHIST");
 
-    if (n!=4 && n!=7) {
+    if (n!=4 && n!=7 && n!=1) {
       if (n<3) 
 	tl->AddEntry(work,labelFor(n));
       else
@@ -149,7 +149,7 @@ void plotEffAcc(TFile* f, int mode=0, const char* var="Z0_Y_masscut") {
   tl2->SetFillColor(0);
   tl2->Draw("SAME");
 
-  zrap_Prelim(0.8,0.77,0.8,0.74);
+  zrap_Prelim(0.87,0.975,0.3,0.87);
 
   char stuff[1024];
   if (post==0) sprintf(stuff,"effacc_bycut.png");
@@ -168,8 +168,8 @@ void plotEffAcc(TFile* f, int mode=0, const char* var="Z0_Y_masscut") {
   final2->SetLineWidth(2);
   finalt->SetLineWidth(2);
 
-  final->GetYaxis()->SetTitle("#epsilon #times A");
-  final->GetXaxis()->SetTitle("Y_{Z}");
+  final->GetYaxis()->SetTitle("Efficiency #times Acceptance");
+  final->GetXaxis()->SetTitle("y_{ee}");
 
   final->GetYaxis()->SetTitleOffset(1.2);
   final->SetTitle(0);
@@ -188,14 +188,15 @@ void plotEffAcc(TFile* f, int mode=0, const char* var="Z0_Y_masscut") {
   final2->Draw("SAMEHIST");
   finalt->Draw("SAMEHIST");
 
-  tl3=new TLegend(0.55,0.74,0.95,0.95);
+  tl3=new TLegend(0.12,0.74,0.95,0.95);
+  tl3->SetNColumns(2);
   tl3->SetFillStyle(0);
   tl3->AddEntry(final,"ECAL-ECAL");
   tl3->AddEntry(final2,"ECAL-HF");
   tl3->AddEntry(finalt,"Total");
   tl3->Draw();
 
-  zrap_Prelim(0.3,0.9,0.3,0.87);
+  zrap_Prelim(0.87,0.975,0.3,0.87);
 
   if (post==0) sprintf(stuff,"effacc_bytype.png");
   else sprintf(stuff,"effacc_bytype_%s.png",post);
@@ -211,11 +212,11 @@ void plotEffAcc(TFile* f, int mode=0, const char* var="Z0_Y_masscut") {
 
   baseclone->Draw("SAMEHIST");
 
-  if (post==0) sprintf(stuff,"effacc_bytypetheory.png");
-  else sprintf(stuff,"effacc_bytypetheory_%s.png",post);
-  c2->Print(stuff);
   if (post==0) sprintf(stuff,"effacc_bytypetheory.eps");
   else sprintf(stuff,"effacc_bytypetheory_%s.eps",post);
+  c2->Print(stuff);
+  if (post==0) sprintf(stuff,"effacc_bytypetheory.C");
+  else sprintf(stuff,"effacc_bytypetheory_%s.C",post);
   c2->Print(stuff);
 
   
