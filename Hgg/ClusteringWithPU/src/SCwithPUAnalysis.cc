@@ -13,7 +13,7 @@
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.11 2011/03/31 18:42:09 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.12 2011/04/04 09:44:35 franzoni Exp $
 //
 //
 
@@ -116,8 +116,10 @@ class SCwithPUAnalysis : public edm::EDAnalyzer {
   TH2F *h_phiWidthVsE_endc;
   TH1F *h_phiSize;
   TH2F *h_phiSizeVsE;
+  TH2F *h_phiSizeVsEt;
   TH1F *h_phiSize_endc;
   TH2F *h_phiSizeVsE_endc;
+  TH2F *h_phiSizeVsEt_endc;
   TH1F *h_phiShape_barl; 
   TH1F *h_absPhiShape_barl; 
   TH1F *h_phiShape_endc; 
@@ -134,6 +136,21 @@ class SCwithPUAnalysis : public edm::EDAnalyzer {
   TH2F *h_etaPhiShape_barlPLus;
   TH2F *h_etaPhiShape_barlMinus;
   TH2F *h_etaPhiShape_barlSymm;
+  TH1F *h_phiBCminusPhiSeed_barl;
+  TH1F *h_etaBCminusEtaSeed_barl;
+  TH2F *h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl;
+  TH2F *h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1;
+  TH1F *h_phiBCminusPhiSeed_barlm1;
+  TH1F *h_etaBCminusEtaSeed_barlm1;
+  TH2F *h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2;
+  TH1F *h_phiBCminusPhiSeed_barlm2;
+  TH1F *h_etaBCminusEtaSeed_barlm2;
+  TH2F *h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3;
+  TH1F *h_phiBCminusPhiSeed_barlm3;
+  TH1F *h_etaBCminusEtaSeed_barlm3;
+  TH2F *h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4;
+  TH1F *h_phiBCminusPhiSeed_barlm4;
+  TH1F *h_etaBCminusEtaSeed_barlm4;
   TH1F *h_maxCryInDomino_barl;
   TH2F *h_maxCryInDominoVsPhi_barl;
   TH1F *h_maxCryInLocMax_barlPLus;
@@ -407,7 +424,8 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	    h_phiWidth->Fill(phiWidth);
 	    h_phiWidthVsE->Fill(phiWidth,(*p)->momentum().e());	  
 	    h_phiSize->Fill(phiSize);
-	    h_phiSizeVsE->Fill(phiSize,(*p)->momentum().e());	  
+	    h_phiSizeVsE->Fill(phiSize,(*p)->momentum().e());
+	    h_phiSizeVsEt->Fill(phiSize, et_true);
 
 	    int   whereIsMaxInDomino[35];
 	    float whatIsMaxInDomino[35];
@@ -513,6 +531,28 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 		    h_maxCryInLocMaxVsPhi_barlMinus     ->Fill( phiOfMaxInsidBC , etaOfMaxInsidBC );
 		    //std::cout << "++ EB- eta distance from SC seed is: " << etaOfMaxInsidBC << " phiOfMaxInsidBC  " << phiOfMaxInsidBC << " energy: " << energyOfMaxInsideBC << std::endl;
 		  }
+
+		// basic cluster position
+		//std::cout << "position of basic cluster number: " << (bcIt-scIt->clustersBegin()) << " eta: " << (*bcIt)->eta() << " phi: " << (*bcIt)->phi() 
+		//	  << "\t seed eta: " << (*scIt->seed()).eta() << " seed phi: " << (*scIt->seed()).phi() << std::endl;
+
+		h_phiBCminusPhiSeed_barl  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() );
+		h_etaBCminusEtaSeed_barl  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
+		h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );
+		if ( fabs(theSCseed.ieta()) <= 25 ){
+		  h_phiBCminusPhiSeed_barlm1  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() ); h_etaBCminusEtaSeed_barlm1  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
+		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );
+		} 
+		else if	    ( 25<fabs(theSCseed.ieta()) &&  fabs(theSCseed.ieta()) <= 45 ){
+		  h_phiBCminusPhiSeed_barlm2  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() ); h_etaBCminusEtaSeed_barlm2  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
+		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );		} 
+		else if	    ( 45<fabs(theSCseed.ieta()) &&  fabs(theSCseed.ieta()) <= 65 ){
+		  h_phiBCminusPhiSeed_barlm3  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() ); h_etaBCminusEtaSeed_barlm3  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
+		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );		} 
+		else if	    ( 65<fabs(theSCseed.ieta()) &&  fabs(theSCseed.ieta()) <= 85 ){
+		  h_phiBCminusPhiSeed_barlm4  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() ); h_etaBCminusEtaSeed_barlm4  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
+		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );		} 
+		
 	      }// loop over the BC's 
 	  }// if SC matches photons
 	}// if EB and Et>20
@@ -539,6 +579,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	    h_phiWidthVsE_endc->Fill(phiWidth,(*p)->momentum().e());	  
 	    h_phiSize_endc->Fill(phiSize);
 	    h_phiSizeVsE_endc->Fill(phiSize,(*p)->momentum().e());	  
+	    h_phiSizeVsEt_endc->Fill(phiSize,et_true);	  
 
 	    std::vector< std::pair<DetId, float> >    theHitsAndFractions =  scIt->hitsAndFractions();  
 	    for(std::vector< std::pair<DetId, float> >::const_iterator idsIt = theHitsAndFractions.begin(); 
@@ -686,8 +727,10 @@ SCwithPUAnalysis::beginJob()
   h_phiWidthVsE_endc = fs->make<TH2F>("h_phiWidthVsE_endc","phi Width Vs. E (Endcap); EB: i#phi width; EB: E [GeV]", 100,0,0.2,100,0,200);
   h_phiSize         = fs->make<TH1F>("h_phiSize_barl","phi Size (barrel); EB: i#phi size", 50,0,50);
   h_phiSizeVsE      = fs->make<TH2F>("h_phiSizeVsE_barl","phi Size Vs. E (Barrel); EB: i#phi size; EB: E [GeV]", 50,0,50.,100,0,200);
+  h_phiSizeVsEt     = fs->make<TH2F>("h_phiSizeVsEt_barl","phi Size Vs. E_{T} (Barrel); EB: i#phi size; EB: E_{T} [GeV]", 50,0,50.,100,0,200);
   h_phiSize_endc    = fs->make<TH1F>("h_phiSize_endc","phi Size (Endcap); EE: i#phi size", 50,0,1);
-  h_phiSizeVsE_endc = fs->make<TH2F>("h_phiSizeVsE_endc","phi Size Vs. E (Endcap); EB: i#phi size; EB: E [GeV]", 50,0,1.,100,0,200);
+  h_phiSizeVsE_endc = fs->make<TH2F>("h_phiSizeVsE_endc","phi Size Vs. E (Endcap); EB: i#phi size; EE: E [GeV]", 50,0,1.,100,0,200);
+  h_phiSizeVsEt_endc= fs->make<TH2F>("h_phiSizeVsEt_endc","phi Size Vs. E_{T} (Endcap); EB: i#phi size; EE: E_{T} [GeV]", 50,0,1.,100,0,200);
   h_phiShape_barl       = fs->make<TH1F>("h_phiShape_barl","phi Shape (barrel); EB i#phi - i#phi_{SCseed}", 35,-17,18); 
   h_absPhiShape_barl    = fs->make<TH1F>("h_absPhiShape_barl","phi AbsShape (barrel); EB  abs(i#phi - i#phi_{SCseed})", 18,0,18); 
   h_phiShape_endc       = fs->make<TH1F>("h_phiShape_endc","phi Shape (endcap) EE i#phi - i#phi_{SCseed}", 35,-17,18); 
@@ -705,6 +748,22 @@ SCwithPUAnalysis::beginJob()
   h_etaPhiShape_barlPLus  = fs->make<TH2F>("h_etaPhiShape_barlPlus","eta Shape (barrel plus); EB+ i#phi_{BC} - phi_{SCseed}; EB+ i#eta_{BC} - i#eta_{SCseed}", 7,-3,3,35,-17,18); 
   h_etaPhiShape_barlMinus = fs->make<TH2F>("h_etaPhiShape_barlMinus","eta Shape (barrel minus); EB- i#phi_{BC} - phi_{SCseed}; EB- i#eta_{BC} - i#eta_{SCseed}", 7,-3,3,35,-17,18); 
   h_etaPhiShape_barlSymm  = fs->make<TH2F>("h_etaPhiShape_barlSymm","eta Shape (barrel symm); EBsymm i#phi_{BC} - phi_{SCseed}; EBsymm i#eta_{BC} - i#eta_{SCseed}", 7,-3,3,35,-17,18); 
+  
+  h_phiBCminusPhiSeed_barl= fs->make<TH1F>("h_phiBCminusPhiSeed_barl","h_phiBCminusPhiSeed_barl; EB #phi_{BC} - #phi_{SCseed}", 50,-0.4,0.4); 
+  h_etaBCminusEtaSeed_barl= fs->make<TH1F>("h_etaBCminusEtaSeed_barl","h_etaBCminusEtaSeed_barl; EB #eta_{BC} - #eta_{SCseed}", 50,-0.05,0.05); 
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl;  EB #phi_{BC} - #phi_{SCseed}; EB #eta_{BC} - #eta_{SCseed}", 20,-0.4,0.4, 20,-0.05,0.05);
+  h_phiBCminusPhiSeed_barlm1= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm1","h_phiBCminusPhiSeed_barl; EBm1  #phi_{BC} - #phi_{SCseed}", 50,-0.4,0.4); 
+  h_etaBCminusEtaSeed_barlm1= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm1","h_etaBCminusEtaSeed_barl; EBm1  #eta_{BC} - #eta_{SCseed}", 50,-0.05,0.05); 
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl;  EBm1 #phi_{BC} - #phi_{SCseed}; EBm1 #eta_{BC} - #eta_{SCseed}", 20,-0.4,0.4, 20,-0.05,0.05);
+  h_phiBCminusPhiSeed_barlm2= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm2","h_phiBCminusPhiSeed_barlm2; EBm2 #phi_{BC} - #phi_{SCseed}", 50,-0.4,0.4); 
+  h_etaBCminusEtaSeed_barlm2= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm2","h_etaBCminusEtaSeed_barlm2; EBm2 #eta_{BC} - #eta_{SCseed}", 50,-0.05,0.05); 
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2;  EBm2  #phi_{BC} - #phi_{SCseed}; EBm2  #eta_{BC} - #eta_{SCseed}", 20,-0.4,0.4, 20,-0.05,0.05);
+  h_phiBCminusPhiSeed_barlm3= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm3","h_phiBCminusPhiSeed_barlm3; EBm3  #phi_{BC} - #phi_{SCseed}", 50,-0.4,0.4); 
+  h_etaBCminusEtaSeed_barlm3= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm3","h_etaBCminusEtaSeed_barlm3; EBm3  #eta_{BC} - #eta_{SCseed}", 50,-0.05,0.05); 
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3;  EBm3  #phi_{BC} - #phi_{SCseed}; EBm3  #eta_{BC} - #eta_{SCseed}", 20,-0.4,0.4, 20,-0.05,0.05);
+  h_phiBCminusPhiSeed_barlm4= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm4","h_phiBCminusPhiSeed_barlm4; EBm4  #phi_{BC} - #phi_{SCseed}", 50,-0.4,0.4); 
+  h_etaBCminusEtaSeed_barlm4= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm4","h_etaBCminusEtaSeed_barlm4; EBm4  #eta_{BC} - #eta_{SCseed}", 50,-0.05,0.05); 
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4;  EBm4  #phi_{BC} - #phi_{SCseed}; EBm4  #eta_{BC} - #eta_{SCseed}", 20,-0.4,0.4, 20,-0.05,0.05);
 
   h_maxCryInDomino_barl           = fs->make<TH1F>("h_maxCryInDomino_barl","max Cry In Domino (barrel); i#eta", 5,-2,3); 
   h_maxCryInDominoVsPhi_barl      = fs->make<TH2F>("h_maxCryInDominoVsPhi_barl","max Cry In Domino Vs i#phi (barrel); EB i#eta_{BC} - i#eta_{SCseed}; EB i#phi_{BC} - i#phi_{SCseed}", 35,-17,18,5,-2,3); 
