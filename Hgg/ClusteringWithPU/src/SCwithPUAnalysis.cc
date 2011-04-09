@@ -13,7 +13,7 @@
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.13 2011/04/08 14:21:10 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.14 2011/04/08 15:15:26 franzoni Exp $
 //
 //
 
@@ -138,19 +138,25 @@ class SCwithPUAnalysis : public edm::EDAnalyzer {
   TH2F *h_etaPhiShape_barlSymm;
   TH1F *h_phiBCminusPhiSeed_barl;
   TH1F *h_etaBCminusEtaSeed_barl;
+  TH1F *h_absEtaBCminusAbsEtaSeed_barl;
+  TH1F *h_absEaBCminusAbsEtaSeed_barl;
   TH2F *h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl;
   TH2F *h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1;
   TH1F *h_phiBCminusPhiSeed_barlm1;
   TH1F *h_etaBCminusEtaSeed_barlm1;
+  TH1F *h_absEtaBCminusAbsEtaSeed_barlm1;
   TH2F *h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2;
   TH1F *h_phiBCminusPhiSeed_barlm2;
   TH1F *h_etaBCminusEtaSeed_barlm2;
+  TH1F *h_absEtaBCminusAbsEtaSeed_barlm2;
   TH2F *h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3;
   TH1F *h_phiBCminusPhiSeed_barlm3;
   TH1F *h_etaBCminusEtaSeed_barlm3;
+  TH1F *h_absEtaBCminusAbsEtaSeed_barlm3;
   TH2F *h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4;
   TH1F *h_phiBCminusPhiSeed_barlm4;
   TH1F *h_etaBCminusEtaSeed_barlm4;
+  TH1F *h_absEtaBCminusAbsEtaSeed_barlm4;
   TH1F *h_maxCryInDomino_barl;
   TH2F *h_maxCryInDominoVsPhi_barl;
   TH1F *h_maxCryInLocMax_barlPLus;
@@ -538,20 +544,24 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 
 		h_phiBCminusPhiSeed_barl  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() );
 		h_etaBCminusEtaSeed_barl  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
+		h_absEtaBCminusAbsEtaSeed_barl  -> Fill( fabs((*bcIt)->eta())   -  fabs((*scIt->seed()).eta())  );
 		h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );
 		if ( fabs(theSCseed.ieta()) <= 25 ){
 		  h_phiBCminusPhiSeed_barlm1  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() ); h_etaBCminusEtaSeed_barlm1  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
 		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );
-		} 
+		  h_absEtaBCminusAbsEtaSeed_barlm1  -> Fill( fabs((*bcIt)->eta())  -  fabs((*scIt->seed()).eta())   );	} 
 		else if	    ( 25<fabs(theSCseed.ieta()) &&  fabs(theSCseed.ieta()) <= 45 ){
 		  h_phiBCminusPhiSeed_barlm2  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() ); h_etaBCminusEtaSeed_barlm2  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
-		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );		} 
+		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );		
+		  h_absEtaBCminusAbsEtaSeed_barlm2  -> Fill( fabs((*bcIt)->eta())  - fabs((*scIt->seed()).eta()) ); } 
 		else if	    ( 45<fabs(theSCseed.ieta()) &&  fabs(theSCseed.ieta()) <= 65 ){
 		  h_phiBCminusPhiSeed_barlm3  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() ); h_etaBCminusEtaSeed_barlm3  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
-		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );		} 
+		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );		
+		  h_absEtaBCminusAbsEtaSeed_barlm3  -> Fill( fabs((*bcIt)->eta()) - fabs((*scIt->seed()).eta())  );} 
 		else if	    ( 65<fabs(theSCseed.ieta()) &&  fabs(theSCseed.ieta()) <= 85 ){
 		  h_phiBCminusPhiSeed_barlm4  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() ); h_etaBCminusEtaSeed_barlm4  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
-		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );		} 
+		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );
+		  h_absEtaBCminusAbsEtaSeed_barlm4  -> Fill( fabs((*bcIt)->eta())  -  fabs((*scIt->seed()).eta()) );} 
 		
 	      }// loop over the BC's 
 	  }// if SC matches photons
@@ -695,22 +705,22 @@ SCwithPUAnalysis::beginJob()
 
   edm::Service<TFileService> fs;
 
-  h_scet_barl = fs->make<TH1F>("h_scet_barl","SC ET over true, barrel; EB: E_{T,superC}/E_{T,true}",120,0.6,1.3);
-  h_scet_endc = fs->make<TH1F>("h_scet_endc","SC ET over true, endcap; EE: E_{T,superC}/E_{T,true}",120,0.6,1.3);
-  h_EoverEtrue_barl = fs->make<TH1F>("h_EoverEtrue_barl","E_SC/Etrue, barrel; EB: E_{superC}/E_{true}",120,0.6,1.3);
-  h_EoverEtrue_endc = fs->make<TH1F>("h_EoverEtrue_endc","E_SC/Etrue, endcap; EB: E_{superC}/E_{true}",120,0.6,1.3);
-  h_E5x5overEtrue_barl = fs->make<TH1F>("h_E5x5overEtrue_barl","E5x5/Etrue, barrel; EB: E_{5x5}/E_{true}",120,0.6,1.3);
-  h_PhoEoverEtrue_barl = fs->make<TH1F>("h_PhoEoverEtrue_barl","E_Photon/Etrue, barrel; EB: E_{photon}/E_{true}",120,0.6,1.3);
-  h_E5x5R9overEtrue_barl = fs->make<TH1F>("h_E5x5R9overEtrue_barl","E5x5/Etrue for R9>0.94, barrel; EB: E_{5x5, r9>0.94}/E_{true}",120,0.6,1.3);
-  h_PhoER9overEtrue_barl = fs->make<TH1F>("h_PhoER9overEtrue_barl","E_Photon/Etrue for R9>0.94, barrel; EB: E_{photon, r9>0.94}/E_{true}",120,0.6,1.3);
-  h_E5x5notR9overEtrue_barl = fs->make<TH1F>("h_E5x5notR9overEtrue_barl","E5x5/Etrue for R9<0.94, barrel; EB: E_{5x5, r9<0.94}/E_{true}",120,0.6,1.3);
-  h_PhoEnotR9overEtrue_barl = fs->make<TH1F>("h_PhoEnotR9overEtrue_barl","E_Photon/Etrue for R9<0.94, barrel; EB: E_{photon, r9<0.94}/E_{true}",120,0.6,1.3);
-  h_E5x5overEtrue_endc = fs->make<TH1F>("h_E5x5overEtrue_endc","E5x5/Etrue, endcap; EE: E_{5x5}/E_{true}",120,0.6,1.3);
-  h_PhoEoverEtrue_endc = fs->make<TH1F>("h_PhoEoverEtrue_endc","E_Photon/Etrue, endcap; EE: E_{photon}/E_{true}",120,0.6,1.3);
-  h_E5x5R9overEtrue_endc = fs->make<TH1F>("h_E5x5R9overEtrue_endc","E5x5/Etrue for R9>0.95, endcap; EE: E_{5x5, r9>0.95}/E_{true}",120,0.6,1.3);
-  h_PhoER9overEtrue_endc = fs->make<TH1F>("h_PhoER9overEtrue_endc","E_Photon/Etrue for R9>0.95, endcap; EE: E_{photon, r9>0.95}/E_{true}",120,0.6,1.3);
-  h_E5x5notR9overEtrue_endc = fs->make<TH1F>("h_E5x5notR9overEtrue_endc","E5x5/Etrue for R9<0.95, endcap; EE: E_{5x5, r9<0.95}/E_{true}",120,0.6,1.3);
-  h_PhoEnotR9overEtrue_endc = fs->make<TH1F>("h_PhoEnotR9overEtrue_endc","E_Photon/Etrue for R9<0.95, endcap; EE: E_{photon, r9<0.95}/E_{true}",120,0.6,1.3);
+  h_scet_barl = fs->make<TH1F>("h_scet_barl","SC ET over true, barrel; EB: E_{T,superC}/E_{T,true}",90,0.75,1.2);
+  h_scet_endc = fs->make<TH1F>("h_scet_endc","SC ET over true, endcap; EE: E_{T,superC}/E_{T,true}",90,0.75,1.2);
+  h_EoverEtrue_barl = fs->make<TH1F>("h_EoverEtrue_barl","E_SC/Etrue, barrel; EB: E_{superC}/E_{true}",90,0.75,1.2);
+  h_EoverEtrue_endc = fs->make<TH1F>("h_EoverEtrue_endc","E_SC/Etrue, endcap; EE: E_{superC}/E_{true}",90,0.75,1.2);
+  h_E5x5overEtrue_barl = fs->make<TH1F>("h_E5x5overEtrue_barl","E5x5/Etrue, barrel; EB: E_{5x5}/E_{true}",90,0.75,1.2);
+  h_PhoEoverEtrue_barl = fs->make<TH1F>("h_PhoEoverEtrue_barl","E_Photon/Etrue, barrel; EB: E_{photon}/E_{true}",90,0.75,1.2);
+  h_E5x5R9overEtrue_barl = fs->make<TH1F>("h_E5x5R9overEtrue_barl","E5x5/Etrue for R9>0.94, barrel; EB: E_{5x5, r9>0.94}/E_{true}",90,0.75,1.2);
+  h_PhoER9overEtrue_barl = fs->make<TH1F>("h_PhoER9overEtrue_barl","E_Photon/Etrue for R9>0.94, barrel; EB: E_{photon, r9>0.94}/E_{true}",90,0.75,1.2);
+  h_E5x5notR9overEtrue_barl = fs->make<TH1F>("h_E5x5notR9overEtrue_barl","E5x5/Etrue for R9<0.94, barrel; EB: E_{5x5, r9<0.94}/E_{true}",90,0.75,1.2);
+  h_PhoEnotR9overEtrue_barl = fs->make<TH1F>("h_PhoEnotR9overEtrue_barl","E_Photon/Etrue for R9<0.94, barrel; EB: E_{photon, r9<0.94}/E_{true}",90,0.75,1.2);
+  h_E5x5overEtrue_endc = fs->make<TH1F>("h_E5x5overEtrue_endc","E5x5/Etrue, endcap; EE: E_{5x5}/E_{true}",90,0.75,1.2);
+  h_PhoEoverEtrue_endc = fs->make<TH1F>("h_PhoEoverEtrue_endc","E_Photon/Etrue, endcap; EE: E_{photon}/E_{true}",90,0.75,1.2);
+  h_E5x5R9overEtrue_endc = fs->make<TH1F>("h_E5x5R9overEtrue_endc","E5x5/Etrue for R9>0.95, endcap; EE: E_{5x5, r9>0.95}/E_{true}",90,0.75,1.2);
+  h_PhoER9overEtrue_endc = fs->make<TH1F>("h_PhoER9overEtrue_endc","E_Photon/Etrue for R9>0.95, endcap; EE: E_{photon, r9>0.95}/E_{true}",90,0.75,1.2);
+  h_E5x5notR9overEtrue_endc = fs->make<TH1F>("h_E5x5notR9overEtrue_endc","E5x5/Etrue for R9<0.95, endcap; EE: E_{5x5, r9<0.95}/E_{true}",90,0.75,1.2);
+  h_PhoEnotR9overEtrue_endc = fs->make<TH1F>("h_PhoEnotR9overEtrue_endc","E_Photon/Etrue for R9<0.95, endcap; EE: E_{photon, r9<0.95}/E_{true}",90,0.75,1.2);
   h_nVtx = fs->make<TH1F>("h_nVtx","no. of primary vertices; num vertices reco",30,0.,30.);
   h_dzVtx = fs->make<TH1F>("h_dzVtx","delta_z for reconstructed PV w.r.t. true PV",200,-5.,5.);
   h_mHiggs_EBEB = fs->make<TH1F>("h_mHiggs_EBEB","2 photon invariant mass, EBEB; EB-EB: m_{#gamma#gamma} GeV/c^{2}",120,100.,140.);
@@ -719,8 +729,8 @@ SCwithPUAnalysis::beginJob()
   h_mHiggs_EBEB_trueVtx = fs->make<TH1F>("h_mHiggs_EBEB_trueVtx","2 photon invariant mass, EBEB, true PV; EB-EB: m_{#gamma#gamma} GeV/c^{2} (true vtx)",120,100.,140.);
   h_mHiggs_EBEE_trueVtx = fs->make<TH1F>("h_mHiggs_EBEE_trueVtx","2 photon invariant mass, EBEE, true PV; EB-EE: m_{#gamma#gamma} GeV/c^{2} (true vtx)",120,100.,140.);
   h_mHiggs_EEEE_trueVtx = fs->make<TH1F>("h_mHiggs_EEEE_trueVtx","2 photon invariant mass, EEEE, true PV; EE-EE: m_{#gamma#gamma} GeV/c^{2} (true vtx)",120,100.,140.);
-  h_E5x5overEtrueVsEphoEtrue_barl = fs->make<TH2F>("h_E5x5overEtrueVsEphoEtrue_barl","E5x5/Etrue vs Epho/Etrue, barrel;EB: E_{5x5}/E_{true}; EB: E_{photon}/E_{true}",120,0.6,1.3,120,0.6,1.3);
-  h_E5x5overEtrueVsEphoEtrue_endc = fs->make<TH2F>("h_E5x5overEtrueVsEphoEtrue_endc","E5x5/Etrue vs Epho/Etrue, endcap;EE: E_{5x5}/E_{true}; EE: E_{photon}/E_{true}",120,0.6,1.3,120,0.6,1.3);
+  h_E5x5overEtrueVsEphoEtrue_barl = fs->make<TH2F>("h_E5x5overEtrueVsEphoEtrue_barl","E5x5/Etrue vs Epho/Etrue, barrel;EB: E_{5x5}/E_{true}; EB: E_{photon}/E_{true}",90,0.75,1.2,90,0.75,1.2);
+  h_E5x5overEtrueVsEphoEtrue_endc = fs->make<TH2F>("h_E5x5overEtrueVsEphoEtrue_endc","E5x5/Etrue vs Epho/Etrue, endcap;EE: E_{5x5}/E_{true}; EE: E_{photon}/E_{true}",90,0.75,1.2,90,0.75,1.2);
   h_phiWidth = fs->make<TH1F>("h_phiWidth_barl","phi Width (barrel); EB: i#phi width", 100,0,0.2);
   h_phiWidthVsE = fs->make<TH2F>("h_phiWidthVsE_barl","phi Width Vs. E (Barrel); EB: i#phi width; EB: E [GeV]", 100,0,0.2,100,0,200);
   h_phiWidth_endc = fs->make<TH1F>("h_phiWidth_endc","phi Width (Endcap); EE: i#phi width", 100,0,0.2);
@@ -748,22 +758,28 @@ SCwithPUAnalysis::beginJob()
   h_etaPhiShape_barlPLus  = fs->make<TH2F>("h_etaPhiShape_barlPlus","eta Shape (barrel plus); EB+ i#phi_{BC} - phi_{SCseed}; EB+ i#eta_{BC} - i#eta_{SCseed}", 7,-3,3,35,-17,18); 
   h_etaPhiShape_barlMinus = fs->make<TH2F>("h_etaPhiShape_barlMinus","eta Shape (barrel minus); EB- i#phi_{BC} - phi_{SCseed}; EB- i#eta_{BC} - i#eta_{SCseed}", 7,-3,3,35,-17,18); 
   h_etaPhiShape_barlSymm  = fs->make<TH2F>("h_etaPhiShape_barlSymm","eta Shape (barrel symm); EBsymm i#phi_{BC} - phi_{SCseed}; EBsymm i#eta_{BC} - i#eta_{SCseed}", 7,-3,3,35,-17,18); 
-  
-  h_phiBCminusPhiSeed_barl= fs->make<TH1F>("h_phiBCminusPhiSeed_barl","h_phiBCminusPhiSeed_barl; EB #phi_{BC} - #phi_{SCseed}", 50,-0.4,0.4); 
-  h_etaBCminusEtaSeed_barl= fs->make<TH1F>("h_etaBCminusEtaSeed_barl","h_etaBCminusEtaSeed_barl; EB #eta_{BC} - #eta_{SCseed}", 50,-0.05,0.05); 
-  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl;  EB #phi_{BC} - #phi_{SCseed}; EB #eta_{BC} - #eta_{SCseed}", 20,-0.4,0.4, 20,-0.05,0.05);
-  h_phiBCminusPhiSeed_barlm1= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm1","h_phiBCminusPhiSeed_barl; EBm1  #phi_{BC} - #phi_{SCseed}", 50,-0.4,0.4); 
-  h_etaBCminusEtaSeed_barlm1= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm1","h_etaBCminusEtaSeed_barl; EBm1  #eta_{BC} - #eta_{SCseed}", 50,-0.05,0.05); 
-  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl;  EBm1 #phi_{BC} - #phi_{SCseed}; EBm1 #eta_{BC} - #eta_{SCseed}", 20,-0.4,0.4, 20,-0.05,0.05);
-  h_phiBCminusPhiSeed_barlm2= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm2","h_phiBCminusPhiSeed_barlm2; EBm2 #phi_{BC} - #phi_{SCseed}", 50,-0.4,0.4); 
-  h_etaBCminusEtaSeed_barlm2= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm2","h_etaBCminusEtaSeed_barlm2; EBm2 #eta_{BC} - #eta_{SCseed}", 50,-0.05,0.05); 
-  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2;  EBm2  #phi_{BC} - #phi_{SCseed}; EBm2  #eta_{BC} - #eta_{SCseed}", 20,-0.4,0.4, 20,-0.05,0.05);
-  h_phiBCminusPhiSeed_barlm3= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm3","h_phiBCminusPhiSeed_barlm3; EBm3  #phi_{BC} - #phi_{SCseed}", 50,-0.4,0.4); 
-  h_etaBCminusEtaSeed_barlm3= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm3","h_etaBCminusEtaSeed_barlm3; EBm3  #eta_{BC} - #eta_{SCseed}", 50,-0.05,0.05); 
-  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3;  EBm3  #phi_{BC} - #phi_{SCseed}; EBm3  #eta_{BC} - #eta_{SCseed}", 20,-0.4,0.4, 20,-0.05,0.05);
-  h_phiBCminusPhiSeed_barlm4= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm4","h_phiBCminusPhiSeed_barlm4; EBm4  #phi_{BC} - #phi_{SCseed}", 50,-0.4,0.4); 
-  h_etaBCminusEtaSeed_barlm4= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm4","h_etaBCminusEtaSeed_barlm4; EBm4  #eta_{BC} - #eta_{SCseed}", 50,-0.05,0.05); 
-  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4;  EBm4  #phi_{BC} - #phi_{SCseed}; EBm4  #eta_{BC} - #eta_{SCseed}", 20,-0.4,0.4, 20,-0.05,0.05);
+
+  // each phi bin is half crystal wide; each eta bin is 1/10 crystal wide
+  h_phiBCminusPhiSeed_barl= fs->make<TH1F>("h_phiBCminusPhiSeed_barl","h_phiBCminusPhiSeed_barl; EB #phi_{BC} - #phi_{SCseed}", 80,-(6.28/360*20),(6.28/360*20)); 
+  h_etaBCminusEtaSeed_barl= fs->make<TH1F>("h_etaBCminusEtaSeed_barl","h_etaBCminusEtaSeed_barl; EB #eta_{BC} - #eta_{SCseed}", 60,-(6.28/360*3),(6.28/360*3)); 
+  h_absEtaBCminusAbsEtaSeed_barl= fs->make<TH1F>("h_absEtaBCminusAbsEtaSeed_barl","h_absEtaBCminusAbsEtaSeed_barl; EB |#eta_{BC}| - |#eta_{SCseed}|", 60,-(6.28/360*3),(6.28/360*3)); 
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl;  EB #phi_{BC} - #phi_{SCseed}; EB #eta_{BC} - #eta_{SCseed}", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
+  h_phiBCminusPhiSeed_barlm1= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm1","h_phiBCminusPhiSeed_barl; EBm1  #phi_{BC} - #phi_{SCseed}", 80,-(6.28/360*20),(6.28/360*20)); 
+  h_etaBCminusEtaSeed_barlm1= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm1","h_etaBCminusEtaSeed_barl; EBm1  #eta_{BC} - #eta_{SCseed}", 60,-(6.28/360*3),(6.28/360*3)); 
+  h_absEtaBCminusAbsEtaSeed_barlm1= fs->make<TH1F>("h_absEtaBCminusAbsEtaSeed_barlm1","h_absEtaBCminusAbsEtaSeed_barl; EBm1  |#eta_{BC}| - |#eta_{SCseed}|", 60,-(6.28/360*3),(6.28/360*3)); 
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl;  EBm1 #phi_{BC} - #phi_{SCseed}; EBm1 #eta_{BC} - #eta_{SCseed}", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
+  h_phiBCminusPhiSeed_barlm2= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm2","h_phiBCminusPhiSeed_barlm2; EBm2 #phi_{BC} - #phi_{SCseed}", 80,-(6.28/360*20),(6.28/360*20)); 
+  h_etaBCminusEtaSeed_barlm2= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm2","h_etaBCminusEtaSeed_barlm2; EBm2 #eta_{BC} - #eta_{SCseed}", 60,-(6.28/360*3),(6.28/360*3)); 
+  h_absEtaBCminusAbsEtaSeed_barlm2= fs->make<TH1F>("h_absEtaBCminusAbsEtaSeed_barlm2","h_absEtaBCminusAbsEtaSeed_barlm2; EBm2 |#eta_{BC}| - |#eta_{SCseed}|", 60,-(6.28/360*3),(6.28/360*3)); 
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2;  EBm2  #phi_{BC} - #phi_{SCseed}; EBm2  #eta_{BC} - #eta_{SCseed}", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
+  h_phiBCminusPhiSeed_barlm3= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm3","h_phiBCminusPhiSeed_barlm3; EBm3  #phi_{BC} - #phi_{SCseed}", 80,-(6.28/360*20),(6.28/360*20)); 
+  h_etaBCminusEtaSeed_barlm3= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm3","h_etaBCminusEtaSeed_barlm3; EBm3  #eta_{BC} - #eta_{SCseed}", 60,-(6.28/360*3),(6.28/360*3)); 
+  h_absEtaBCminusAbsEtaSeed_barlm3= fs->make<TH1F>("h_absEtaBCminusAbsEtaSeed_barlm3","h_absEtaBCminusAbsEtaSeed_barlm3; EBm3  |#eta_{BC}| - |#eta_{SCseed}|", 60,-(6.28/360*3),(6.28/360*3)); 
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3;  EBm3  #phi_{BC} - #phi_{SCseed}; EBm3  #eta_{BC} - #eta_{SCseed}", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
+  h_phiBCminusPhiSeed_barlm4= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm4","h_phiBCminusPhiSeed_barlm4; EBm4  #phi_{BC} - #phi_{SCseed}", 80,-(6.28/360*20),(6.28/360*20)); 
+  h_etaBCminusEtaSeed_barlm4= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm4","h_etaBCminusEtaSeed_barlm4; EBm4  #eta_{BC} - #eta_{SCseed}", 60,-(6.28/360*3),(6.28/360*3)); 
+  h_absEtaBCminusAbsEtaSeed_barlm4= fs->make<TH1F>("h_absEtaBCminusAbsEtaSeed_barlm4","h_absEtaBCminusAbsEtaSeed_barlm4; EBm4  |#eta_{BC}| - |#eta_{SCseed}|", 60,-(6.28/360*3),(6.28/360*3)); 
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4;  EBm4  #phi_{BC} - #phi_{SCseed}; EBm4  #eta_{BC} - #eta_{SCseed}", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
 
   h_maxCryInDomino_barl           = fs->make<TH1F>("h_maxCryInDomino_barl","max Cry In Domino (barrel); i#eta", 5,-2,3); 
   h_maxCryInDominoVsPhi_barl      = fs->make<TH2F>("h_maxCryInDominoVsPhi_barl","max Cry In Domino Vs i#phi (barrel); EB i#eta_{BC} - i#eta_{SCseed}; EB i#phi_{BC} - i#phi_{SCseed}", 35,-17,18,5,-2,3); 
