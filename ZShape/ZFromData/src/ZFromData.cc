@@ -232,7 +232,9 @@ void ZFromData::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	    math::XYZTLorentzVector tpP4 = tag->p4() + vprobes->p4();//Probably not needed for anything.
 	    
 	    evt_.elec(0).p4_=tag->p4();
+	    evt_.elec(0).charge_=tag->charge();
 	    evt_.elec(1).p4_=vprobes->p4();
+	    evt_.elec(1).charge_=vprobes->charge();
 		
 	    reco::SuperClusterRef SCt = tag->get<reco::SuperClusterRef>();
 	    reco::SuperClusterRef SCp = vprobes->get<reco::SuperClusterRef>();

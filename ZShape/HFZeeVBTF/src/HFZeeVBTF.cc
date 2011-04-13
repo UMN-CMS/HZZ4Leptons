@@ -13,7 +13,7 @@
 //
 // Original Author:  Jeremy M Mans
 //         Created:  Mon May 31 07:00:26 CDT 2010
-// $Id: HFZeeVBTF.cc,v 1.20 2010/11/15 15:50:47 franzoni Exp $
+// $Id: HFZeeVBTF.cc,v 1.21 2010/12/01 15:05:59 mansj Exp $
 //
 //
 
@@ -84,6 +84,7 @@ private:
   edm::InputTag hFElectrons_;
   selectElectron w;
   std::string filterId_;
+  std::vector<double> massWindow_;
 
   // ----------member data ---------------------------
 
@@ -118,7 +119,7 @@ private:
   // gf set of histo for all Z definitios in a stack
   struct HistStruct {
     TH1 *nelec,*nhf;
-    HistPerDef /*base,*/ mee90none, zMass;
+    HistPerDef base, mee90none, zMass, ;
     HistPerDef mee90loose, mee80loose, mee70loose, mee60loose;
     HistPerDef mee90tight, mee80tight, mee70tight, mee60tight;
   } hists;
@@ -196,7 +197,7 @@ void HFZeeVBTF::HistPerDef::book(TFileDirectory td, const std::string& post) {
   hfm_pt=td.make<TH1D>("pthfm",title.c_str(),120,0,120);  
 
   title=std::string("iso e9e25 ")+post;
-  hf_e9e25=td.make<TH1D>("e9e25",title.c_str(),60,0,1.2);
+  hf_e9e25=td.make<TH1D>("e9e25",title.c_str(),60,0.5,1.2);
   title=std::string("eldId var2d")+post;
   hf_var2d=td.make<TH1D>("var2d",title.c_str(),75,0,1.5);  
   title=std::string("eCOREe9 ")+post;
@@ -575,6 +576,7 @@ HFZeeVBTF::HFZeeVBTF(const edm::ParameterSet& iConfig)
   minEtHF_             = iConfig.getParameter< double >("minEtHF");
   myName_              = iConfig.getParameter<std::string>("myName");
   skipTrigger_         = iConfig.getParameter<bool>("skipTrigger");
+  massWindow_          = iConfig.getParameter< std::vector<double> >("Zmass");
 
   myName_+=std::string("    ");
   
@@ -586,6 +588,7 @@ HFZeeVBTF::HFZeeVBTF(const edm::ParameterSet& iConfig)
   edm::Service<TFileService> fs;
   hists.nelec=fs->make<TH1D>("nelec","N_Elec",10,-0.5,9.5);
   hists.nhf=fs  ->make<TH1D>("nhf","N_HF",10,-0.5,9.5);
+  hists.base.book(fs->mkdir("base"),"(base)");
   hists.mee90none.book(fs->mkdir("mee90none"),"(mee90none)");
   hists.zMass.book(fs->mkdir("zMass"),"(zMass)");
   hists.mee90loose.book(fs->mkdir("mee90loose"),"(90,loose)");
@@ -681,8 +684,6 @@ HFZeeVBTF::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       reco::SuperClusterRef hfclusRef=hfE.superCluster();
       const reco::HFEMClusterShapeRef hfclusShapeRef=(*ClusterAssociation).find(hfclusRef)->val;
       // const reco::HFEMClusterShape& hfshape=*hfclusShapeRef;
-      // hists.base.fill(i,hfE,hfshape,robust90relIsoEleIDCutsV04_ps_);//gf: for each Z definition, N-1 control plots could be filled here too
-      ;
     }
     
     // ECAL acceptance cut
@@ -695,6 +696,23 @@ HFZeeVBTF::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   hists.nelec->Fill(pElecs.size());
   hists.nhf  ->Fill(HFElectrons->size());
+
+  if (pElecs.size()>0 && (HFElectrons->size()>0)) {
+    unsigned int hfEleWithMaxPt = 0;
+    for(unsigned int u=0; u<(HFElectrons->size()); u++){
+      if ( (*HFElectrons).at(u).pt() > (*HFElectrons).at(hfEleWithMaxPt).pt() )  hfEleWithMaxPt = u;
+    }
+    const reco::RecoEcalCandidate& hfE=(*HFElectrons).at(hfEleWithMaxPt);
+    
+    reco::SuperClusterRef hfclusRef=hfE.superCluster();
+    const reco::HFEMClusterShapeRef hfclusShapeRef=(*ClusterAssociation).find(hfclusRef)->val;
+    const reco::HFEMClusterShape& hfshape=*hfclusShapeRef;
+
+    if (ecalE!=pElecs.end()) 
+      hists.base.fill(ecalE,hfE,hfshape,true,robust90relIsoEleIDCutsV04_ps_,0,hfIdParams_);
+    else
+      hists.base.fill(pElecs.begin(),hfE,hfshape,true,robust90relIsoEleIDCutsV04_ps_,0,hfIdParams_);
+  }
 
   if ( (pElecs.size()>0) &&  (HFElectrons->size()>0) && (ecalE!=pElecs.end())){
     if(dolog_ && 0) std::cout << myName_  << "size ele coll:" << pElecs.size() << "  size HF coll: " << HFElectrons->size() << std::endl;
@@ -739,7 +757,7 @@ HFZeeVBTF::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // gf: 3) loose Z mass cut and min pt
     // ==> these are the CANDIATES
-    if (Z.M()>40 && Z.M()<130 && ecalE->pt()>minEtECAL_ && hfE.pt()>minEtHF_) {
+    if (Z.M()>massWindow_[0] && Z.M()<massWindow_[1] && ecalE->pt()>minEtECAL_ && hfE.pt()>minEtHF_) {
       double var2d=hfshape.eCOREe9()-(hfshape.eSeL()*1.125);
       double eta_det=ecalE->superCluster().get()->eta();
       if (dolog_) {

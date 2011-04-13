@@ -14,6 +14,8 @@ public:
   // four-vector of electron (standardized, in physics space)
   math::PtEtaPhiMLorentzVector p4_;
 
+  int charge_;
+
   double detEta_;
 
   // calculate detector eta w.r.t to vertex

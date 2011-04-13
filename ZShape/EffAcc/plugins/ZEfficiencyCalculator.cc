@@ -350,7 +350,9 @@ void ZEfficiencyCalculator::fillEvent(const reco::GenParticleCollection* ZeePart
   // storing cones as electrons 
   //(note: in case cones were fed in in the first place, they are used) 
   evt_.elec(0).p4_=elecs[0];
+  evt_.elec(0).charge_=me[0]->charge();
   evt_.elec(1).p4_=elecs[1];
+  evt_.elec(1).charge_=me[1]->charge();
   
   // end loop on particles
   evt_.n_elec=ne;
