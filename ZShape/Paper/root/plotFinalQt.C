@@ -154,6 +154,9 @@ void plotFinalQt(TFile* mctruth, int mode) {
     postfix="_matrix";
     //    truth=(TH1*)(mctruth->Get("mcEff/MUON-MUON/Acceptance/Z0_PtTL_masscut")->Clone("truth"));
     truth=(TH1*)(mctruth->Get("mcEff/MUON-MUON-G20/C01-GPT20/Z0_PtTL_masscut")->Clone("truth"));
+  } else {
+    std::cout << "the value you've input: " << mode << " is not valid" << std::endl;
+    return;
   }
 
   truth->SetDirectory(0);
@@ -197,7 +200,7 @@ void plotFinalQt(TFile* mctruth, int mode) {
 
   for (int i=0; i<BINCOUNT; i++) {  
     if   (effAcc.y[i]==0) corrData.y[i]=0;
-    else                  corrData.ey[i]=sqrt(data_all.y[i]+backgroundAll.y[i])/effAcc.y[i];
+    else                  corrData.ey[i]=sqrt(data_all.y[i]+backgroundAll.y[i])/effAcc.y[i]; // this is statistical err, post effxacc corrections
   }
   DataSeries corrDataClone(corrData);
 
@@ -206,10 +209,12 @@ void plotFinalQt(TFile* mctruth, int mode) {
     TH1* data_corr_smeared=corrData.makeTH1("data_corr_smeared");
     TH1* data_corr_unsmeared=unfold(data_corr_smeared,"../root/unfoldingMatrix-pt_theOutPut.root");
     TFile*    theunfoldingMatrixInputFile = new TFile("../root/unfoldingMatrix-pt_theOutPut.root","read");
-    TMatrixD* theUnfoldingMatrix          = (TMatrixD*)theunfoldingMatrixInputFile->Get("unsmearMatrices/unfoldingMatrixTotal"); // indices [0.. 99] X [0.. 99]
+    TMatrixD* theUnfoldingMatrix          = (TMatrixD*)theunfoldingMatrixInputFile->Get("unsmearMatrices/unfoldingMatrixTotal");
     double errorCumul=0;
     for (int i=0; i<BINCOUNT; i++) {  
       corrData.y[i]=data_corr_unsmeared->GetBinContent(i+1);
+      // unfolded bin = linear combination ( folded bins, theUnfoldingMatrix-column)
+      // propagate errors accordingly, assuming uncorrelated variables; errors on corrData are statistical only 
       for (int s=0; s<BINCOUNT; s++) {
 	errorCumul+= pow( corrDataClone.ey[s] * (*theUnfoldingMatrix)(s,i) , 2);
       }
@@ -338,8 +343,8 @@ void plotFinalQt(TFile* mctruth, int mode) {
     if (corrData.y[j]>0.01)
       fprintf(ftable,"%7.4f & %7.4f & %7.4f \\\\ \n",
 	      corrData.y[j],
-	      corrData.ey[j],
-	      sqrt(pow(corrDataSyst.ey[j],2)-pow(corrData.ey[j],2))
+	      corrData.ey[j],                                       // stat_error (post-unfolding) since corrData includes only statistical
+	      sqrt(pow(corrDataSyst.ey[j],2)-pow(corrData.ey[j],2)) // syst_error := (tot_error quadMinus stat_err) 
 	      );
     else     if (corrData.y[j]>0.001)
 
