@@ -28,7 +28,7 @@ class EffHistos {
  private:
   double massWindowLow_,massWindowHigh_;
 
-  TH1 *mZ_,*YZ_, *ptZ_,*ptZmon_;
+  TH1 *mZ_,*YZ_, *ptZ_,*ptZmon_,*polarizationZ_,*cosPolarizationZ_;
   TH1 *YZmasscut_,*ptZmasscut_;
   TH1 *YZmasscutTL_,*ptZmasscutTL_;
   TH1 *YZTLmasscut_,*ptZTLmasscut_;

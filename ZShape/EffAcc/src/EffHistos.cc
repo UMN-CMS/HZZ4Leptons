@@ -1,5 +1,7 @@
 #include "ZShape/EffAcc/interface/EffHistos.h"
 #include "ZShape/Base/interface/ZShapeBinning.h"
+#include "Math/GenVector/Boost.h"
+#include "DataFormats/Math/interface/Vector3D.h"
 
 typedef math::XYZTLorentzVector XYZTLorentzVector;
 
@@ -40,6 +42,9 @@ void EffHistos::Book(TFileDirectory& tdf,bool mzbin) {
   ptZ_  = tdf.make<TH1F>("Z0_Pt","Z0_Pt;p_{T,Z0}", zshape::pt_bins, zshape::pt_binning);
   ptZmon_ = tdf.make<TH1F>("Z0_PtMon","Z0_PtMon;p_{T,Z0}", 200, 0, maxPt);
 
+  //polarization
+polarizationZ_= tdf.make<TH1F>("Z0_Pol","Z0_Polarization", 100, 0,3.2 );
+ cosPolarizationZ_= tdf.make<TH1F>("Z0_cosPol","Z0_cosinePolarization", 100, -1,1);
   YZmasscut_  = tdf.make<TH1F>("Z0_Y_masscut","Z0_Y_masscut;Y_{Z0}", zshape::y_bins, -zshape::y_max, zshape::y_max);
   ptZmasscut_  = tdf.make<TH1F>("Z0_Pt_masscut","Z0_Pt_masscut;p_{T,Z0}", zshape::pt_bins, zshape::pt_binning);
 
@@ -124,6 +129,23 @@ void EffHistos::Fill(const  ZShapeElectron& e1, const  ZShapeElectron& e2,
 
   XYZTLorentzVector pZ = p1 + p2 ;
   XYZTLorentzVector pTLZ = pTL1 + pTL2 ; 
+  
+
+  ROOT::Math::Boost boost(pZ.BoostToCM());
+  XYZTLorentzVector bste1;
+
+  if(e1.charge_<0){
+    bste1=boost(e1.p4_);
+  }else{
+    bste1=boost(e2.p4_);
+  }
+  math::XYZVector Zdir(pZ.px(),pZ.py(),pZ.pz());
+  math::XYZVector e1dir(bste1.px(),bste1.py(),bste1.pz());
+  double cospolriz=(Zdir.Dot(e1dir))/(sqrt(Zdir.mag2())*sqrt(e1dir.mag2()));
+  double polriz=acos(cospolriz);
+  polarizationZ_->Fill(polriz);
+  cosPolarizationZ_->Fill(cospolriz);
+  
 
   //  debug
   //  std::cout << "this is e1:"  << p1 << std::endl;
