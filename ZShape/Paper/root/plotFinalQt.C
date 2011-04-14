@@ -603,6 +603,9 @@ void plotFinalQt(TFile* mctruth, int mode) {
   for(int i = 0; i < BINCOUNT-1; i++)
     {
       fprintf(outFile, "%9i %9.1f %9.1f %9f %12.10f %12.10f\n", i+1, pt_binning[i], pt_binning[i+1], corrData.y[i], corrData.ey[i], sqrt(pow(corrDataSyst.ey[i],2)-pow(corrData.ey[i],2)));
+      // for scientific notation
+      // fprintf(outFile, "%9i %9.1f %9.1f %9e %12.10e %12.10e\n", i+1, pt_binning[i], pt_binning[i+1], corrData.y[i], corrData.ey[i], 
+sqrt(pow(corrDataSyst.ey[i],2)-pow(corrData.ey[i],2)));
 
       double toadd=pow(corrData.y[i]-truth_vis->GetBinContent(i+1),2)/pow(corrDataSyst.ey[i],2);
       //      printf("%d %f %f %f %f\n",i,corrData.y[i],truth_vis->GetBinContent(i+1),corrDataSyst.ey[i],toadd);
