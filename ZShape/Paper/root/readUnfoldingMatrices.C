@@ -133,7 +133,7 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
       //errorsArray[errorsCounter] = e*e; // look at systematic alone
       errorsArray[errorsCounter] = d*d; // look at statistical alone
       std::cout << "errors2 directly from unfolded distribution - bin : " << i  <<"\t" << " err2: " << sqrt(errorsArray[errorsCounter])  << std::endl;    
-      myfileData << progressive << "\t"
+      myfileData << scientific << progressive << "\t"
 	     << a << "\t" 
 	     << b << "\t" 
 	     << c << "\t" 
@@ -192,7 +192,7 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
   for(int i=0; i<errorsCounter; i++){
     for(int j=0; j<errorsCounter; j++){
       //std::cout << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;     
-      myfile << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;
+      myfile << scientific << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;
       if(i==j) std::cout << "cov matrix diagonal (sig^2): " << covarianceMatrix(i,j) << "\t sig: " << sqrt(covarianceMatrix(i,j)) << std::endl;
     }
   }
