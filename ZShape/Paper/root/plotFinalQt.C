@@ -214,7 +214,7 @@ void plotFinalQt(TFile* mctruth, int mode) {
     for (int i=0; i<BINCOUNT; i++) {  
       corrData.y[i]=data_corr_unsmeared->GetBinContent(i+1);
       // unfolded bin = linear combination ( folded bins, theUnfoldingMatrix-column)
-      // propagate errors accordingly, assuming uncorrelated variables; errors on corrData are statistical only 
+      // propagate errors accordingly, assuming uncorrelated errors; errors on corrData are statistical only 
       for (int s=0; s<BINCOUNT; s++) {
 	errorCumul+= pow( corrDataClone.ey[s] * (*theUnfoldingMatrix)(s,i) , 2);
       }
@@ -222,8 +222,8 @@ void plotFinalQt(TFile* mctruth, int mode) {
       errorCumul=0;
     }
   }
-  DataSeries corrDataSyst(corrData);
-  DataSeries corrDataBkgd(corrData);
+  DataSeries corrDataSyst(corrData);  // errors on corrDataSyst are stat only at this point
+  DataSeries corrDataBkgd(corrData);  //           corrDataBkgd     stat only
 
   DataSeries pdfPos("pdfErrsPos_QT.txt");
   DataSeries pdfNeg("pdfErrsNeg_QT.txt");
@@ -270,8 +270,6 @@ void plotFinalQt(TFile* mctruth, int mode) {
     //    corrDataSyst.xave[i]+=0.02; // uncomment to offset error bars
 
     backgroundUncFrac.y[i]=backgroundAllUnc.y[i]/std::max(1.0,data_bkgd.y[i]);
-    // GF
-    //corrDataBkgd.ey[i]=sqrt(data_all.y[i]+backgroundAll.y[i])/effAcc.y[i];
     
     dataStatError.y[i]= corrDataBkgd.ey[i]/std::max(1.0,corrDataBkgd.y[i]);
 
@@ -282,10 +280,10 @@ void plotFinalQt(TFile* mctruth, int mode) {
     pdfFrac.y[i]=(pdfPos.y[i]+fabs(pdfNeg.y[i]))/2;
     
     //  printf("%d %f %f %f %f\n",i,corrData.ey[i],corrData.y[i]*ea_statErr.y[i]);
-    corrDataSyst.ey[i]=sqrt(pow(corrDataBkgd.ey[i],2)+
-			    pow(corrDataBkgd.y[i]*ea_statErr.y[i],2)+
+    corrDataSyst.ey[i]=sqrt(pow(corrDataBkgd.ey[i],2)+                // this is stat error - if mode==3, after unfolding
+			    pow(corrDataBkgd.y[i]*ea_statErr.y[i],2)+ // corrDataBkgd is unfolded, if mode==3
 			    pow(backgroundAllUnc.y[i]/effAcc.y[i],2)+
-			    pow(energyScale.y[i]*corrData.y[i],2)+
+			    pow(energyScale.y[i]*corrData.y[i],2)+    // corrData=corrDataBkgd at this point (except removing 0-eff bins) 
 			    pow(unfoldSyst.y[i]*corrData.y[i],2)+
 			    pow(effSystErr.y[i]*corrData.y[i],2)+
 			    0
@@ -596,7 +594,8 @@ void plotFinalQt(TFile* mctruth, int mode) {
 
   double chi2=0;
   int ndof=0;
-
+  
+  // write out text file
   sprintf(fnamework,"dsdqt_zee_final%s.csv",postfix);
   FILE* outFile = fopen(fnamework, "wt");
 
