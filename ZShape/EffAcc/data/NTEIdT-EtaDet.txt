@@ -1,9 +1,0 @@
-#put your comments after a '#'.
-#efficiency name: NTEIdT
-#dimension: 1 
-
-
-     #PtMin      PtMax     EtaMin     EtaMax   NumParms        eff      systp      systm        den
-         20        120       -2.9       -2.5          4     0.8728     0.8757     0.8698     762.72
-         20        120       -2.5        2.5          4  3.653e-14  1.026e-05          0      19310
-         20        120        2.5        2.9          4     0.8771     0.8801      0.874     784.24
