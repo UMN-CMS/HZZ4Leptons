@@ -1,4 +1,5 @@
 #include <iostream> 
+#include <fstream>
 #include <stdlib.h>
 #include "TH1.h"
 #include "TMatrixD.h"
@@ -93,17 +94,20 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
   zrap_colors();
 
   // get unfolding matrix and make its transpose
-  TMatrixD unfoldingMatrix        = *((TMatrixD*) theUnfoldingMatrix->Clone("theUnfoldingMatrix")) ;
-  TMatrixD transpUnfoldingMatrix  = *((TMatrixD*) theUnfoldingMatrix->Transpose((*theUnfoldingMatrix))  );
-  //if ( std::string(file) == (std::string("ZRapidity_fold_zee_matrix.txt") ) )
-  //    { 
-  //      std::cout << "this is rapidity " << std::endl;
-  //      unfoldingMatrix       = *( (TMatrixD*) theUnfoldingMatrix->GetSub(0,34,0,34) );
-  //transpUnfoldingMatrix = *( (TMatrixD*) unfoldingMatrix.Transpose(unfoldingMatrix) );
-  //    }
+
+  TMatrixD unfoldingMatrixRaw           = *((TMatrixD*) theUnfoldingMatrix->Clone("theUnfoldingMatrix")) ;
+  // necessary only for pt since results have one less bin 
+  unfoldingMatrixRaw.ResizeTo(18,18);
+  TMatrixD unfoldingMatrix = (TMatrixD)unfoldingMatrixRaw;
+  // necessary only for pt since results have one less bin 
+  unfoldingMatrix.ResizeTo(18,18);
+  TMatrixD transpUnfoldingMatrix     =  (        theUnfoldingMatrix->Transpose((*theUnfoldingMatrix))        );
+  // necessary only for pt since results have one less bin 
+  transpUnfoldingMatrix.ResizeTo(18,18);
 
   ofstream myfileData;
-  myfileData.open ("dataTextFile.txt");
+  myfileData.open ("originalDataTextFile.txt");
+  myfileData<<"#bin\tqt_min\tqt_max\tvalue\tstat error" << std::endl;
   int progressive=1;
 
   // import total errors
@@ -125,20 +129,24 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
       int found=sscanf(line," %d %f %f %f %f %f",&i,&a,&b,&c,&d,&e);
 
       //errorsArray[errorsCounter] = sqrt(e*e+d*d); 
-      errorsArray[errorsCounter] = e*e+d*d; // sum statistical and syst in quadrature 
-      std::cout << "errors directly from Array: " << i << "\t" << errorsArray[errorsCounter]  << std::endl;    
+      //errorsArray[errorsCounter] = e*e+d*d; // sum statistical and syst in quadrature 
+      //errorsArray[errorsCounter] = e*e; // look at systematic alone
+      errorsArray[errorsCounter] = d*d; // look at statistical alone
+      std::cout << "errors2 directly from unfolded distribution - bin : " << i  <<"\t" << " err2: " << sqrt(errorsArray[errorsCounter])  << std::endl;    
       myfileData << progressive << "\t"
 	     << a << "\t" 
 	     << b << "\t" 
 	     << c << "\t" 
-	     << sqrt(e*e+d*d) 
+	//<< sqrt(e*e+d*d) 
+	     << sqrt(d*d) 
 	     << std::endl;
       progressive++;
       errorsCounter++;
       if (found!=3) continue;
   }
   fclose(f);
-     
+  
+  // this is the file with the unfolded results that I start from 
   myfileData.close();
 
   TVectorD totalErrorsVector; totalErrorsVector.Use(errorsCounter,errorsArray);
@@ -154,37 +162,38 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
   
   // manipulate erros and matrices to get correlation matrix
   
-  TCanvas * theErrorsCanvas = new TCanvas("theErrorsCanvas","theErrorsCanvas",200,200,1000,800);  
+  TCanvas * theErrorsCanvas = new TCanvas("theErrors^2 from unfolded results","theErrors^2 from unfolded results",250,250,1050,850);  
   theErrorsCanvas->cd();
   errorsOnDiagonalMatrix.Draw("colz");
   errorsOnDiagonalMatrix.Draw("text same");
 
-  TCanvas * theUnfoldingCanvas = new TCanvas("theUnfoldingCanvas","theUnfoldingCanvas",210,210,1000,800);  
+  TCanvas * theUnfoldingCanvas = new TCanvas("the Unfolding matrix Canvas","the Unfolding matrix Canvas",210,210,1000,800);  
   theUnfoldingCanvas->cd();
   unfoldingMatrix.Draw("colz");
 
-  TCanvas * theTransposeCanvas = new TCanvas("theTransposeCanvas","theTransposeCanvas",210,210,1000,800);  
-  theTransposeCanvas->cd();
-  transpUnfoldingMatrix.Draw("colz");
+  TCanvas * theDebuggingCanvas = new TCanvas("the debugging Canvas","the debugging Canvas",280,280,1080,880);  
+  theDebuggingCanvas->cd();
 
-  
-  //  TMatrixD covarianceMatrix(errorsCounter,errorsCounter);
+  std::cout << "sizes:   errorsOnDiagonalMatrix is " << errorsOnDiagonalMatrix.GetNcols() << "\t transpUnfoldingMatrix is: " << transpUnfoldingMatrix.GetNcols() << std::endl;
   TMatrixD tmp(errorsOnDiagonalMatrix,TMatrixD::kMult,transpUnfoldingMatrix);
+  tmp.Draw("colz");
   TMatrixD covarianceMatrix(unfoldingMatrix,TMatrixD::kMult,tmp);
   TCanvas * theCovarianceCanvas = new TCanvas("theCovarianceCanvas","theCovarianceCanvas",200,200,1000,800);
   theCovarianceCanvas->cd();
   covarianceMatrix.Draw("colz");
-  covarianceMatrix.Draw("text same");
+  //covarianceMatrix.Draw("text same");
 
   ofstream myfile;
   myfile.open ("covarianceTextFile.txt");
 
-  std::cout << "\n\n\n covariance matrix " << errorsCounter << " x " << errorsCounter << std::endl;
+  std::cout << "\n\n\n covariance matrix (num errors in file) " << errorsCounter << " x " << errorsCounter << std::endl;
+  std::cout << " unfolding  matrix (from .root) " << unfoldingMatrix.GetNcols() << " x " << unfoldingMatrix.GetNrows() << std::endl;
+  
   for(int i=0; i<errorsCounter; i++){
     for(int j=0; j<errorsCounter; j++){
       //std::cout << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;     
       myfile << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;
-      if(i==j) std::cout << "cov matrix diagonal: " << covarianceMatrix(i,j) << std::endl;
+      if(i==j) std::cout << "cov matrix diagonal (sig^2): " << covarianceMatrix(i,j) << "\t sig: " << sqrt(covarianceMatrix(i,j)) << std::endl;
     }
   }
  
