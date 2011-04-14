@@ -1,5 +1,7 @@
 #include "TFile.h"
 #include "TH1F.h"
+#include "TH2F.h"
+#include "TProfile.h"
 #include "TLegend.h"
 #include "TStyle.h"
 #include "TCanvas.h"
@@ -17,13 +19,18 @@ int  scwithpu(char *);
 void makeAplot( std::vector<TFile*> , std::vector<std::string> theLabels, std::vector<int> theColors, std::vector<int> theFillStyle, std::string myPlot, 
 		ofstream &myfile, 
 		bool doLog=false, std::string path=std::string("./"));
+void make2dAplot(TFile*, TFile* , std::vector<std::string> theLabels, std::vector<int> theColors, std::vector<int> theFillStyle,
+		 std::string myPlot, 
+		 ofstream &myfile, 
+		 bool doLog=false, std::string path=std::string("./"));
 
 
-//int scwithpu(std::string theDirectory){
+
+
 int scwithpu(char myword[100]){
   
   std::string theDirectory = std::string(myword) + std::string("/");
-  std::string theDir       = std::string(theDirectory) + std::string("/"); 
+  std::string theDir       = std::string(theDirectory);
   std::string theCommand   = std::string("mkdir ") + theDir; 
   std::cout << "locating output in: " << theDir << std::endl; 
   system(theCommand.c_str());
@@ -41,29 +48,35 @@ int scwithpu(char myword[100]){
   std::vector<int>         theColors;
   std::vector<int>         theFillStyle;
 
-  TFile *file2 = new TFile("PU-20.root","READ");
-  theFiles.push_back(file2);   theLabels.push_back(std::string("PU-20 #xi=0")); theColors.push_back(kRed); theFillStyle.push_back(3365);
-  TFile *file4 = new TFile("PU-20-0.01-mar29.root","READ");
-  theFiles.push_back(file4);   theLabels.push_back(std::string("PU-20 #xi=0.01")); theColors.push_back(kGreen); theFillStyle.push_back(3354);
-  TFile *file3 = new TFile("PU-20-0.02.root","READ");
-  theFiles.push_back(file3);   theLabels.push_back(std::string("PU-20 #xi=0.02")); theColors.push_back(kViolet); theFillStyle.push_back(3356);
-  //TFile *file3 = new TFile("PU-20-0.03.root","READ");
-  //theFiles.push_back(file3);   theLabels.push_back(std::string("PU-20 #xi=0.03")); theColors.push_back(kViolet); theFillStyle.push_back(3356);
-  //TFile *file4 = new TFile("PU-20-0.04.root","READ");
-  //theFiles.push_back(file4);   theLabels.push_back(std::string("PU-20 #xi=0.04")); theColors.push_back(kGreen); theFillStyle.push_back(3354);
-  //TFile *file5 = new TFile("PU-20-0.06.root","READ");
-  //theFiles.push_back(file5);   theLabels.push_back(std::string("PU-20 #xi=0.06")); theColors.push_back(kAzure+10); theFillStyle.push_back(3354);
   TFile *file1 = new TFile("PU-0.root","READ");
   theFiles.push_back(file1);   theLabels.push_back(std::string("PU-0 #xi=0")); theColors.push_back(kBlue); theFillStyle.push_back(3395);
-  //TFile *file7 = new TFile("PU-0-0.02.root","READ");
-  //theFiles.push_back(file7);   theLabels.push_back(std::string("PU-0 #xi=0.02")); theColors.push_back(kAzure+10); theFillStyle.push_back(3356);
-  TFile *file7 = new TFile("PU-0-0.01-mar29.root","READ");
-  theFiles.push_back(file7);   theLabels.push_back(std::string("PU-0 #xi=0.01")); theColors.push_back(kAzure+10); theFillStyle.push_back(3356);
+  TFile *file2 = new TFile("PU-20.root","READ");
+  theFiles.push_back(file2);   theLabels.push_back(std::string("PU-20 #xi=0")); theColors.push_back(kRed); theFillStyle.push_back(3365);
+
+  TFile *file11 = new TFile("PU-0-deltaEta.root","READ");
+  theFiles.push_back(file11);   theLabels.push_back(std::string("PU-0 clus-w-#Delta#eta")); theColors.push_back(kAzure+10); theFillStyle.push_back(3365);
+  TFile *file12 = new TFile("PU-20-deltaEta.root","READ");
+  theFiles.push_back(file12);   theLabels.push_back(std::string("PU-20 clus-w-#Delta#eta")); theColors.push_back(kGreen); theFillStyle.push_back(3365);
+
+  
+
+
+  //TFile *file8 = new TFile("PU-20-0.005.root","READ");
+  //theFiles.push_back(file8);   theLabels.push_back(std::string("PU-20 #xi=0.005")); theColors.push_back(kAzure+10); theFillStyle.push_back(3356);
+  //TFile *file3 = new TFile("PU-20-0.01.root","READ");
+  //theFiles.push_back(file3);   theLabels.push_back(std::string("PU-20 #xi=0.01")); theColors.push_back(kGreen); theFillStyle.push_back(3356);
+  //TFile *file4 = new TFile("PU-20-0.02.root","READ");
+  //theFiles.push_back(file4);   theLabels.push_back(std::string("PU-20 #xi=0.02")); theColors.push_back(kViolet); theFillStyle.push_back(3356);
+  //TFile *file9 = new TFile("PU-20-0.03.root","READ");
+  //theFiles.push_back(file9);   theLabels.push_back(std::string("PU-20 #xi=0.03")); theColors.push_back(kOrange); theFillStyle.push_back(3356);
+
+
+  TFile *file0 = new TFile("PU-0.root","READ");
+  theFiles.push_back(file0);   theLabels.push_back(std::string("PU-0 #xi=0")); theColors.push_back(kBlue); theFillStyle.push_back(3395);
 
   std::string myPlot;
   std::vector<std::string> allMyPlots;
   myPlot = std::string("h_phiShape_barl"); allMyPlots.push_back(myPlot);
-  //makeAplot( theFiles, theLabels, theColors, theFillStyle, myPlot , myfile, true, theDirectory);
   
   //myPlot = std::string("h_etaShape_barl"); allMyPlots.push_back(myPlot);
   //myPlot = std::string("h_etaShape_barlPLus"); allMyPlots.push_back(myPlot);
@@ -76,12 +89,29 @@ int scwithpu(char myword[100]){
   //myPlot = std::string("h_maxCryInLocalMax_barlPLus"); allMyPlots.push_back(myPlot);
   //myPlot = std::string("h_maxCryInLocalMax_barlMinus"); allMyPlots.push_back(myPlot);
 
-
   //myPlot = std::string("h_phiShape_endc"); allMyPlots.push_back(myPlot);
   myPlot = std::string("h_phiSize_barl"); allMyPlots.push_back(myPlot);
+
+  //myPlot = std::string("h_etaBCminusEtaSeed_barl"); allMyPlots.push_back(myPlot);
+  myPlot = std::string("h_absEtaBCminusAbsEtaSeed_barl"); allMyPlots.push_back(myPlot);
+  //myPlot = std::string("h_etaBCminusEtaSeed_barlm1"); allMyPlots.push_back(myPlot);
+  myPlot = std::string("h_absEtaBCminusAbsEtaSeed_barlm1"); allMyPlots.push_back(myPlot);
+  //myPlot = std::string("h_etaBCminusEtaSeed_barlm2"); allMyPlots.push_back(myPlot);
+  myPlot = std::string("h_absEtaBCminusAbsEtaSeed_barlm2"); allMyPlots.push_back(myPlot);
+  //myPlot = std::string("h_etaBCminusEtaSeed_barlm3"); allMyPlots.push_back(myPlot);
+  myPlot = std::string("h_absEtaBCminusAbsEtaSeed_barlm3"); allMyPlots.push_back(myPlot);
+  //myPlot = std::string("h_etaBCminusEtaSeed_barlm4"); allMyPlots.push_back(myPlot);
+  myPlot = std::string("h_absEtaBCminusAbsEtaSeed_barlm4"); allMyPlots.push_back(myPlot);
+
+  myPlot = std::string("h_phiBCminusPhiSeed_barl"); allMyPlots.push_back(myPlot);
+  myPlot = std::string("h_phiBCminusPhiSeed_barlm1"); allMyPlots.push_back(myPlot);
+  myPlot = std::string("h_phiBCminusPhiSeed_barlm2"); allMyPlots.push_back(myPlot);
+  myPlot = std::string("h_phiBCminusPhiSeed_barlm3"); allMyPlots.push_back(myPlot);
+  myPlot = std::string("h_phiBCminusPhiSeed_barlm4"); allMyPlots.push_back(myPlot);
+
   //myPlot = std::string("h_phiSize_endc"); allMyPlots.push_back(myPlot);
   myPlot = std::string("h_EoverEtrue_barl"); allMyPlots.push_back(myPlot);
-  myPlot = std::string("h_EoverEtrue_endc"); allMyPlots.push_back(myPlot);
+  //myPlot = std::string("h_EoverEtrue_endc"); allMyPlots.push_back(myPlot);
   myPlot = std::string("h_PhoEoverEtrue_barl"); allMyPlots.push_back(myPlot);
   myPlot = std::string("h_PhoER9overEtrue_barl"); allMyPlots.push_back(myPlot);
   myPlot = std::string("h_PhoEnotR9overEtrue_barl"); allMyPlots.push_back(myPlot);
@@ -89,17 +119,40 @@ int scwithpu(char myword[100]){
   myPlot = std::string("h_mHiggs_EEEE_trueVtx"); allMyPlots.push_back(myPlot);
   
 
-  
-  std::string theLineForHtml = std::string("<h2 id=\"ECAL superclusters with pile up - ECAL95-ECAL95\"><A name=\"EB\"><FONT color=\"Black\">G. Franzoni and Y. Kubota") +   std::string("</FONT></A><BR></h2>"); 
+  // heading to the web page
+   std::string theLineForHtml = std::string("<h2 id=\"ECAL superclusters with pile up - ECAL95-ECAL95\"><A name=\"EB\"><FONT color=\"Black\">G. Franzoni and Y. Kubota") +   std::string("</FONT></A><BR></h2>"); 
   myfile << theLineForHtml << std::endl;
+  // loop where the plots get actually made!
   for(std::vector<std::string>::iterator iter=allMyPlots.begin(); iter!=allMyPlots.end(); iter++){
     makeAplot( theFiles, theLabels, theColors, theFillStyle, (*iter) , 
 	       myfile, 
 	       true, theDirectory);
   }
-  
-  myfile << "<hr>" << std::endl; 
 
+
+//  theLabels.clear();
+//  theLabels.push_back(std::string("PU-0 #xi=0"));   theLabels.push_back(std::string("PU-0 clus-w-#Delta#eta"));
+//  make2dAplot(file1 , file11, theLabels, theColors, theFillStyle, std::string("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl"),myfile,true, theDirectory);
+//  make2dAplot(file1 , file11, theLabels, theColors, theFillStyle, std::string("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1"),myfile,true, theDirectory);
+//  make2dAplot(file1 , file11, theLabels, theColors, theFillStyle, std::string("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2"),myfile,true, theDirectory);
+//  make2dAplot(file1 , file11, theLabels, theColors, theFillStyle, std::string("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3"),myfile,true, theDirectory);
+//  make2dAplot(file1 , file11, theLabels, theColors, theFillStyle, std::string("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4"),myfile,true, theDirectory);
+//
+//  theLabels.clear();
+//  theLabels.push_back(std::string("PU-20 #xi=0"));   theLabels.push_back(std::string("PU-20 clus-w-#Delta#eta"));
+//  make2dAplot(file2 , file12, theLabels, theColors, theFillStyle, std::string("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl"),myfile,true, theDirectory);
+//  make2dAplot(file2 , file12, theLabels, theColors, theFillStyle, std::string("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1"),myfile,true, theDirectory);
+//  make2dAplot(file2 , file12, theLabels, theColors, theFillStyle, std::string("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2"),myfile,true, theDirectory);
+//  make2dAplot(file2 , file12, theLabels, theColors, theFillStyle, std::string("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3"),myfile,true, theDirectory);
+//  make2dAplot(file2 , file12, theLabels, theColors, theFillStyle, std::string("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4"),myfile,true, theDirectory);
+
+  theLabels.clear();
+  theLabels.push_back(std::string("PU-0 #xi=0"));   theLabels.push_back(std::string("PU-20 #xi=0"));
+  make2dAplot(file1 , file2, theLabels, theColors, theFillStyle, std::string("h_phiSizeVsE_barl"),myfile,true, theDirectory);
+  make2dAplot(file1 , file2, theLabels, theColors, theFillStyle, std::string("h_phiSizeVsEt_barl"),myfile,true, theDirectory);
+  
+
+  myfile << "<hr>" << std::endl; 
   return 0;
 }
 
@@ -120,13 +173,13 @@ void makeAplot( std::vector<TFile*> theFiles, std::vector<std::string> theLabels
   TCanvas *theCanvas = new TCanvas(myPlot.c_str(),myPlot.c_str(),150,10,990,760);
   theCanvas->cd();
 
-  TLegend * leg = new TLegend(0.10,0.73,0.37,0.97);
+  TLegend * leg = new TLegend(0.70,0.70,0.99,0.99);
   leg->SetHeader(myPlot.c_str());
 
   // loop over the files 
   std::vector< TFile* >::const_iterator constIterator;
   for ( constIterator = theFiles.begin();
-	constIterator != theFiles.end(); constIterator++ ) {
+	constIterator != (theFiles.end()-1); constIterator++ ) {
 
     std::string thePlot = theBasePath + myPlot;
     TH1F * aHisto = (TH1F*)  (*constIterator)->Get(thePlot.c_str());
@@ -136,12 +189,8 @@ void makeAplot( std::vector<TFile*> theFiles, std::vector<std::string> theLabels
     //aHisto->SetFillColor(theColors.at(countPlots));
     //aHisto->SetFillStyle(theFillStyle.at(countPlots));
 
+    aHisto->SetStats(0);
     aHisto->Draw(drawOption.c_str());
-
-    //std::cout << "option is : " << drawOption.c_str() << std::endl;
-    //if(countPlots>0){
-    //      std::cout << "any list? " << aHisto->GetListOfFunctions() << std::endl;
-    //      TPaveStats * st = (TPaveStats*)aHisto->GetListOfFunctions()->FindObject("TPaveStats::stats");
     //}
     
     std::string sigEffLabel("");
@@ -160,7 +209,7 @@ void makeAplot( std::vector<TFile*> theFiles, std::vector<std::string> theLabels
 	std::cout << "eff sigma for plot: " << myPlot << " is: " << effSigma(aHisto) << std::endl;
 	char buffer [50]; 
 	sprintf (buffer, "%.2e ", effSigma(aHisto) );
-	sigEffLabel = std::string("       #sigma_{eff} = ") + std::string( buffer )  + std::string(";");
+	sigEffLabel = std::string("    #sigma_{eff} = ") + std::string( buffer )  + std::string("");
       }
     }// loop over hist needing sigmaeff
     std::string theFullLabel = theLabels.at(countPlots) + sigEffLabel;
@@ -186,6 +235,92 @@ void makeAplot( std::vector<TFile*> theFiles, std::vector<std::string> theLabels
   theLineForHtml = std::string("<A HREF=") +myPlot+std::string("_log")+std::string(".png")  + std::string("> <img height=\"300\" src=\"") +myPlot+std::string("_log")+std::string(".png")  + std::string("\"> </A>"); 
   myfile << theLineForHtml << std::endl;   
 
-
-
 }// end makeAplot
+
+
+
+
+void make2dAplot( TFile *file1 , TFile *file2, std::vector<std::string> theLabels, std::vector<int> theColors, std::vector<int> theFillStyle, 
+		std::string myPlot, 
+		ofstream &myfile,
+		bool doLog , 
+		std::string thePath)
+{
+  
+  std::string theBasePath("scwithpuanalyzer/");
+  std::string drawOption("he");
+  //int         countPlots(0);
+  std::string thePlot = theBasePath + myPlot;
+
+  //TCanvas *theCanvas = new TCanvas(myPlot.c_str(),myPlot.c_str(),150,10,1092,975);
+  TCanvas *theCanvas = new TCanvas(myPlot.c_str(),myPlot.c_str(),150,10,990,760);
+  theCanvas->Divide(1,3);
+  theCanvas->cd(1);
+
+  TLegend * leg = new TLegend(0.05,0.85,0.20,0.99);
+  //leg->SetHeader(myPlot.c_str());
+
+  TH2F * aHisto       = (TH2F*)  file1->Get(thePlot.c_str());
+  TH2F * anotherHisto = (TH2F*)  file2->Get(thePlot.c_str());
+
+  aHisto        ->SetLineColor(theColors.at(0));
+  anotherHisto  ->SetLineColor(theColors.at(1));
+
+  theCanvas->cd(1);  aHisto->Draw("box");
+  bool DoFitting(true);
+  if(true){  TProfile *a = ((TProfile*)aHisto->ProfileX()); a->SetLineColor(kBlack); a->Draw("same");}
+  else{
+    TH2F* theClone = (TH2F*) aHisto->Clone("pippo");
+    //   aHisto->FitSlicesY();
+    theClone->FitSlicesY();
+    std::string theNameOfFitted = std::string("pippo") + std::string("_1");
+    //    std::string theNameOfFitted = myPlot + std::string("_1");
+    TH1D* fittedMean = (TH1D*)gDirectory->Get(theNameOfFitted.c_str());
+    //    fittedMean = (TH1D*)fittedMean->Clone("pippo");
+    fittedMean->Draw("same");
+    theNameOfFitted = std::string("pippo") + std::string("_2");
+    //    theNameOfFitted = std::string("pippo") + std::string("_2");
+    TH1D* fittedSigma = (TH1D*)gDirectory->Get(theNameOfFitted.c_str());
+    fittedSigma->GetYaxis()->SetTitle("#sigma( |#eta_{BC}| - |#eta_{SCseed}|)");
+    fittedSigma->SetLineColor(theColors.at(0));
+    theCanvas->cd(3);
+    fittedSigma->SetStats(0);
+    fittedSigma->Draw();
+  }
+
+
+  theCanvas->cd(2);  anotherHisto ->Draw("box");
+  if(true){    TProfile *b = ((TProfile*)anotherHisto->ProfileX()); b->SetLineColor(kBlack); b->Draw("same");}
+  else{
+    TH2F* theClone = (TH2F*) anotherHisto->Clone("pluto");
+    //anotherHisto->FitSlicesY();
+    theClone->FitSlicesY();
+    //std::string theNameOfFitted = myPlot + std::string("_1");
+    std::string theNameOfFitted = std::string("pluto") + std::string("_1");
+    TH1D* fittedMean = (TH1D*)gDirectory->Get(theNameOfFitted.c_str());
+    fittedMean->Draw("same");
+    theNameOfFitted = std::string("pluto") + std::string("_2");
+    TH1D* fittedSigma = (TH1D*)gDirectory->Get(theNameOfFitted.c_str());
+    fittedSigma->GetYaxis()->SetTitle("#sigma( |#eta_{BC}| - |#eta_{SCseed}|)");
+    //fittedSigma->SetLineColor(theColors.at(1));
+    fittedSigma->SetLineColor(theColors.at(1));
+    theCanvas->cd(3);
+    fittedSigma->SetStats(0);
+    fittedSigma->Draw("same");
+  }
+
+
+  theCanvas->cd(1);
+  leg->AddEntry(aHisto,theLabels.at(0).c_str());
+  leg->AddEntry(anotherHisto,theLabels.at(1).c_str());
+  leg->Draw("");
+
+  //theCanvas->SetLogz(1);
+  //theCanvas->SetLogz(2);
+  theCanvas->Print( (thePath+myPlot+std::string(".png")) .c_str() );
+  std::string theLineForHtml = std::string("<A HREF=") +myPlot+std::string(".png") + std::string("> <img height=\"300\" src=\"")+myPlot+std::string(".png") + std::string("\"> </A>"); 
+  myfile << theLineForHtml << std::endl; 
+
+
+}// end make2dAplot
+
