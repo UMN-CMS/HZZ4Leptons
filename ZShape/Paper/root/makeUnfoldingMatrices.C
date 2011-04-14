@@ -277,8 +277,8 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
      //limitNumberBinY=50;
      int a=313;
    } else {
-     limitNumberBinX=19;
-     limitNumberBinY=19;
+     limitNumberBinX=18;
+     limitNumberBinY=18;
    }
 
    int lowestBinX      = histoMatrix->GetNbinsX()/2 - min(histoMatrix->GetNbinsX()/2, limitNumberBinX);
