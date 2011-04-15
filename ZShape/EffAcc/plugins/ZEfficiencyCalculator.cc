@@ -303,6 +303,8 @@ void ZEfficiencyCalculator::fillEvent(const reco::GenParticleCollection* ZeePart
   
   using namespace reco;
 
+  if (ZeeParticles==0 || ZeeTreeLevelParticles==0) return;
+
   ////////////////////////
   // looking for electrons
   int myPid = 11;
@@ -323,6 +325,8 @@ void ZEfficiencyCalculator::fillEvent(const reco::GenParticleCollection* ZeePart
 	ne++;
       }
     }
+
+  if (ne<2) return; // we don't have two electrons somehow
 
 
   // iterating over all particles checking if they fall in cone around electron 
