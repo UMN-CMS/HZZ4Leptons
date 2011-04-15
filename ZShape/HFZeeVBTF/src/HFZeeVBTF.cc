@@ -13,7 +13,7 @@
 //
 // Original Author:  Jeremy M Mans
 //         Created:  Mon May 31 07:00:26 CDT 2010
-// $Id: HFZeeVBTF.cc,v 1.21 2010/12/01 15:05:59 mansj Exp $
+// $Id: HFZeeVBTF.cc,v 1.22 2011/04/13 19:08:46 mansj Exp $
 //
 //
 
@@ -91,7 +91,7 @@ private:
   // gf set of histograms per each == Z definition ==
   struct HistPerDef {
     //book histogram set w/ common suffix inside the provided TFileDirectory
-    void book(TFileDirectory td,const std::string&);
+    void book(TFileDirectory td,const std::string&,const std::vector<double>& win);
     // fill all histos of the set with the two electron candidates
     void fill(pat::ElectronCollection::const_iterator ecalE,  const reco::RecoEcalCandidate& hfE, const reco::HFEMClusterShape& hfshape, 
 	      const bool hasEleIDPassed, const edm::ParameterSet& myPs, const int isTight, std::vector<double> hfIdParams);
@@ -112,6 +112,8 @@ private:
     TH1* combIsoEE_nmo,  *relTkIsoEE_nmo, *relEcIsoEE_nmo, *relHcIsoEE_nmo, *sigiEtaiEtaEE_nmo, *dphiEE_nmo, *detaEE_nmo, *hOeEE_nmo;
     TH1* e9e25_nmo, *var2d_nmo, *eCOREe9_nmo, *eSeL_nmo;
     TH2* eSeL_vs_logEl;
+    std::vector<double> massWindow_;
+
   };
   std::vector<std::string> HLT_Names;
   bool init_,skipTrigger_;
@@ -142,9 +144,10 @@ private:
 };
 
 
-void HFZeeVBTF::HistPerDef::book(TFileDirectory td, const std::string& post) {
+void HFZeeVBTF::HistPerDef::book(TFileDirectory td, const std::string& post, const std::vector<double>& win) {
+  massWindow_=win;
   std::string title;
-  double minZrange = 60;
+  double minZrange = 40;
   double maxZrange = 120;
   
   title=std::string("M_{ee} ")+post;
@@ -297,7 +300,12 @@ void HFZeeVBTF::HistPerDef::fill(pat::ElectronCollection::const_iterator ecalE,
     hf_2d_cut   = hfIdParams.at(3);
     eCOREe9_cut = hfIdParams.at(5);
     eSeL_cut    = hfIdParams.at(7);}
-  else
+  else if (isTight==-1) {
+    e9e25_cut=-1;
+    hf_2d_cut=-1;
+    eCOREe9_cut=-1;
+    eSeL_cut=-1;
+  } else 
     {assert(0);} // no values otherthan 1 and 0 are supported for the moment
   
   // for debugging
@@ -324,12 +332,12 @@ void HFZeeVBTF::HistPerDef::fill(pat::ElectronCollection::const_iterator ecalE,
   Z+=hfE.p4();
 
   // if all selections are passed, fill standard plots
-  if(hasEleIDPassed && 
+  if (isTight==-1 || (hasEleIDPassed && 
      var2d   > hf_2d_cut   &&
      e9e25   > e9e25_cut   &&
      eCOREe9 > eCOREe9_cut &&
      eSeL    < eSeL_cut    &&
-     60 < Z.M() && Z.M() < 130){ // make inv. mass requirement explicit
+     massWindow_[0] < Z.M() && Z.M() < massWindow_[1])){ // make inv. mass requirement explicit
     
     mee          ->Fill(Z.M());
     mee_vsEta    -> Fill(hfE.p4().eta(),Z.M());
@@ -588,17 +596,17 @@ HFZeeVBTF::HFZeeVBTF(const edm::ParameterSet& iConfig)
   edm::Service<TFileService> fs;
   hists.nelec=fs->make<TH1D>("nelec","N_Elec",10,-0.5,9.5);
   hists.nhf=fs  ->make<TH1D>("nhf","N_HF",10,-0.5,9.5);
-  hists.base.book(fs->mkdir("base"),"(base)");
-  hists.mee90none.book(fs->mkdir("mee90none"),"(mee90none)");
-  hists.zMass.book(fs->mkdir("zMass"),"(zMass)");
-  hists.mee90loose.book(fs->mkdir("mee90loose"),"(90,loose)");
-  hists.mee80loose.book(fs->mkdir("mee80loose"),"(80,loose)");
-  hists.mee70loose.book(fs->mkdir("mee70loose"),"(70,loose)");  
-  hists.mee60loose.book(fs->mkdir("mee60loose"),"(60,loose)");  
-  hists.mee90tight.book(fs->mkdir("mee90tight"),"(90,tight)");  
-  hists.mee80tight.book(fs->mkdir("mee80tight"),"(80,tight)");  
-  hists.mee70tight.book(fs->mkdir("mee70tight"),"(70,tight)");  
-  hists.mee60tight.book(fs->mkdir("mee60tight"),"(60,tight)");  
+  hists.base.book(fs->mkdir("base"),"(base)",massWindow_);
+  hists.mee90none.book(fs->mkdir("mee90none"),"(mee90none)",massWindow_);
+  hists.zMass.book(fs->mkdir("zMass"),"(zMass)",massWindow_);
+  hists.mee90loose.book(fs->mkdir("mee90loose"),"(90,loose)",massWindow_);
+  hists.mee80loose.book(fs->mkdir("mee80loose"),"(80,loose)",massWindow_);
+  hists.mee70loose.book(fs->mkdir("mee70loose"),"(70,loose)",massWindow_);  
+  hists.mee60loose.book(fs->mkdir("mee60loose"),"(60,loose)",massWindow_);  
+  hists.mee90tight.book(fs->mkdir("mee90tight"),"(90,tight)",massWindow_);  
+  hists.mee80tight.book(fs->mkdir("mee80tight"),"(80,tight)",massWindow_);  
+  hists.mee70tight.book(fs->mkdir("mee70tight"),"(70,tight)",massWindow_);  
+  hists.mee60tight.book(fs->mkdir("mee60tight"),"(60,tight)",massWindow_);  
   init_=false;
 
   // import parameter set which carry threshold vaues
@@ -709,9 +717,9 @@ HFZeeVBTF::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     const reco::HFEMClusterShape& hfshape=*hfclusShapeRef;
 
     if (ecalE!=pElecs.end()) 
-      hists.base.fill(ecalE,hfE,hfshape,true,robust90relIsoEleIDCutsV04_ps_,0,hfIdParams_);
+      hists.base.fill(ecalE,hfE,hfshape,true,robust90relIsoEleIDCutsV04_ps_,-1,hfIdParams_);
     else
-      hists.base.fill(pElecs.begin(),hfE,hfshape,true,robust90relIsoEleIDCutsV04_ps_,0,hfIdParams_);
+      hists.base.fill(pElecs.begin(),hfE,hfshape,true,robust90relIsoEleIDCutsV04_ps_,-1,hfIdParams_);
   }
 
   if ( (pElecs.size()>0) &&  (HFElectrons->size()>0) && (ecalE!=pElecs.end())){
