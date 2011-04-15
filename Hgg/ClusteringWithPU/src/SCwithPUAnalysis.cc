@@ -13,7 +13,7 @@
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.14 2011/04/08 15:15:26 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.15 2011/04/09 15:12:46 franzoni Exp $
 //
 //
 
@@ -366,7 +366,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
   ev.getByLabel("ecalRecHit", "EcalRecHitsEE", eeRecHitsHandle);
   const EcalRecHitCollection * eeRecHits = eeRecHitsHandle.product();
 
-
+  // this histogram can be used as a counter of events 
   h_nVtx->Fill(vertexCollection->size());
 
   Handle< HepMCProduct > hepProd ;
@@ -405,7 +405,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
       float etaEcal_true = etaTransformation(eta_true, (*p)->production_vertex()->position().z()/10. );
       float et_true = (*p)->momentum().e()/cosh((*p)->momentum().eta());
 
-      // Barrel SuperClusters
+      // Barrel SuperClusters (inside loop over MC particles)
       for(SuperClusterCollection::const_iterator scIt = barrelSCCollection->begin(); scIt != barrelSCCollection->end(); scIt++) {
 	if (fabs(scIt->eta())<1.4442 && scIt->energy()/cosh(scIt->eta())>20.) {
 
@@ -425,8 +425,8 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  if ( deltaPhi < -pi) deltaPhi += twopi;
 	  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);
 	  if ( delta<0.1) { // match if dr<0.1
-	    h_scet_barl->Fill((scIt->energy()/cosh(scIt->eta()))/et_true);
-	    h_EoverEtrue_barl->Fill(scIt->energy()/(*p)->momentum().e());
+	    h_scet_barl->Fill((scIt->energy()/cosh(scIt->eta()))/et_true);   // using: h_scet_barl as counter of EB matched photons
+	    h_EoverEtrue_barl->Fill(scIt->energy()/(*p)->momentum().e());    //        supercluster that matches a MC-truth particle 
 	    h_phiWidth->Fill(phiWidth);
 	    h_phiWidthVsE->Fill(phiWidth,(*p)->momentum().e());	  
 	    h_phiSize->Fill(phiSize);
@@ -482,7 +482,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 
 		}
 	      } // loop over crystals of the SC
-	    
+
 	    for(int u=0; u<35; u++) {
 	      if (whereIsMaxInDomino[u]<-100) continue;
 	      h_maxCryInDomino_barl        -> Fill(whereIsMaxInDomino[u]);
@@ -493,17 +493,20 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	    // looping on basic clusters within the Supercluster
 	    for(CaloCluster_iterator bcIt = scIt->clustersBegin(); bcIt!=scIt->clustersEnd(); bcIt++)
 	      {
+		// fill the plots that follow only if the basic cluster is NOT the seed basic cluster
+		//std::cout << "BEF num of BC: " << scIt->clustersSize()  << " or also " << (scIt->clustersEnd()-scIt->clustersBegin()) << std::endl;
+		if (   EBDetId(   (*bcIt)->seed().rawId())  
+		       == EBDetId ( (*scIt->seed()).seed().rawId() )  
+		       ) continue;
+		//std::cout << "AFT num of BC: " << scIt->clustersSize()  << " or also " << (scIt->clustersEnd()-scIt->clustersBegin()) << std::endl;
+
 		// std::cout << "BC number: "<< (bcIt-scIt->clustersBegin()) << std::endl;
-		// std::cout << "\n\n new BC number: " << ( bcIt-(scIt->clustersBegin()) ) << std::endl;
 		EBDetId theBCSeed           = EBDetId(   (*bcIt)->seed().rawId());  // this is always SCseed? FIXme
-		//EBDetId theBCSeed           = EBDetId(   bcIt->seed().rawId());  // this is always SCseed? FIXme
 		EBDetId theSCseed           = EBDetId(   ( *(scIt->seed()) ).seed().rawId()  ) ;
-		// std::cout << " BC seed is: " << theBCSeed.rawId() << " while the SC seed is: " << theSCseed.rawId() << std::endl; 
 
 		int     etaOfMaxInsidBC     =-999; 
 		int     phiOfMaxInsidBC     =-999; 
 		float   energyOfMaxInsideBC =-888;
-		// std::cout << "++ BEFORE etaOfMaxInsidBC: " << etaOfMaxInsidBC << " phiOfMaxInsidBC  " << phiOfMaxInsidBC << " energy: " << energyOfMaxInsideBC << std::endl;
 
 		std::vector< std::pair<DetId, float> >  theBCHitsAndFractions =  (*bcIt)->hitsAndFractions();
 		for(std::vector< std::pair<DetId, float> >::const_iterator idsIt = theBCHitsAndFractions.begin(); 
@@ -514,28 +517,23 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 		    etaOfMaxInsidBC         = (   (int)getEtaDistance ( (*scIt->seed()).seed() , EBDetId( (*idsIt).first.rawId() ) )  );
 		    phiOfMaxInsidBC         = (   (int)getPhiDistance ( (*scIt->seed()).seed() , EBDetId( (*idsIt).first.rawId() ) )  );
 		    energyOfMaxInsideBC     = currCryEnergy;
-		    //std::cout << "eta distance from SC seed is: " << etaOfMaxInsidBC << " phiOfMaxInsidBC  " << phiOfMaxInsidBC << " energy: " << energyOfMaxInsideBC << std::endl;
 		  } // if energy surpassed
 		} // loop over theBCHitsAndFractions of BC
-		// std::cout << "++ AFTER etaOfMaxInsidBC: " << etaOfMaxInsidBC << " phiOfMaxInsidBC  " << phiOfMaxInsidBC << " energy: " << energyOfMaxInsideBC << std::endl;
 
 		// fill the histograms with the location of the BC maximum, w.r.t. to SC seed
 		if(fabs(theSCseed.ieta()) >2)
 		  {
 		    h_maxCryInLocMax_barlSymm           ->Fill( etaOfMaxInsidBC * signum( theSCseed.ieta() ) );
 		    h_maxCryInLocMaxVsPhi_barlSymm      ->Fill( phiOfMaxInsidBC , etaOfMaxInsidBC * signum( theSCseed.ieta() ) );
-		    //std::cout << "++ SYMM eta distance from SC seed is: " << etaOfMaxInsidBC << " phiOfMaxInsidBC  " << phiOfMaxInsidBC << " energy: " << energyOfMaxInsideBC << std::endl;
 		  }
 		if(theSCseed.ieta() >2)
 		  {
 		    h_maxCryInLocMax_barlPLus           ->Fill( etaOfMaxInsidBC );
 		    h_maxCryInLocMaxVsPhi_barlPLus      ->Fill( phiOfMaxInsidBC , etaOfMaxInsidBC );
-		    //std::cout << "++ EB+ eta distance from SC seed is: " << etaOfMaxInsidBC << " phiOfMaxInsidBC  " << phiOfMaxInsidBC << " energy: " << energyOfMaxInsideBC << std::endl;
 		  } else if (theSCseed.ieta() <-2)
 		  {
 		    h_maxCryInLocMax_barlMinus          ->Fill( etaOfMaxInsidBC );
 		    h_maxCryInLocMaxVsPhi_barlMinus     ->Fill( phiOfMaxInsidBC , etaOfMaxInsidBC );
-		    //std::cout << "++ EB- eta distance from SC seed is: " << etaOfMaxInsidBC << " phiOfMaxInsidBC  " << phiOfMaxInsidBC << " energy: " << energyOfMaxInsideBC << std::endl;
 		  }
 
 		// basic cluster position
@@ -545,22 +543,22 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 		h_phiBCminusPhiSeed_barl  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() );
 		h_etaBCminusEtaSeed_barl  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
 		h_absEtaBCminusAbsEtaSeed_barl  -> Fill( fabs((*bcIt)->eta())   -  fabs((*scIt->seed()).eta())  );
-		h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );
+		h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , fabs((*bcIt)->eta()) - fabs((*scIt->seed()).eta()) );
 		if ( fabs(theSCseed.ieta()) <= 25 ){
 		  h_phiBCminusPhiSeed_barlm1  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() ); h_etaBCminusEtaSeed_barlm1  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
-		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );
+		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , fabs((*bcIt)->eta()) - fabs((*scIt->seed()).eta()) );
 		  h_absEtaBCminusAbsEtaSeed_barlm1  -> Fill( fabs((*bcIt)->eta())  -  fabs((*scIt->seed()).eta())   );	} 
 		else if	    ( 25<fabs(theSCseed.ieta()) &&  fabs(theSCseed.ieta()) <= 45 ){
 		  h_phiBCminusPhiSeed_barlm2  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() ); h_etaBCminusEtaSeed_barlm2  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
-		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );		
+		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , fabs((*bcIt)->eta()) - fabs((*scIt->seed()).eta()) );		
 		  h_absEtaBCminusAbsEtaSeed_barlm2  -> Fill( fabs((*bcIt)->eta())  - fabs((*scIt->seed()).eta()) ); } 
 		else if	    ( 45<fabs(theSCseed.ieta()) &&  fabs(theSCseed.ieta()) <= 65 ){
 		  h_phiBCminusPhiSeed_barlm3  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() ); h_etaBCminusEtaSeed_barlm3  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
-		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );		
+		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , fabs((*bcIt)->eta()) - fabs((*scIt->seed()).eta()) );		
 		  h_absEtaBCminusAbsEtaSeed_barlm3  -> Fill( fabs((*bcIt)->eta()) - fabs((*scIt->seed()).eta())  );} 
 		else if	    ( 65<fabs(theSCseed.ieta()) &&  fabs(theSCseed.ieta()) <= 85 ){
 		  h_phiBCminusPhiSeed_barlm4  -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() ); h_etaBCminusEtaSeed_barlm4  -> Fill( (*bcIt)->eta() - (*scIt->seed()).eta() );
-		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , (*bcIt)->eta() - (*scIt->seed()).eta() );
+		  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4   -> Fill( (*bcIt)->phi() - (*scIt->seed()).phi() , fabs((*bcIt)->eta()) - fabs((*scIt->seed()).eta()) );
 		  h_absEtaBCminusAbsEtaSeed_barlm4  -> Fill( fabs((*bcIt)->eta())  -  fabs((*scIt->seed()).eta()) );} 
 		
 	      }// loop over the BC's 
@@ -574,7 +572,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  float deltaPhi = scIt->phi()-phi_true;
 	  float deltaEta = scIt->eta()-etaEcal_true;
 	  float phiWidth = scIt->phiWidth();
-	  float energySC = scIt->rawEnergy();//gf
+	  float energySC = scIt->rawEnergy();
 	  float energySCtoCheck=0;
 
 	  float phiSize = getPhiSize(scIt,false);
@@ -583,7 +581,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  if ( deltaPhi < -pi) deltaPhi += twopi;
 	  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);
 	  if ( delta<0.1) { // match if dr<0.1
-	    h_scet_endc->Fill((scIt->energy()/cosh(scIt->eta()))/et_true);
+	    h_scet_endc->Fill((scIt->energy()/cosh(scIt->eta()))/et_true); // using: h_scet_barl as counter of EE matched photons
 	    h_EoverEtrue_endc->Fill(scIt->energy()/(*p)->momentum().e());
 	    h_phiWidth_endc->Fill(phiWidth);
 	    h_phiWidthVsE_endc->Fill(phiWidth,(*p)->momentum().e());	  
@@ -607,10 +605,12 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	      } // loop over crystals of the SC
 	    // std::cout << "EE energySC: " << energySC << " energySCtoCheck: " << energySCtoCheck << std::endl;
 	    // unresolved: energySC > energySCtoCheck???
-	  }// if matching
-	}
-      }
-      
+	  }// if SC matches one MC particle 
+	}// if in EE and Et>20 GeV 
+      }// loop over EE Sc's
+
+
+      // still within loop over MC particles
       // special treatment if current MCparticle is a photon
       // match also to photon object
       if ((*p)->pdg_id()==22) {
@@ -629,10 +629,10 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	      h_E5x5overEtrueVsEphoEtrue_barl->Fill(phoIt->e5x5()/(*p)->momentum().e(),phoIt->energy()/(*p)->momentum().e());
 	      if (phoIt->r9()>0.94) { // r9 cut is 0.94 for EB and 0.95 for EE  
 		h_E5x5R9overEtrue_barl->Fill(phoIt->e5x5()/(*p)->momentum().e());
-		h_PhoER9overEtrue_barl->Fill(phoIt->energy()/(*p)->momentum().e());
+		h_PhoER9overEtrue_barl->Fill(phoIt->energy()/(*p)->momentum().e()); // counter r9 EB
 	      } else {
 		h_E5x5notR9overEtrue_barl->Fill(phoIt->e5x5()/(*p)->momentum().e());
-		h_PhoEnotR9overEtrue_barl->Fill(phoIt->energy()/(*p)->momentum().e());
+		h_PhoEnotR9overEtrue_barl->Fill(phoIt->energy()/(*p)->momentum().e()); // counter !r9 EB
 	      }
 	      isEB++;
 	    }
@@ -640,7 +640,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	      h_PhoEoverEtrue_endc->Fill(phoIt->energy()/(*p)->momentum().e());
 	      h_E5x5overEtrue_endc->Fill(phoIt->e5x5()/(*p)->momentum().e());
 	      h_E5x5overEtrueVsEphoEtrue_endc->Fill(phoIt->e5x5()/(*p)->momentum().e(),phoIt->energy()/(*p)->momentum().e());
-	      if (phoIt->r9()>0.95) { // r9 cut is 0.94 for EB and 0.95 for EE  
+	      if (phoIt->r9()>0.94) { // r9 cut is 0.94 for EB and 0.95 for EE  
 		h_E5x5R9overEtrue_endc->Fill(phoIt->e5x5()/(*p)->momentum().e());
 		h_PhoER9overEtrue_endc->Fill(phoIt->energy()/(*p)->momentum().e());
 	      } else {
@@ -705,23 +705,23 @@ SCwithPUAnalysis::beginJob()
 
   edm::Service<TFileService> fs;
 
-  h_scet_barl = fs->make<TH1F>("h_scet_barl","SC ET over true, barrel; EB: E_{T,superC}/E_{T,true}",90,0.75,1.2);
-  h_scet_endc = fs->make<TH1F>("h_scet_endc","SC ET over true, endcap; EE: E_{T,superC}/E_{T,true}",90,0.75,1.2);
+  h_scet_barl = fs->make<TH1F>("h_scet_barl","SC ET over true, barrel; EB: E_{T,superC}/E_{T,true}",90,0.75,1.2);  // using: h_scet_barl as counter of EB matched photons 
+  h_scet_endc = fs->make<TH1F>("h_scet_endc","SC ET over true, endcap; EE: E_{T,superC}/E_{T,true}",90,0.75,1.2);  // using: h_scet_endc as counter of EE matched photons 
   h_EoverEtrue_barl = fs->make<TH1F>("h_EoverEtrue_barl","E_SC/Etrue, barrel; EB: E_{superC}/E_{true}",90,0.75,1.2);
   h_EoverEtrue_endc = fs->make<TH1F>("h_EoverEtrue_endc","E_SC/Etrue, endcap; EE: E_{superC}/E_{true}",90,0.75,1.2);
   h_E5x5overEtrue_barl = fs->make<TH1F>("h_E5x5overEtrue_barl","E5x5/Etrue, barrel; EB: E_{5x5}/E_{true}",90,0.75,1.2);
   h_PhoEoverEtrue_barl = fs->make<TH1F>("h_PhoEoverEtrue_barl","E_Photon/Etrue, barrel; EB: E_{photon}/E_{true}",90,0.75,1.2);
   h_E5x5R9overEtrue_barl = fs->make<TH1F>("h_E5x5R9overEtrue_barl","E5x5/Etrue for R9>0.94, barrel; EB: E_{5x5, r9>0.94}/E_{true}",90,0.75,1.2);
-  h_PhoER9overEtrue_barl = fs->make<TH1F>("h_PhoER9overEtrue_barl","E_Photon/Etrue for R9>0.94, barrel; EB: E_{photon, r9>0.94}/E_{true}",90,0.75,1.2);
+  h_PhoER9overEtrue_barl = fs->make<TH1F>("h_PhoER9overEtrue_barl","E_Photon/Etrue for R9>0.94, barrel; EB: E_{photon, r9>0.94}/E_{true}",90,0.75,1.2); // counter r9 EB
   h_E5x5notR9overEtrue_barl = fs->make<TH1F>("h_E5x5notR9overEtrue_barl","E5x5/Etrue for R9<0.94, barrel; EB: E_{5x5, r9<0.94}/E_{true}",90,0.75,1.2);
-  h_PhoEnotR9overEtrue_barl = fs->make<TH1F>("h_PhoEnotR9overEtrue_barl","E_Photon/Etrue for R9<0.94, barrel; EB: E_{photon, r9<0.94}/E_{true}",90,0.75,1.2);
+  h_PhoEnotR9overEtrue_barl = fs->make<TH1F>("h_PhoEnotR9overEtrue_barl","E_Photon/Etrue for R9<0.94, barrel; EB: E_{photon, r9<0.94}/E_{true}",90,0.75,1.2); // counter !r9 EB
   h_E5x5overEtrue_endc = fs->make<TH1F>("h_E5x5overEtrue_endc","E5x5/Etrue, endcap; EE: E_{5x5}/E_{true}",90,0.75,1.2);
   h_PhoEoverEtrue_endc = fs->make<TH1F>("h_PhoEoverEtrue_endc","E_Photon/Etrue, endcap; EE: E_{photon}/E_{true}",90,0.75,1.2);
   h_E5x5R9overEtrue_endc = fs->make<TH1F>("h_E5x5R9overEtrue_endc","E5x5/Etrue for R9>0.95, endcap; EE: E_{5x5, r9>0.95}/E_{true}",90,0.75,1.2);
-  h_PhoER9overEtrue_endc = fs->make<TH1F>("h_PhoER9overEtrue_endc","E_Photon/Etrue for R9>0.95, endcap; EE: E_{photon, r9>0.95}/E_{true}",90,0.75,1.2);
+  h_PhoER9overEtrue_endc = fs->make<TH1F>("h_PhoER9overEtrue_endc","E_Photon/Etrue for R9>0.95, endcap; EE: E_{photon, r9>0.95}/E_{true}",90,0.75,1.2); // counter r9 EE
   h_E5x5notR9overEtrue_endc = fs->make<TH1F>("h_E5x5notR9overEtrue_endc","E5x5/Etrue for R9<0.95, endcap; EE: E_{5x5, r9<0.95}/E_{true}",90,0.75,1.2);
-  h_PhoEnotR9overEtrue_endc = fs->make<TH1F>("h_PhoEnotR9overEtrue_endc","E_Photon/Etrue for R9<0.95, endcap; EE: E_{photon, r9<0.95}/E_{true}",90,0.75,1.2);
-  h_nVtx = fs->make<TH1F>("h_nVtx","no. of primary vertices; num vertices reco",30,0.,30.);
+  h_PhoEnotR9overEtrue_endc = fs->make<TH1F>("h_PhoEnotR9overEtrue_endc","E_Photon/Etrue for R9<0.95, endcap; EE: E_{photon, r9<0.95}/E_{true}",90,0.75,1.2); // counter !r9 EE
+  h_nVtx = fs->make<TH1F>("h_nVtx","no. of primary vertices; num vertices reco",30,0.,30.);  // usig h_nVtx  histogram can be used as a counter of events 
   h_dzVtx = fs->make<TH1F>("h_dzVtx","delta_z for reconstructed PV w.r.t. true PV",200,-5.,5.);
   h_mHiggs_EBEB = fs->make<TH1F>("h_mHiggs_EBEB","2 photon invariant mass, EBEB; EB-EB: m_{#gamma#gamma} GeV/c^{2}",120,100.,140.);
   h_mHiggs_EBEE = fs->make<TH1F>("h_mHiggs_EBEE","2 photon invariant mass, EBEE; EB-EE: m_{#gamma#gamma} GeV/c^{2}",120,100.,140.);
@@ -763,23 +763,23 @@ SCwithPUAnalysis::beginJob()
   h_phiBCminusPhiSeed_barl= fs->make<TH1F>("h_phiBCminusPhiSeed_barl","h_phiBCminusPhiSeed_barl; EB #phi_{BC} - #phi_{SCseed}", 80,-(6.28/360*20),(6.28/360*20)); 
   h_etaBCminusEtaSeed_barl= fs->make<TH1F>("h_etaBCminusEtaSeed_barl","h_etaBCminusEtaSeed_barl; EB #eta_{BC} - #eta_{SCseed}", 60,-(6.28/360*3),(6.28/360*3)); 
   h_absEtaBCminusAbsEtaSeed_barl= fs->make<TH1F>("h_absEtaBCminusAbsEtaSeed_barl","h_absEtaBCminusAbsEtaSeed_barl; EB |#eta_{BC}| - |#eta_{SCseed}|", 60,-(6.28/360*3),(6.28/360*3)); 
-  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl;  EB #phi_{BC} - #phi_{SCseed}; EB #eta_{BC} - #eta_{SCseed}", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl;  EB #phi_{BC} - #phi_{SCseed}; EB |#eta_{BC}| - |#eta_{SCseed}| ", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
   h_phiBCminusPhiSeed_barlm1= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm1","h_phiBCminusPhiSeed_barl; EBm1  #phi_{BC} - #phi_{SCseed}", 80,-(6.28/360*20),(6.28/360*20)); 
   h_etaBCminusEtaSeed_barlm1= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm1","h_etaBCminusEtaSeed_barl; EBm1  #eta_{BC} - #eta_{SCseed}", 60,-(6.28/360*3),(6.28/360*3)); 
   h_absEtaBCminusAbsEtaSeed_barlm1= fs->make<TH1F>("h_absEtaBCminusAbsEtaSeed_barlm1","h_absEtaBCminusAbsEtaSeed_barl; EBm1  |#eta_{BC}| - |#eta_{SCseed}|", 60,-(6.28/360*3),(6.28/360*3)); 
-  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl;  EBm1 #phi_{BC} - #phi_{SCseed}; EBm1 #eta_{BC} - #eta_{SCseed}", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm1","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barl;  EBm1 #phi_{BC} - #phi_{SCseed}; EBm1 |#eta_{BC}| - |#eta_{SCseed}|", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
   h_phiBCminusPhiSeed_barlm2= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm2","h_phiBCminusPhiSeed_barlm2; EBm2 #phi_{BC} - #phi_{SCseed}", 80,-(6.28/360*20),(6.28/360*20)); 
   h_etaBCminusEtaSeed_barlm2= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm2","h_etaBCminusEtaSeed_barlm2; EBm2 #eta_{BC} - #eta_{SCseed}", 60,-(6.28/360*3),(6.28/360*3)); 
   h_absEtaBCminusAbsEtaSeed_barlm2= fs->make<TH1F>("h_absEtaBCminusAbsEtaSeed_barlm2","h_absEtaBCminusAbsEtaSeed_barlm2; EBm2 |#eta_{BC}| - |#eta_{SCseed}|", 60,-(6.28/360*3),(6.28/360*3)); 
-  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2;  EBm2  #phi_{BC} - #phi_{SCseed}; EBm2  #eta_{BC} - #eta_{SCseed}", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm2;  EBm2  #phi_{BC} - #phi_{SCseed}; EBm2  |#eta_{BC}| - |#eta_{SCseed}|", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
   h_phiBCminusPhiSeed_barlm3= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm3","h_phiBCminusPhiSeed_barlm3; EBm3  #phi_{BC} - #phi_{SCseed}", 80,-(6.28/360*20),(6.28/360*20)); 
   h_etaBCminusEtaSeed_barlm3= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm3","h_etaBCminusEtaSeed_barlm3; EBm3  #eta_{BC} - #eta_{SCseed}", 60,-(6.28/360*3),(6.28/360*3)); 
   h_absEtaBCminusAbsEtaSeed_barlm3= fs->make<TH1F>("h_absEtaBCminusAbsEtaSeed_barlm3","h_absEtaBCminusAbsEtaSeed_barlm3; EBm3  |#eta_{BC}| - |#eta_{SCseed}|", 60,-(6.28/360*3),(6.28/360*3)); 
-  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3;  EBm3  #phi_{BC} - #phi_{SCseed}; EBm3  #eta_{BC} - #eta_{SCseed}", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm3;  EBm3  #phi_{BC} - #phi_{SCseed}; EBm3  |#eta_{BC}| - |#eta_{SCseed}|", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
   h_phiBCminusPhiSeed_barlm4= fs->make<TH1F>("h_phiBCminusPhiSeed_barlm4","h_phiBCminusPhiSeed_barlm4; EBm4  #phi_{BC} - #phi_{SCseed}", 80,-(6.28/360*20),(6.28/360*20)); 
   h_etaBCminusEtaSeed_barlm4= fs->make<TH1F>("h_etaBCminusEtaSeed_barlm4","h_etaBCminusEtaSeed_barlm4; EBm4  #eta_{BC} - #eta_{SCseed}", 60,-(6.28/360*3),(6.28/360*3)); 
   h_absEtaBCminusAbsEtaSeed_barlm4= fs->make<TH1F>("h_absEtaBCminusAbsEtaSeed_barlm4","h_absEtaBCminusAbsEtaSeed_barlm4; EBm4  |#eta_{BC}| - |#eta_{SCseed}|", 60,-(6.28/360*3),(6.28/360*3)); 
-  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4;  EBm4  #phi_{BC} - #phi_{SCseed}; EBm4  #eta_{BC} - #eta_{SCseed}", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
+  h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4 = fs->make<TH2F>("h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4","h_phiBCminusPhiSeed_VS_etaBCminusEtaSeed_barlm4;  EBm4  #phi_{BC} - #phi_{SCseed}; EBm4  |#eta_{BC}| - |#eta_{SCseed}|", 20,-(6.28/360*20),(6.28/360*20), 20,-(6.28/360*3),(6.28/360*3));
 
   h_maxCryInDomino_barl           = fs->make<TH1F>("h_maxCryInDomino_barl","max Cry In Domino (barrel); i#eta", 5,-2,3); 
   h_maxCryInDominoVsPhi_barl      = fs->make<TH2F>("h_maxCryInDominoVsPhi_barl","max Cry In Domino Vs i#phi (barrel); EB i#eta_{BC} - i#eta_{SCseed}; EB i#phi_{BC} - i#phi_{SCseed}", 35,-17,18,5,-2,3); 
