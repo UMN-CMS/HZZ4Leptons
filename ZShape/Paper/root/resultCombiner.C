@@ -3,48 +3,108 @@
 #include "TMatrixT.h"
 #include "TVectorT.h"
 #include "stdio.h"
+#include "math.h"
+#include <vector>
 
 void readDataVector(const char * name, TVectorD& dv, double binLimits[][2] = 0);
 void readCovMatrix(const char * name, TMatrixT<double>& dv);
 
-void resultCombiner(const char * name_dv1, const char * name_cm1, const char * name_dv2, const char * name_cm2, const int length, const char * outputNameStub = "output")
+void resultCombiner(const char * name_dv1, const char * name_cm1, const int length1, const char * name_dv2, const char * name_cm2, const int length2, const char * outputNameStub = "output")
 {
-    TVectorD dv1(length), dv2(length);
-    TMatrixT<double> cm1(length, length), cm2(length, length);
-    double binLimits[length][2];
+    TVectorD dv1(length1), dv2(length2);
+    TMatrixT<double> cm1(length1, length1), cm2(length2, length2);
+    double binLimits1[length1][2], binLimits2[length2][2];
 
-    readDataVector(name_dv1, dv1, binLimits);
-    readDataVector(name_dv2, dv2);
+    readDataVector(name_dv1, dv1, binLimits1);
+    readDataVector(name_dv2, dv2, binLimits2);
 
     readCovMatrix(name_cm1, cm1);
     readCovMatrix(name_cm2, cm2);
 
-    TVectorD dv(2 * length);
-    for(int i = 0; i < 2 * length; i++)
+    std::vector<double*> binLimits;
+    std::vector<std::vector<int > > preU;
+    int i1 = 0, i2 = 0;
+    while(i1 < length1 || i2 < length2)
     {
-        dv[i] = (i < length) ? dv1[i] : dv2[i - length];
+        if(i1 < length1 && i2 < length2)
+        {
+            if((binLimits1[i1][1] + binLimits1[i1][0])/2 > binLimits2[i2][0] && (binLimits1[i1][1] + binLimits1[i1][0])/2 < binLimits2[i2][1])
+            {
+                binLimits.push_back(binLimits1[i1]);
+                std::vector<int> tmp;
+                tmp.push_back(i1);
+                tmp.push_back(i2);
+                preU.push_back(tmp);
+                i1++;
+                i2++;
+            }
+            else if((binLimits1[i1][1] + binLimits1[i1][0])/2 <= binLimits2[i2][0])
+            {
+                binLimits.push_back(binLimits1[i1]);
+                std::vector<int> tmp;
+                tmp.push_back(i1);
+                tmp.push_back(-1);
+                preU.push_back(tmp);
+                i1++;
+            }
+            else
+            {
+                binLimits.push_back(binLimits2[i2]);
+                std::vector<int> tmp;
+                tmp.push_back(-1);
+                tmp.push_back(i2);
+                preU.push_back(tmp);
+                i2++;
+            }
+        }
+        else if(i1 < length1 && i2 >= length2)
+        {
+            binLimits.push_back(binLimits1[i1]);
+            std::vector<int> tmp;
+            tmp.push_back(i1);
+            tmp.push_back(-1);
+            preU.push_back(tmp);
+            i1++;
+        }
+        else
+        {
+            binLimits.push_back(binLimits2[i2]);
+            std::vector<int> tmp;
+            tmp.push_back(-1);
+            tmp.push_back(i2);
+            preU.push_back(tmp);
+            i2++;
+        }
     }
 
-    TMatrixT<double> cm(2 * length, 2 * length), U(2 * length, length);
-    for(int i = 0; i < length; i++)
+    TVectorD dv(length1 + length2);
+    for(int i = 0; i < length1 + length2; i++)
     {
-        for(int j = 0; j < length; j++)
+        dv[i] = (i < length1) ? dv1[i] : dv2[i - length1];
+    }
+
+    TMatrixT<double> cm(length1 + length2, length1 + length2), U(length1 + length2, preU.size());
+    for(int i = 0; i < length1; i++)
+    {
+        for(int j = 0; j < length1; j++)
         {
             cm[i][j] = cm1[i][j];
         }
     }
-    for(int i = length; i < 2 * length; i++)
+    for(int i = length1; i < length1 + length2; i++)
     {
-        for(int j = length; j < 2 * length; j++)
+        for(int j = length1; j < length1 + length2; j++)
         {
-            cm[i][j] = cm2[i - length][j - length];
+            cm[i][j] = cm2[i - length1][j - length1];
         }
     }
-    for(int i = 0; i < length; i++)
+
+    for(unsigned int i = 0; i < preU.size(); i++)
     {
-        U[i][i] = 1;
-        U[i + length][i] = 1;
+        if(preU[i][0] >= 0) U[preU[i][0]][i] = 1;
+        if(preU[i][1] >= 0) U[preU[i][1] + length1][i] = 1;
     }
+
     TMatrixT<double> Ut(U);
     Ut.T();
 
