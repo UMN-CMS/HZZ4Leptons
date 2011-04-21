@@ -15,6 +15,7 @@ process.maxEvents = cms.untracked.PSet(
     )
 
 process.source = cms.Source("PoolSource",
+                            duplicateCheckMode = cms.untracked.string('noDuplicateCheck'),
     fileNames = cms.untracked.vstring("file:/data2/rekovic/condor_powheg/powhegz_LHAGLUE10900-1.root" )
 )
 

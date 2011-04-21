@@ -15,7 +15,8 @@ process.maxEvents = cms.untracked.PSet(
     )
 
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring("" )
+                            duplicateCheckMode = cms.untracked.string('noDuplicateCheck'),
+                            fileNames = cms.untracked.vstring("" )
 )
 
 process.TFileService = cms.Service("TFileService",
