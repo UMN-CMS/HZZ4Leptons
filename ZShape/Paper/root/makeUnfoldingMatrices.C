@@ -78,14 +78,30 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
   // of AN-10-367/AN-11-xxx one needs to use the YZTL_vs_YZ/PtTL_vs_PtZ before Eff and Acc
   // are applied ==> move to the "All" folder
   
+
+  // at least for PT this is the way to go  
   std::string prefix("mcEff/");
-  std::string definition=std::string("All");
-  std::string cut("");
-  if(isRapidity) plot=std::string("YZTL_vs_YZ"); // bin migration histogram for rapidity
-  else           plot=std::string("PtTL_vs_PtZ"); // bin migration histogram for Pt
+  std::string definition=std::string("MUON-MUON-G20");
+  std::string cut("C01-GPT20/");
+  std::string plot=std::string("YZTL_vs_YZ"); // bin migration histogram for rapidity
+
+  if(isRapidity) {
+    // so far Thu Apr 28 17:36:57 CEST 2011 matrices were done like this:
+    prefix = std::string("mcEff/");
+    definition=std::string("All");
+    cut = str::string("");
+    //definition=std::string("ECAL80-ECAL95");
+    //std::string cut("C01-PT10/");
+    plot=std::string("YZTL_vs_YZ"); // bin migration histogram for rapidity
+  }
+  else{
+    plot=std::string("PtTL_vs_PtZ"); // bin migration histogram for Pt
+    std::string cut("C01-GPT20/");
+    definition=std::string("MUON-MUON-G20");
+  }
   std::string plotName = prefix + definition;
   plotName = plotName + std::string("/");    plotName = plotName + cut;
-  plotName = plotName + std::string("/");    plotName = plotName + plot;
+  /*plotName = plotName + std::string("/");*/    plotName = plotName + plot;
   std::cout << "\tUsing directly the total plot:     "<< plotName << endl;
   TH2F * histoMigration  = (TH2F*) theEffAccInpuntFile->Get(plotName.c_str());
   TH2F * histoMigrationFolded; // this is for folded rapidity matrix 
@@ -277,8 +293,8 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
      //limitNumberBinY=50;
      int a=313;
    } else {
-     limitNumberBinX=18;
-     limitNumberBinY=18;
+     limitNumberBinX=19;
+     limitNumberBinY=19;
    }
 
    int lowestBinX      = histoMatrix->GetNbinsX()/2 - min(histoMatrix->GetNbinsX()/2, limitNumberBinX);
@@ -316,7 +332,7 @@ int makeUnfoldingMatrices(std::string effAccFileInputFile, std::string unfolding
      }
      
      //http://root.cern.ch/root/html/tutorials/matrix/invertMatrix.C.html
-  //this is the smearing matrix: it multiplies the unsmeared vector to give the smeared vector
+     //this is the smearing matrix: it multiplies the unsmeared vector to give the smeared vector
   gSystem->Load("libMatrix");
   //TMatrixD MigrationMatrix(0, histoMatrix->GetNbinsX()-1, 0, histoMatrix->GetNbinsX()-1, migration,"");
   TMatrixD MigrationMatrix(0, (highestBinX-lowestBinX)-1, 0, (highestBinY-lowestBinY)-1, migration,"");
