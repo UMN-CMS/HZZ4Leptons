@@ -190,7 +190,7 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
   std::cout << "\n\n\n covariance matrix (num errors in file) " << errorsCounter << " x " << errorsCounter << std::endl;
   std::cout << " unfolding  matrix (from .root) " << unfoldingMatrix.GetNcols() << " x " << unfoldingMatrix.GetNrows() << std::endl;
   
-  bool addSystematicsOnDiagonal(false);
+  bool addSystematicsOnDiagonal(true);
   if(addSystematicsOnDiagonal) std::cout << " adding systematic errors in quadrature to the diagonal of the cov matrix\n" << std::endl;
   else                         std::cout << " NOT adding systematic errors in quadrature to the diagonal of the cov matrix\n" << std::endl;
   for(int i=0; i<errorsCounter; i++){
