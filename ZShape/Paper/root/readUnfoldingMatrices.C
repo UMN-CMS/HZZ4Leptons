@@ -97,13 +97,13 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
 
   TMatrixD unfoldingMatrixRaw           = *((TMatrixD*) theUnfoldingMatrix->Clone("theUnfoldingMatrix")) ;
   // necessary only for pt since results have one less bin 
-  unfoldingMatrixRaw.ResizeTo(18,18);
+  //unfoldingMatrixRaw.ResizeTo(18,18);
   TMatrixD unfoldingMatrix = (TMatrixD)unfoldingMatrixRaw;
   // necessary only for pt since results have one less bin 
-  unfoldingMatrix.ResizeTo(18,18);
+  //unfoldingMatrix.ResizeTo(18,18);
   TMatrixD transpUnfoldingMatrix     =  (        theUnfoldingMatrix->Transpose((*theUnfoldingMatrix))        );
   // necessary only for pt since results have one less bin 
-  transpUnfoldingMatrix.ResizeTo(18,18);
+  //transpUnfoldingMatrix.ResizeTo(18,18);
 
   ofstream myfileData;
   myfileData.open ("originalDataTextFile.txt");
@@ -112,6 +112,7 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
 
   // import total errors
   Double_t errorsArray[1000];
+  Double_t systErrosArray[1000];
   int   errorsCounter(0);
   FILE* f=fopen(file,"r");
   if (f==0) {
@@ -128,29 +129,26 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
       //      int ate, atetotal=0;
       int found=sscanf(line," %d %f %f %f %f %f",&i,&a,&b,&c,&d,&e);
 
-      //errorsArray[errorsCounter] = sqrt(e*e+d*d); 
-      //errorsArray[errorsCounter] = e*e+d*d; // sum statistical and syst in quadrature 
-      //errorsArray[errorsCounter] = e*e; // look at systematic alone
-      errorsArray[errorsCounter] = d*d; // look at statistical alone
-      std::cout << "errors2 directly from unfolded distribution - bin : " << i  <<"\t" << " err2: " << sqrt(errorsArray[errorsCounter])  << std::endl;    
+      errorsArray[errorsCounter] = d*d; // use statistical to compute covariance matrix
+      systErrosArray[errorsCounter] = d*d+e*e;
+      std::cout << "stat errors2 directly from unfolded distribution - bin : " << i  <<"\t" << " err2: " << sqrt(errorsArray[errorsCounter])  << std::endl;    
       myfileData << scientific << progressive << "\t"
-	     << a << "\t" 
-	     << b << "\t" 
-	     << c << "\t" 
-	//<< sqrt(e*e+d*d) 
-	     << sqrt(d*d) 
-	     << std::endl;
+		 << a << "\t" //bin_min
+		 << b << "\t"  //bin_max
+		 << c << "\t" //value
+	//<< sqrt(d*d) //staterr
+	//<<   sqrt(e*e) //systerr
+		 <<   sqrt(e*e+d*d) //TOTterr
+		 << std::endl;
       progressive++;
       errorsCounter++;
       if (found!=3) continue;
   }
   fclose(f);
-  
-  // this is the file with the unfolded results that I start from 
+  // this is the file contains the erros of the smeared results that I start from 
   myfileData.close();
 
   TVectorD totalErrorsVector; totalErrorsVector.Use(errorsCounter,errorsArray);
-
   TMatrixD errorsOnDiagonalMatrix(errorsCounter,errorsCounter);  
   TMatrixDDiag diag1(errorsOnDiagonalMatrix); diag1 = totalErrorsVector;
   for(int i=0; i<errorsCounter; i++){
@@ -158,10 +156,9 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
       if( errorsOnDiagonalMatrix(i,j) !=0){       std::cout << "errorsOnDiagonal: " << i << "\t" << j << "\t" << errorsOnDiagonalMatrix(i,j) << std::endl;       }
     }}
   
+
   gStyle->SetPalette(1);
-  
   // manipulate erros and matrices to get correlation matrix
-  
   TCanvas * theErrorsCanvas = new TCanvas("theErrors^2 from unfolded results","theErrors^2 from unfolded results",250,250,1050,850);  
   theErrorsCanvas->cd();
   errorsOnDiagonalMatrix.Draw("colz");
@@ -183,19 +180,34 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
   covarianceMatrix.Draw("colz");
   //covarianceMatrix.Draw("text same");
 
+  
+  // write out text output
+  // by default systematic errors are added in quadrature to the diagonal
+  // of the covariance matrix, which has been obtained using only stat errors
   ofstream myfile;
   myfile.open ("covarianceTextFile.txt");
 
   std::cout << "\n\n\n covariance matrix (num errors in file) " << errorsCounter << " x " << errorsCounter << std::endl;
   std::cout << " unfolding  matrix (from .root) " << unfoldingMatrix.GetNcols() << " x " << unfoldingMatrix.GetNrows() << std::endl;
   
+  bool addSystematicsOnDiagonal(false);
+  if(addSystematicsOnDiagonal) std::cout << " adding systematic errors in quadrature to the diagonal of the cov matrix\n" << std::endl;
+  else                         std::cout << " NOT adding systematic errors in quadrature to the diagonal of the cov matrix\n" << std::endl;
   for(int i=0; i<errorsCounter; i++){
     for(int j=0; j<errorsCounter; j++){
       //std::cout << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;     
-      myfile << scientific << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;
-      if(i==j) std::cout << "cov matrix diagonal (sig^2): " << covarianceMatrix(i,j) << "\t sig: " << sqrt(covarianceMatrix(i,j)) << std::endl;
-    }
-  }
+      if(addSystematicsOnDiagonal) {
+	float theMatrixElement = covarianceMatrix(i,j);
+	if(i==j) theMatrixElement+= systErrosArray[i]*systErrosArray[i];
+	  myfile << scientific << (i+1) << "\t" << (j+1) << "\t" << theMatrixElement << std::endl;
+	  if(i==j) std::cout << "cov matrix diagonal (sig^2): " << theMatrixElement << "\t sig: " << sqrt(theMatrixElement) << std::endl;
+      }
+      else{
+	myfile << scientific << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;
+	if(i==j) std::cout << "cov matrix diagonal (sig^2): " << covarianceMatrix(i,j) << "\t sig: " << sqrt(covarianceMatrix(i,j)) << std::endl;
+      }
+    }// loop on matrixIndex
+  }// loop on matrixIndex
  
   myfile.close();
   
