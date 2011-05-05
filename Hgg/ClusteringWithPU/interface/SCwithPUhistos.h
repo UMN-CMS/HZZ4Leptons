@@ -129,6 +129,7 @@ public:
   TH2F *h_EoverEtrue_VS_phiWidth_barl;
   TH2F *h_EoverEtrue_VS_phiSize_barl;
   TH2F *h_EoverEtrue_VS_DeltaPhi_TwoCl_barl;
+  TH2F *h_EoverEtrue_VS_DeltaPhibcminObcMax_barl;
   TH2F *h_EoverEtrue_VS_bcminObcMax_barl;
 
 }; 

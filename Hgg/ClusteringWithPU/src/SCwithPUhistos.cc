@@ -108,10 +108,11 @@ void SCwithPUhistos::Book(TFileDirectory& fs) {
   h_maxCryInLocMaxVsPhi_barlMinus = fs.make<TH2F>("h_maxCryInLocalMaxVsPhi_barlMinus","max Cry In Local Max Vs i#phi (EB-); EB i#phi_{BC} - i#phi_{SCseed}; EB-  i#eta - i#eta_{SCseed}", 35,-17,18,5,-2,3); 
 
   h_numBC = fs.make<TH1F>("h_numBC","num BC in SC; num BC in SC",10,0,10); ;
-  h_EoverEtrue_VS_phiWidth_barl         = fs.make<TH2F>("h_EoverEtrue_VS_phiWidth_barl","E_SC/Etrue vs #sigma_{#phi#phi} (EB); EB: E_{photon}/E_{true}; EB: i#phi width",30,0.75,1.2,10,0,0.25); 
-  h_EoverEtrue_VS_phiSize_barl = fs.make<TH2F>("h_EoverEtrue_VS_phiSize_barl","E_SC/Etrue vs  #phi size (EB);  EB: E_{photon}/E_{true}; EB: i#phi size",30,0.75,1.2,35,0,34); 
-  h_EoverEtrue_VS_bcminObcMax_barl = fs.make<TH2F>("h_EoverEtrue_VS_bcminObcMax_barl","E_SC/Etrue VS E_{BC min}/E_{BC Max} (two BC - EB); EB: E_{photon}/E_{true}; EB: E_{BC min}/E_{BC Max}",30,0.75,1.2,10,0,1);
-  h_EoverEtrue_VS_DeltaPhi_TwoCl_barl = fs.make<TH2F>("h_EoverEtrue_VS_DeltaPhi_TwoCl_barl","E_SC/Etrue VS |#phi_{Max}-#phi_{min}|; EB: E_{photon}/E_{true}; EB: |#phi_{Max}-#phi_{min}|",30,0.75,1.2,10,0,0.3);
+  h_EoverEtrue_VS_phiWidth_barl         = fs.make<TH2F>("h_EoverEtrue_VS_phiWidth_barl","E_SC/Etrue vs #sigma_{#phi#phi} (EB); EB: E_{photon}/E_{true}; EB: i#phi width",45,0.75,1.2,10,0,0.25); 
+  h_EoverEtrue_VS_phiSize_barl = fs.make<TH2F>("h_EoverEtrue_VS_phiSize_barl","E_SC/Etrue vs  #phi size (EB);  EB: E_{photon}/E_{true}; EB: i#phi size",45,0.75,1.2,35,0,34); 
+  h_EoverEtrue_VS_bcminObcMax_barl = fs.make<TH2F>("h_EoverEtrue_VS_bcminObcMax_barl","E_SC/Etrue VS E_{BC min}/E_{BC Max} (two BC - EB); EB: E_{photon}/E_{true}; EB: E_{BC min}/E_{BC Max}",45,0.75,1.2,10,0,1);
+  h_EoverEtrue_VS_DeltaPhi_TwoCl_barl = fs.make<TH2F>("h_EoverEtrue_VS_DeltaPhi_TwoCl_barl","E_SC/Etrue VS |#phi_{Max}-#phi_{min}|; EB: E_{photon}/E_{true}; EB: |#phi_{Max}-#phi_{min}|",45,0.75,1.2,10,0,0.3);
+  h_EoverEtrue_VS_DeltaPhibcminObcMax_barl = fs.make<TH2F>("h_EoverEtrue_VS_DeltaPhibcminObcMax_barl","E_SC/Etrue VS |#phi_{Max}-#phi_{min}|; EB: E_{photon}/E_{true}; EB: |#phi_{Max}-#phi_{min}|",45,0.75,1.2,10,0,0.3);
 
 }
 
@@ -124,8 +125,6 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
   
   // initial photon true variables 
   float phi_true=(*particle1)->momentum().phi();
-  float eta_true=(*particle1)->momentum().eta();
-  //float etaEcal_true = etaTransformation(eta_true, (*particle1)->production_vertex()->position().z()/10. );
   float et_true = (*particle1)->momentum().e()/cosh((*particle1)->momentum().eta());
   
   // choose which energy to use in SC
@@ -299,13 +298,18 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
     } // end if numBC==2    
     
     if(numOfBC>1){
-      float emin(9999); float eMax(-9999);
+      float emin(9999); float eMax(-9999); float phimin(0); float phiMax(0);
       for(reco::CaloCluster_iterator bcIt = sc1->clustersBegin(); bcIt!=sc1->clustersEnd(); bcIt++){
 	float energy = (*bcIt)->energy();
-	if(energy>eMax) eMax=energy;
-	if(energy<emin) emin=energy;
+	float phi   = (*bcIt)->phi();
+	if(energy>eMax) {eMax=energy; phiMax=phi;}
+	if(energy<emin) {emin=energy; phimin=phi;}
       }
       h_EoverEtrue_VS_bcminObcMax_barl->Fill(energySc/cosh(sc1->eta())/et_true, emin/eMax);
+      float deltaPhi = phiMax-phimin;
+      if ( deltaPhi > PI ) deltaPhi -= TWOPI;
+      if ( deltaPhi < -PI) deltaPhi += TWOPI;
+      h_EoverEtrue_VS_DeltaPhibcminObcMax_barl->Fill(energySc/cosh(sc1->eta())/et_true, std::fabs(deltaPhi));
     }
     
 
