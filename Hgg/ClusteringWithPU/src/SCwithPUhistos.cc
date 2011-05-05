@@ -4,10 +4,24 @@
 #include "CLHEP/Units/GlobalPhysicalConstants.h"
 
 
+SCwithPUhistos::SCwithPUhistos(bool useRawEnergy) { 
+  useRawEnergy_ = useRawEnergy;
+}
+
+SCwithPUhistos::SCwithPUhistos() { 
+  useRawEnergy_ = false;
+}
+
+void SCwithPUhistos::setRawEnergy(bool useRawEnergy){
+  useRawEnergy_ = useRawEnergy;
+}
+
 void SCwithPUhistos::Book(TFileDirectory& fs) {
+  
+  if(useRawEnergy_) std::cout << "\n[SCwithPUhistos] raw energy of SC will be used\n" << std::endl;
+  else              std::cout << "\n[SCwithPUhistos] corrected energy of SC will be used\n" << std::endl;
 
   h_scet_barl = fs.make<TH1F>("h_scet_barl","SC ET over true, barrel; EB: E_{T,superC}/E_{T,true}",90,0.75,1.2);  // using: h_scet_barl as counter of EB matched photons 
-  //std::cout << "histo wtih name: " << h_scet_barl->GetName() << std::endl;
   h_scet_endc = fs.make<TH1F>("h_scet_endc","SC ET over true, endcap; EE: E_{T,superC}/E_{T,true}",90,0.75,1.2);  // using: h_scet_endc as counter of EE matched photons 
   h_EoverEtrue_barl = fs.make<TH1F>("h_EoverEtrue_barl","E_SC/Etrue, barrel; EB: E_{superC}/E_{true}",90,0.75,1.2);
   h_EoverEtrue_endc = fs.make<TH1F>("h_EoverEtrue_endc","E_SC/Etrue, endcap; EE: E_{superC}/E_{true}",90,0.75,1.2);
@@ -107,28 +121,25 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
   float eta_true=(*particle1)->momentum().eta();
   float etaEcal_true = etaTransformation(eta_true, (*particle1)->production_vertex()->position().z()/10. );
   float et_true = (*particle1)->momentum().e()/cosh((*particle1)->momentum().eta());
-
-
+  
+  // choose which energy to use in SC
+  float energyScRAW  = sc1->rawEnergy();
+  float energyScCorr = sc1->energy();
+  
   // this is a SC in the EB case
-  if (fabs(sc1->eta())<1.4442 && sc1->energy()/cosh(sc1->eta())>20.) {
+  if (fabs(sc1->eta())<1.4442 && energyScCorr/cosh(sc1->eta())>20.) {
     
-
     // perform SC-MCparticle matching
     float deltaPhi = sc1->phi()-phi_true;
-    //float deltaEta = sc1->eta()-etaEcal_true;
     float phiWidth = sc1->phiWidth();          // covariance of cluster in phi
-    // we want to look at the absolute extension too... phi_MAX-phi_min 
-    // float energySC = sc1->energy();
-    float energySC = sc1->rawEnergy();
     float energySCtoCheck=0;
-  
+    
     float phiSize = getPhiSize(sc1,true);
     if ( deltaPhi > PI ) deltaPhi -= TWOPI;
     if ( deltaPhi < -PI) deltaPhi += TWOPI;
-    //  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);  
   
-    h_scet_barl->Fill((sc1->energy()/cosh(sc1->eta()))/et_true);   // using: h_scet_barl as counter of EB matched photons
-    h_EoverEtrue_barl->Fill(sc1->energy()/(*particle1)->momentum().e());    //        supercluster that matches a MC-truth particle 
+    h_scet_barl->Fill((energyScCorr/cosh(sc1->eta()))/et_true);   // using: h_scet_barl as counter of EB matched photons
+    h_EoverEtrue_barl->Fill(energyScCorr/(*particle1)->momentum().e());    //        supercluster that matches a MC-truth particle 
     h_phiWidth->Fill(phiWidth);
     h_phiWidthVsE->Fill(phiWidth,(*particle1)->momentum().e());	  
     h_phiSize->Fill(phiSize);
@@ -151,26 +162,26 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
 					       (*idsIt).first );
 	float currEbEnergy    = (ebRecHits->find( (*idsIt).first ))->energy();
 	energySCtoCheck       += currEbEnergy;
-	h_phiShape_barl       -> Fill(thePhiDistance, currEbEnergy/energySC);
-	h_absPhiShape_barl    -> Fill(fabs(thePhiDistance), currEbEnergy/energySC);
-	h_phiShapeVsE_barl    -> Fill(thePhiDistance, energySC , currEbEnergy/energySC);   
-	h_absPhiShapeVsE_barl -> Fill(fabs(thePhiDistance), energySC , currEbEnergy/energySC);   
+	h_phiShape_barl       -> Fill(thePhiDistance, currEbEnergy/energyScRAW);
+	h_absPhiShape_barl    -> Fill(fabs(thePhiDistance), currEbEnergy/energyScRAW);
+	h_phiShapeVsE_barl    -> Fill(thePhiDistance, energyScRAW , currEbEnergy/energyScRAW);   
+	h_absPhiShapeVsE_barl -> Fill(fabs(thePhiDistance), energyScRAW , currEbEnergy/energyScRAW);   
       
 	float theEtaDistance = getEtaDistance( (*sc1->seed()).seed() , 
 					       (*idsIt).first );
 	float theSeedEta = EBDetId ( (*sc1->seed()).seed().rawId() ).ieta();
 	// treat EB+ and EB- separately, give the sign of ieta; and make a symmetrized plot
-	h_etaShape_barl        -> Fill(theEtaDistance, currEbEnergy/energySC);
-	h_etaShape_barlSymm    -> Fill( signum(theSeedEta) *theEtaDistance, currEbEnergy/energySC);
-	h_etaPhiShape_barl     -> Fill(theEtaDistance, thePhiDistance, currEbEnergy/energySC);
-	h_etaPhiShape_barlSymm -> Fill( signum(theSeedEta) *theEtaDistance, thePhiDistance, currEbEnergy/energySC);
+	h_etaShape_barl        -> Fill(theEtaDistance, currEbEnergy/energyScRAW);
+	h_etaShape_barlSymm    -> Fill( signum(theSeedEta) *theEtaDistance, currEbEnergy/energyScRAW);
+	h_etaPhiShape_barl     -> Fill(theEtaDistance, thePhiDistance, currEbEnergy/energyScRAW);
+	h_etaPhiShape_barlSymm -> Fill( signum(theSeedEta) *theEtaDistance, thePhiDistance, currEbEnergy/energyScRAW);
 	if ( theSeedEta>0 )  {
-	  h_etaShape_barlPLus    -> Fill(theEtaDistance, currEbEnergy/energySC);
-	  h_etaPhiShape_barlPLus -> Fill(theEtaDistance, thePhiDistance, currEbEnergy/energySC);
+	  h_etaShape_barlPLus    -> Fill(theEtaDistance, currEbEnergy/energyScRAW);
+	  h_etaPhiShape_barlPLus -> Fill(theEtaDistance, thePhiDistance, currEbEnergy/energyScRAW);
 	}
 	else{
-	  h_etaShape_barlMinus    -> Fill(theEtaDistance, currEbEnergy/energySC);
-	  h_etaPhiShape_barlMinus -> Fill(theEtaDistance, thePhiDistance, currEbEnergy/energySC);
+	  h_etaShape_barlMinus    -> Fill(theEtaDistance, currEbEnergy/energyScRAW);
+	  h_etaPhiShape_barlMinus -> Fill(theEtaDistance, thePhiDistance, currEbEnergy/energyScRAW);
 	}
       
 	// at each given phi [0... 34], heck where in eta max energy crystal occurs
@@ -184,22 +195,21 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
 	
 	}
       } // loop over crystals of the SC
-  
+    
     for(int u=0; u<35; u++) {
       if (whereIsMaxInDomino[u]<-100) continue;
       h_maxCryInDomino_barl        -> Fill(whereIsMaxInDomino[u]);
       h_maxCryInDominoVsPhi_barl   -> Fill(u-17, whereIsMaxInDomino[u]);
     }
   
-    // std::cout << "size of BC clollection for this SC:  " << (sc1->clustersEnd() - sc1->clustersBegin() ) << std::endl; 
-    // looping on basic clusters within the Supercluster
+    // looping on basic clusters within the Supercluster    for(reco::CaloCluster_iterator bcIt = sc1->clustersBegin(); bcIt!=sc1->clustersEnd(); bcIt++)
     for(reco::CaloCluster_iterator bcIt = sc1->clustersBegin(); bcIt!=sc1->clustersEnd(); bcIt++)
       {
 	// fill the plots that follow only if the basic cluster is NOT the seed basic cluster
 	if (   EBDetId(   (*bcIt)->seed().rawId())  
 	       == EBDetId ( (*sc1->seed()).seed().rawId() )  
 	       ) continue;
-		
+	
 	EBDetId theBCSeed           = EBDetId(   (*bcIt)->seed().rawId());  // this is always SCseed? FIXme
 	EBDetId theSCseed           = EBDetId(   ( *(sc1->seed()) ).seed().rawId()  ) ;
 		
@@ -264,13 +274,13 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
   
 
   // this is a SC in the EE case
-  if (fabs(sc1->eta())>1.566 && fabs(sc1->eta())<2.5 && sc1->energy()/cosh(sc1->eta())>20.) {
+  if (fabs(sc1->eta())>1.566 && fabs(sc1->eta())<2.5 && energyScCorr/cosh(sc1->eta())>20.) {
     
 
     float deltaPhi = sc1->phi()-phi_true;
     //float deltaEta = sc1->eta()-etaEcal_true;
     float phiWidth = sc1->phiWidth();
-    float energySC = sc1->rawEnergy();
+    float energyScRAW = sc1->rawEnergy();
     float energySCtoCheck=0;
     
     float phiSize = getPhiSize(sc1,false);
@@ -278,8 +288,8 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
     if ( deltaPhi > pi ) deltaPhi -= twopi;
     if ( deltaPhi < -pi) deltaPhi += twopi;
 	  
-    h_scet_endc->Fill((sc1->energy()/cosh(sc1->eta()))/et_true); // using: h_scet_barl as counter of EE matched photons
-    h_EoverEtrue_endc->Fill(sc1->energy()/(*particle1)->momentum().e());
+    h_scet_endc->Fill((energyScCorr/cosh(sc1->eta()))/et_true); // using: h_scet_barl as counter of EE matched photons
+    h_EoverEtrue_endc->Fill(energyScCorr/(*particle1)->momentum().e());
     h_phiWidth_endc->Fill(phiWidth);
     h_phiWidthVsE_endc->Fill(phiWidth,(*particle1)->momentum().e());	  
     h_phiSize_endc->Fill(phiSize);
@@ -294,10 +304,10 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
 					       (*idsIt).first );
 	float currEeEnergy   = (eeRecHits->find( (*idsIt).first ))->energy();
 	energySCtoCheck      += currEeEnergy;
-	h_phiShape_endc       -> Fill(thePhiDistance, currEeEnergy/energySC);
-	h_absPhiShape_endc    -> Fill(fabs(thePhiDistance), currEeEnergy/energySC);
-	h_phiShapeVsE_endc    -> Fill(thePhiDistance, energySC , currEeEnergy/energySC);   
-	h_absPhiShapeVsE_endc -> Fill(fabs(thePhiDistance), energySC, currEeEnergy/energySC );     }// end EE case
+	h_phiShape_endc       -> Fill(thePhiDistance, currEeEnergy/energyScRAW);
+	h_absPhiShape_endc    -> Fill(fabs(thePhiDistance), currEeEnergy/energyScRAW);
+	h_phiShapeVsE_endc    -> Fill(thePhiDistance, energyScRAW , currEeEnergy/energyScRAW);   
+	h_absPhiShapeVsE_endc -> Fill(fabs(thePhiDistance), energyScRAW, currEeEnergy/energyScRAW );     }// end EE case
 
   }// end ENDCAP case
 }
@@ -306,54 +316,37 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
 
 void SCwithPUhistos::FillGamma(const reco::PhotonCollection::const_iterator pho1, HepMC::GenEvent::particle_const_iterator particle1){
   
-  
+  float energyPho    = pho1->energy();
+  float energyPhoRAW = pho1->superCluster()->rawEnergy();
+
   if (pho1->isEB()) {
-    h_PhoEoverEtrue_barl->Fill(pho1->energy()/(*particle1)->momentum().e());
+    h_PhoEoverEtrue_barl->Fill(energyPho/(*particle1)->momentum().e());
     h_E5x5overEtrue_barl->Fill(pho1->e5x5()/(*particle1)->momentum().e());
-    h_E5x5overEtrueVsEphoEtrue_barl->Fill(pho1->e5x5()/(*particle1)->momentum().e(),pho1->energy()/(*particle1)->momentum().e());
+    h_E5x5overEtrueVsEphoEtrue_barl->Fill(pho1->e5x5()/(*particle1)->momentum().e(),energyPho/(*particle1)->momentum().e());
     if (pho1->r9()>0.94) { // r9 cut is 0.94 for EB and 0.95 for EE  
       h_E5x5R9overEtrue_barl->Fill(pho1->e5x5()/(*particle1)->momentum().e());
-      h_PhoER9overEtrue_barl->Fill(pho1->energy()/(*particle1)->momentum().e()); // counter r9 EB
+      h_PhoER9overEtrue_barl->Fill(energyPho/(*particle1)->momentum().e()); // counter r9 EB
     } else {
       h_E5x5notR9overEtrue_barl->Fill(pho1->e5x5()/(*particle1)->momentum().e());
-      h_PhoEnotR9overEtrue_barl->Fill(pho1->energy()/(*particle1)->momentum().e()); // counter !r9 EB
+      h_PhoEnotR9overEtrue_barl->Fill(energyPho/(*particle1)->momentum().e()); // counter !r9 EB
     }
     //isEB++;
-  }
+  }// if photon in EB
   else if (pho1->isEE()) {
-    h_PhoEoverEtrue_endc->Fill(pho1->energy()/(*particle1)->momentum().e());
+    h_PhoEoverEtrue_endc->Fill(energyPho/(*particle1)->momentum().e());
     h_E5x5overEtrue_endc->Fill(pho1->e5x5()/(*particle1)->momentum().e());
-    h_E5x5overEtrueVsEphoEtrue_endc->Fill(pho1->e5x5()/(*particle1)->momentum().e(),pho1->energy()/(*particle1)->momentum().e());
+    h_E5x5overEtrueVsEphoEtrue_endc->Fill(pho1->e5x5()/(*particle1)->momentum().e(),energyPho/(*particle1)->momentum().e());
     if (pho1->r9()>0.94) { // r9 cut is 0.94 for EB and 0.95 for EE  
       h_E5x5R9overEtrue_endc->Fill(pho1->e5x5()/(*particle1)->momentum().e());
-      h_PhoER9overEtrue_endc->Fill(pho1->energy()/(*particle1)->momentum().e());
+      h_PhoER9overEtrue_endc->Fill(energyPho/(*particle1)->momentum().e());
     } else {
       h_E5x5notR9overEtrue_endc->Fill(pho1->e5x5()/(*particle1)->momentum().e());
-      h_PhoEnotR9overEtrue_endc->Fill(pho1->energy()/(*particle1)->momentum().e());
+      h_PhoEnotR9overEtrue_endc->Fill(energyPho/(*particle1)->momentum().e());
     }
-  }
-
-  //	    if (mother2!=0 && mother2->pdg_id()==25) { // specifically look out for HIGGses
-  //	      if (pho1->isEB() || pho1->isEE()) {
-  //		higgsPhotons.push_back(*pho1);
-  //		Photon localPho = Photon(*pho1);
-  //		if (!trueVtxFound) cout << "Error: true vertex not found!" << endl;
-  //		localPho.setVertex(trueVtx);
-  //		higgsPhotons_trueVtx.push_back(localPho);
-  //		//cout << pho1->et() << " " << localPho.et() << " " << trueVtx << " " << recoVtx << endl;
-  //	      }
-  //	    }
-	    
+  }// if photon in EE
 }
 
 
-
-//void SCwithPUhistos::FillDouble(const reco::SuperClusterCollection::const_iterator sc1, const reco::SuperClusterCollection::const_iterator sc2,
-//				HepMC::GenEvent::particle_const_iterator p1, HepMC::GenEvent::particle_const_iterator p2,
-//				const EcalRecHitCollection* ebRecHits, const EcalRecHitCollection* eeRecHits)
-//{
-//  std::cout << "Double Filling histograms - ciao " << std::endl;
-//}
 
 
 
@@ -383,7 +376,6 @@ void SCwithPUhistos::FillH(const std::vector<reco::Photon> higgsPhotons, const s
   }
 
   if (higgsPhotons_trueVtx.size()>1) {
-    //cout << higgsPhotons_trueVtx[0].et() << " " << higgsPhotons_trueVtx[1].et() << endl;
     if ((higgsPhotons_trueVtx[0].et()>40. && higgsPhotons_trueVtx[1].et()>30.) ||
 	(higgsPhotons_trueVtx[0].et()>30. && higgsPhotons_trueVtx[1].et()>40.)) {
       double mHiggs_trueVtx = (higgsPhotons_trueVtx[0].p4()+higgsPhotons_trueVtx[1].p4()).M();

@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.16 2011/04/15 16:35:46 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.1 2011/05/05 10:02:43 franzoni Exp $
 //
 //
 
@@ -89,8 +89,10 @@ private:
 
   // ----------member data ---------------------------
 
-  SCwithPUhistos allCase;
-  SCwithPUhistos oneCase, twoCase, threeCase, moreCase;
+  bool useRawEnergy_;
+
+  SCwithPUhistos allCase_;
+  SCwithPUhistos oneCase_, twoCase_, threeCase_, moreCase_;
 
   TH1F *h_scet_barl;// single-photon mult
   TH1F *h_scet_endc;// single-photon mult
@@ -179,7 +181,6 @@ private:
 // constants, enums and typedefs
 //
 
-//float signum(float x) {    return (x>0)?1:((x<0)?-1:0); }
 
 //
 // static data member definitions
@@ -189,151 +190,16 @@ private:
 // constructors and destructor
 //
 SCwithPUAnalysis::SCwithPUAnalysis(const edm::ParameterSet& iConfig)
-
 {
-
+  useRawEnergy_ = iConfig.getParameter< bool >("useRawEnergy");
+  if(useRawEnergy_) std::cout << "\n[SCwithPUAnalysis] raw energy of SC will be used\n" << std::endl;
+  else              std::cout << "\n[SCwithPUAnalysis] corrected energy of SC will be used\n" << std::endl;
 }
 
 
 SCwithPUAnalysis::~SCwithPUAnalysis()
 {
 }
-
-
-
-//// returns distance between two crystals, in units of crystal size (both  for EB and EE)
-//float getEtaDistance(DetId theSeed, DetId theCry ){
-//
-//  if ( theSeed.subdetId()==EcalBarrel && theCry.subdetId()==EcalBarrel)     // the barrel case
-//    {
-//      float theSeedEta = EBDetId ( theSeed.rawId() ).ieta();
-//      float theCryEta  = EBDetId ( theCry.rawId() ).ieta();
-//      
-//      if ( theSeedEta * theCryEta > 0 )     // crystal and seed are on the same side of EB
-//	{ 
-//	  return (theCryEta - theSeedEta);
-//	}
-//      else	                           // crystal and seed are on opposite sides of EB
-//	{
-//	  if (theSeedEta<0) return (theCryEta - theSeedEta -1);
-//	  else              return (theCryEta - theSeedEta +1);
-//	}
-//    }
-//  else if ( theSeed.subdetId()==EcalEndcap && theCry.subdetId()==EcalEndcap) // the endcap case
-//    {
-//      // to be implemented w/ geometry...
-//      return -9999;
-//    }
-//
-//  return -9999;
-//
-//}
-
-//
-//// returns distance between two crystals, in units of crystal size (both  for EB and EE)
-//float getPhiDistance(DetId theSeed, DetId theCry ){
-//
-//  if ( theSeed.subdetId()==EcalBarrel && theCry.subdetId()==EcalBarrel)     // the barrel case
-//    {
-//      float theSeedPhi = EBDetId ( theSeed.rawId() ).iphi();
-//      float theCryPhi  = EBDetId ( theCry.rawId() ).iphi();
-//      if (fabs( theCryPhi - theSeedPhi ) > 180 )                            // this means cluster is crossing the iphi==1 <--> iphi==360 boundary
-//	{
-//	  theCryPhi -= 360 * signum( theCryPhi - theSeedPhi );
-//	}
-//      return (theCryPhi-theSeedPhi);    // this is in units of EB crystals
-//    }
-//  else if ( theSeed.subdetId()==EcalEndcap && theCry.subdetId()==EcalEndcap) // the endcap case
-//    {
-//      float theSeedX = EEDetId ( theSeed.rawId() ).ix() -50;
-//      float theSeedY = EEDetId ( theSeed.rawId() ).iy() -50;
-//      float theSeedPhi = atan2( theSeedX , theSeedY); 
-//      float theCryX  = EEDetId ( theCry.rawId() ).ix()  -50;
-//      float theCryY  = EEDetId ( theCry.rawId() ).iy()  -50;
-//      float theCryPhi  = atan2( theCryX , theCryY); 
-//      
-//      if ( fabs( theCryPhi - theSeedPhi ) > PI ) // this means cluster is crossing the phi==-pi <--> phi==pi boundary
-//	{
-//	  theCryPhi -= TWOPI * signum ( theCryPhi - theSeedPhi );
-//	}
-//      //        angular span              radius in units of EE crystal size 
-//      return ( (theCryPhi - theSeedPhi) * pow( theSeedX*theSeedX + theSeedY*theSeedY, 0.5) ) ;
-//    }
-//  else // unsupported mixed case
-//    {
-//      return -9999;
-//    }
-//  
-//}
-//
-
-
-
-
-
-
-//
-//// PhiSize is in unit of: crystals for EB 
-////                        radiants for EE (change this to crystals too)             
-//float getPhiSize(reco::SuperClusterCollection::const_iterator scIt , float isBarrel ){
-//  // scIt is an iterator pointing to a supercluster
-//  // isBarrel has to be passed from outside - resolve there the clusters across EB and EE
-//  
-//  std::vector< std::pair<DetId, float> >  theHitsAndFractions =  (*scIt).hitsAndFractions();  
-//  
-//  float phiLow =0;
-//  float phiHigh=0;
-//  float phiFirstEB =-9999;  // a sort of seeding is done with the first crystal
-//  float phiFirstEE =-9999;  // in order to handle the boundaries where phi is discontinuos
-//  
-//  for(std::vector< std::pair<DetId, float> >::const_iterator idsIt = theHitsAndFractions.begin(); 
-//      idsIt != theHitsAndFractions.end(); ++idsIt) 
-//    {
-//      
-//      float thePhi=-99999;
-//      
-//      if      ( isBarrel && (*idsIt).first.subdetId()==EcalBarrel ) { 
-//
-//	thePhi = EBDetId(  (*idsIt).first.rawId()  ).iphi() ; 
-//	if (phiFirstEB<-9998) phiFirstEB = thePhi;
-//	
-//	if (fabs( thePhi - phiFirstEB ) > 180 ) // this means cluster is crossing the iphi==1 <--> iphi==360 boundary
-//	  {
-//	    //	    std::cout << "====== EB thePhi was: " << thePhi << " and now has become: " << ( thePhi + 360 * signum( thePhi - phiFirstEB ) * -1 )<< std::endl;
-//	    thePhi -= 360 * signum( thePhi - phiFirstEB );
-//	  }
-//      }
-//
-//      else if ( (!isBarrel) &&  (*idsIt).first.subdetId()==EcalEndcap ) {
-//	double ix = EEDetId(  (*idsIt).first.rawId()  ).ix() -50;
-//	double iy = EEDetId(  (*idsIt).first.rawId()  ).iy() -50;
-//	thePhi = atan2( ix,  iy );
-//
-//	if (phiFirstEE<-9998) phiFirstEE = thePhi;
-//
-//	if (fabs( thePhi - phiFirstEE ) > PI ) // this means cluster is crossing the phi==-pi <--> phi==pi boundary
-//	  {
-//	    //	    std::cout << "====== EE thePhi was: " << thePhi << " and now has become: " << ( thePhi + TWOPI * signum( thePhi - phiFirstEE ) * -1 )<< std::endl;
-//	    thePhi -= TWOPI * signum( thePhi - phiFirstEE );
-//	  }
-//	
-//      }
-//      
-//      if (phiLow==0 && phiHigh==0)
-//	{ phiLow  = thePhi;
-//	  phiHigh = thePhi;	 }
-//      if       (thePhi < phiLow)  phiLow  = thePhi;
-//      else if  (thePhi > phiHigh) phiHigh = thePhi;
-//
-//    }
-//
-//  float thePhiSize = phiHigh-phiLow;
-//
-//  // PhiSize is in unit of crystals for EB 
-//  //                       radiants for EE (change this to crystals too)             
-//  return thePhiSize;
-//}
-//
 
 
 //
@@ -433,16 +299,15 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);
 	  if ( delta<0.1) { // match if dr<0.1
 
-	    allCase.FillSc(scIt,p,ebRecHits,eeRecHits);
+	    allCase_.FillSc(scIt,p,ebRecHits,eeRecHits);
 	    // use this variable to classify EB SC's
 	    int numOfBC = scIt->clustersSize();
 	    std::cout << "EB numOfBC is: " << numOfBC << std::endl;
 	    if      (numOfBC==0){ std::cout << "ZERO basic cluster found in an EB SC; mess? - Bailing out"; assert (-1);}
-	    else if (numOfBC==1){ oneCase.FillSc(scIt,p,ebRecHits,eeRecHits);}
-	    else if (numOfBC==2){ twoCase.FillSc(scIt,p,ebRecHits,eeRecHits);}
-	    else if (numOfBC==3){ threeCase.FillSc(scIt,p,ebRecHits,eeRecHits);}
-	    else                { moreCase.FillSc(scIt,p,ebRecHits,eeRecHits);}
-
+	    else if (numOfBC==1){ oneCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
+	    else if (numOfBC==2){ twoCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
+	    else if (numOfBC==3){ threeCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
+	    else                { moreCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
 
 	    // COPY1 //
 	    h_scet_barl->Fill((scIt->energy()/cosh(scIt->eta()))/et_true);   // using: h_scet_barl as counter of EB matched photons
@@ -509,7 +374,6 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	      h_maxCryInDominoVsPhi_barl   -> Fill(u-17, whereIsMaxInDomino[u]);
 	    }
 
-	    // std::cout << "size of BC clollection for this SC:  " << (scIt->clustersEnd() - scIt->clustersBegin() ) << std::endl; 
 	    // looping on basic clusters within the Supercluster
 	    for(reco::CaloCluster_iterator bcIt = scIt->clustersBegin(); bcIt!=scIt->clustersEnd(); bcIt++)
 	      {
@@ -598,15 +462,15 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);
 	  if ( delta<0.1) { // match if dr<0.1
 
-	    allCase.FillSc(scIt,p,ebRecHits,eeRecHits);
+	    allCase_.FillSc(scIt,p,ebRecHits,eeRecHits);
 	    // use this variable to classify EB SC's
 	    int numOfBC = scIt->clustersSize();
 	    std::cout << "EE numOfBC is: " << numOfBC << std::endl;
 	    if      (numOfBC==0){ std::cout << "ZERO basic cluster found in an EE SC; mess? - Bailing out"; assert (-1);}
-	    else if (numOfBC==1){ oneCase.FillSc(scIt,p,ebRecHits,eeRecHits);}
-	    else if (numOfBC==2){ twoCase.FillSc(scIt,p,ebRecHits,eeRecHits);}
-	    else if (numOfBC==3){ threeCase.FillSc(scIt,p,ebRecHits,eeRecHits);}
-	    else                { moreCase.FillSc(scIt,p,ebRecHits,eeRecHits);}
+	    else if (numOfBC==1){ oneCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
+	    else if (numOfBC==2){ twoCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
+	    else if (numOfBC==3){ threeCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
+	    else                { moreCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
 
 	    // COPY2 //
 	    h_scet_endc->Fill((scIt->energy()/cosh(scIt->eta()))/et_true); // using: h_scet_barl as counter of EE matched photons
@@ -638,10 +502,10 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
       }// loop over EE Sc's
     
 
-
+      
       //////////////////////////////////////////////
       // follows the photon part of the histograms
-
+      
       // still within loop over MC particles
       // special treatment if current MCparticle is a photon
       // match also to photon object
@@ -657,16 +521,15 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);
 	  if ( delta<0.1 && phoIt->energy()/cosh(phoIt->caloPosition().eta())>20.) {
 	    
-	    allCase.FillGamma(phoIt,p);
+	    allCase_.FillGamma(phoIt,p);
 	    // use this variable to classify the SC's associated to PHOTONS
 	    int numOfBC = phoIt->superCluster()->clustersSize();
 	    std::cout << "numOfBC for PHOTON is: " << numOfBC << std::endl;
 	    if      (numOfBC==0){ std::cout << "ZERO basic cluster found in a PHOTOn; mess? - Bailing out"; assert (-1);}
-	    else if (numOfBC==1){ oneCase.FillGamma(phoIt,p);}
-	    else if (numOfBC==2){ twoCase.FillGamma(phoIt,p);}
-	    else if (numOfBC==3){ threeCase.FillGamma(phoIt,p);}
-	    else                { moreCase.FillGamma(phoIt,p);}
-
+	    else if (numOfBC==1){ oneCase_.FillGamma(phoIt,p);}
+	    else if (numOfBC==2){ twoCase_.FillGamma(phoIt,p);}
+	    else if (numOfBC==3){ threeCase_.FillGamma(phoIt,p);}
+	    else                { moreCase_.FillGamma(phoIt,p);}
 
 	    // COPY 3 //
 	    if (phoIt->isEB()) {
@@ -721,11 +584,11 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
     }
   }// loop over all MC-truth particles
 
-  allCase.FillH(higgsPhotons, higgsPhotons_trueVtx);
-  if(hasOneClus==2)    oneCase.FillH(higgsPhotons, higgsPhotons_trueVtx);
-  if(hasTwoClus==2)    twoCase.FillH(higgsPhotons, higgsPhotons_trueVtx);
-  if(hasThreeClus==2)  threeCase.FillH(higgsPhotons, higgsPhotons_trueVtx);
-  if(hasMoreClus==2)   moreCase.FillH(higgsPhotons, higgsPhotons_trueVtx);
+  allCase_.FillH(higgsPhotons, higgsPhotons_trueVtx);
+  if(hasOneClus==2)    oneCase_.FillH(higgsPhotons, higgsPhotons_trueVtx);
+  if(hasTwoClus==2)    twoCase_.FillH(higgsPhotons, higgsPhotons_trueVtx);
+  if(hasThreeClus==2)  threeCase_.FillH(higgsPhotons, higgsPhotons_trueVtx);
+  if(hasMoreClus==2)   moreCase_.FillH(higgsPhotons, higgsPhotons_trueVtx);
 
   //COPY4
   if (higgsPhotons.size()>1) {
@@ -766,15 +629,19 @@ void
 SCwithPUAnalysis::beginJob()
 {
 
+  allCase_.setRawEnergy(useRawEnergy_);
+  oneCase_.setRawEnergy(useRawEnergy_);   twoCase_.setRawEnergy(useRawEnergy_);
+  threeCase_.setRawEnergy(useRawEnergy_); moreCase_.setRawEnergy(useRawEnergy_);
+  
   edm::Service<TFileService> fs;
-  std::cout << "making directories" << std::endl;
+  std::cout << "[SCwithPUAnalysis] making directories" << std::endl;
   
   TFileDirectory subDir=fs->mkdir("allCase");  
-  allCase.Book(subDir);
-  subDir=fs->mkdir("oneBC");     oneCase.Book(subDir);
-  subDir=fs->mkdir("twoBC");     twoCase.Book(subDir);
-  subDir=fs->mkdir("threeBC");   threeCase.Book(subDir);
-  subDir=fs->mkdir("moreBC");    moreCase.Book(subDir);
+  allCase_.Book(subDir);
+  subDir=fs->mkdir("oneBC");     oneCase_.Book(subDir);
+  subDir=fs->mkdir("twoBC");     twoCase_.Book(subDir);
+  subDir=fs->mkdir("threeBC");   threeCase_.Book(subDir);
+  subDir=fs->mkdir("moreBC");    moreCase_.Book(subDir);
   
   // keeping these ones for COMPARISON and validation
   h_scet_barl = fs->make<TH1F>("h_scet_barl","SC ET over true, barrel; EB: E_{T,superC}/E_{T,true}",90,0.75,1.2);  // using: h_scet_barl as counter of EB matched photons 

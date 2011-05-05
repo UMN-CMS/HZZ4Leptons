@@ -27,7 +27,8 @@ process.source = cms.Source("PoolSource",
     )
 )
 
-process.scwithpuanalyzer = cms.EDAnalyzer('SCwithPUAnalysis'
+process.scwithpuanalyzer = cms.EDAnalyzer('SCwithPUAnalysis',
+                                          useRawEnergy = cms.bool(False)
 )
 
 

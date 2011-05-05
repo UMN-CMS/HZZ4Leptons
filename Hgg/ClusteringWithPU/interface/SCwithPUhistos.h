@@ -32,17 +32,15 @@ public:
   void FillGamma(const reco::PhotonCollection::const_iterator pho1, HepMC::GenEvent::particle_const_iterator particle1);
 
   void FillH(const std::vector<reco::Photon> higgsPhotons, const std::vector<reco::Photon> higgsPhotons_trueVtx);
-  
-  //  void FillDouble(const reco::SuperClusterCollection::const_iterator sc1, const reco::SuperClusterCollection::const_iterator sc2,
-  //		  HepMC::GenEvent::particle_const_iterator particle1, HepMC::GenEvent::particle_const_iterator particle2,
-  //		  const EcalRecHitCollection* ebRecHits, const EcalRecHitCollection* eeRecHits);
-  //  
 
   float etaTransformation(  float EtaParticle , float Zvertex);
+  void setRawEnergy(bool useRawEnergy);
   
-  SCwithPUhistos() { }
+  SCwithPUhistos();
+  SCwithPUhistos(bool useRawEnergy);
   
  private:
+  bool useRawEnergy_;
   
   TH1F *h_scet_barl;// single-photon mult
   TH1F *h_scet_endc;// single-photon mult
@@ -124,26 +122,7 @@ public:
   TH2F *h_maxCryInLocMaxVsPhi_barlMinus;// single-photon mult
   TH1F *h_maxCryInLocMax_barlSymm;// single-photon mult
   TH2F *h_maxCryInLocMaxVsPhi_barlSymm;// single-photon mult
-
-//  double massWindowLow_,massWindowHigh_;
-//  
-//  TH1 *mZ_,*YZ_, *ptZ_,*ptZmon_,*polarizationZ_,*cosPolarizationZ_;
-//  TH1 *YZmasscut_,*ptZmasscut_;
-//  TH1 *YZmasscutTL_,*ptZmasscutTL_;
-//  TH1 *YZTLmasscut_,*ptZTLmasscut_;
-//  TH1 *YZTL_,*ptZTLmon_,*mZTL_,*ptZTL_;
-//  bool booked_;
-//  TH1 *e1eta_,*e2eta_,*e1phi_,*e2phi_,*e1pt_,*e2pt_,*eeta_,*ephi_,*hfeta_;
-//  TH2 *mZ_Y_,*mZ_pt_,*pt_Y_,*e1eta_YZ_,*e2eta_YZ_,*e1eta_ptZ_,*e2eta_ptZ_,*e1eta_e2eta_,*YZTL_YZ_,*YZTL_YZ_matrix_;
-//  TH1 *evt_PVz_, *evt_BSz_, *evt_MET_, *evt_PFMET_, *evt_TCMET_;
-//  TH2* ptZTL_ptZ_, *ptZTL_ptZ_zoom_;
-//  TH3* mZ_e2pt_e2eta_;
-//
-//  bool massFinals_;
-//  struct {
-//    TH2 *e1eta_,*e2eta_,*e1phi_,*e2phi_,*e1pt_,*e2pt_,*hfeta_;    
-//  } mZ_binned_finals;
-
+  
 }; 
 
 #endif
