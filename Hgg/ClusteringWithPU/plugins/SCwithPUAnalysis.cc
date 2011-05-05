@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.1 2011/05/05 10:02:43 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.2 2011/05/05 13:52:34 franzoni Exp $
 //
 //
 
@@ -135,8 +135,10 @@ private:
   TH1F *h_phiShape_endc; // single-photon mult
   TH1F *h_absPhiShape_endc; // single-photon mult
   TH2F *h_phiShapeVsE_barl; // single-photon mult
+  TH2F *h_phiShapeVsEt_barl; // single-photon mult
   TH2F *h_absPhiShapeVsE_barl; // single-photon mult
   TH2F *h_phiShapeVsE_endc; // single-photon mult
+  TH2F *h_phiShapeVsEt_endc; // single-photon mult
   TH2F *h_absPhiShapeVsE_endc; // single-photon mult
   TH1F *h_etaShape_barl;// single-photon mult
   TH1F *h_etaShape_barlPLus;// single-photon mult
@@ -302,7 +304,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	    allCase_.FillSc(scIt,p,ebRecHits,eeRecHits);
 	    // use this variable to classify EB SC's
 	    int numOfBC = scIt->clustersSize();
-	    std::cout << "EB numOfBC is: " << numOfBC << std::endl;
+
 	    if      (numOfBC==0){ std::cout << "ZERO basic cluster found in an EB SC; mess? - Bailing out"; assert (-1);}
 	    else if (numOfBC==1){ oneCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
 	    else if (numOfBC==2){ twoCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
@@ -337,6 +339,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 		h_phiShape_barl       -> Fill(thePhiDistance, currEbEnergy/energySC);
 		h_absPhiShape_barl    -> Fill(fabs(thePhiDistance), currEbEnergy/energySC);
 		h_phiShapeVsE_barl    -> Fill(thePhiDistance, energySC , currEbEnergy/energySC);   
+		h_phiShapeVsEt_barl   -> Fill(thePhiDistance, energySC/cosh(scIt->eta()) , currEbEnergy/energySC);   
 		h_absPhiShapeVsE_barl -> Fill(fabs(thePhiDistance), energySC , currEbEnergy/energySC);   
 
 		float theEtaDistance = getEtaDistance( (*scIt->seed()).seed() , 
@@ -465,7 +468,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	    allCase_.FillSc(scIt,p,ebRecHits,eeRecHits);
 	    // use this variable to classify EB SC's
 	    int numOfBC = scIt->clustersSize();
-	    std::cout << "EE numOfBC is: " << numOfBC << std::endl;
+
 	    if      (numOfBC==0){ std::cout << "ZERO basic cluster found in an EE SC; mess? - Bailing out"; assert (-1);}
 	    else if (numOfBC==1){ oneCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
 	    else if (numOfBC==2){ twoCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
@@ -492,6 +495,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 		h_phiShape_endc       -> Fill(thePhiDistance, currEeEnergy/energySC);
 		h_absPhiShape_endc    -> Fill(fabs(thePhiDistance), currEeEnergy/energySC);
 		h_phiShapeVsE_endc    -> Fill(thePhiDistance, energySC , currEeEnergy/energySC);   
+		h_phiShapeVsEt_endc   -> Fill(thePhiDistance, energySC/cosh(scIt->eta()) , currEeEnergy/energySC);   
 		h_absPhiShapeVsE_endc -> Fill(fabs(thePhiDistance), energySC, currEeEnergy/energySC );   
 
 	      } // loop over crystals of the SC
@@ -524,7 +528,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	    allCase_.FillGamma(phoIt,p);
 	    // use this variable to classify the SC's associated to PHOTONS
 	    int numOfBC = phoIt->superCluster()->clustersSize();
-	    std::cout << "numOfBC for PHOTON is: " << numOfBC << std::endl;
+
 	    if      (numOfBC==0){ std::cout << "ZERO basic cluster found in a PHOTOn; mess? - Bailing out"; assert (-1);}
 	    else if (numOfBC==1){ oneCase_.FillGamma(phoIt,p);}
 	    else if (numOfBC==2){ twoCase_.FillGamma(phoIt,p);}
@@ -684,10 +688,12 @@ SCwithPUAnalysis::beginJob()
   h_absPhiShape_barl    = fs->make<TH1F>("h_absPhiShape_barl","phi AbsShape (barrel); EB  abs(i#phi - i#phi_{SCseed})", 18,0,18); 
   h_phiShape_endc       = fs->make<TH1F>("h_phiShape_endc","phi Shape (endcap) EE i#phi - i#phi_{SCseed}", 35,-17,18); 
   h_absPhiShape_endc    = fs->make<TH1F>("h_absPhiShape_endc","phi AbsShape (endcap); EE  abs(i#phi - i#phi_{SCseed})", 18,0,18); 
-  h_phiShapeVsE_barl    = fs->make<TH2F>("h_phiShapeVsE_barl","phi Shape Vs E (barrel); EB i#phi - i#phi_{SCseed}; EB E [GeV]", 35,-17,18,100,0,200); 
-  h_absPhiShapeVsE_barl = fs->make<TH2F>("h_absPhiShapeVsE_barl","phi AbsShape Vs E (barrel); EB  abs(i#phi - i#phi_{SCseed}); EB E [GeV]", 18,0,18,100,0,200); 
-  h_phiShapeVsE_endc    = fs->make<TH2F>("h_phiShapeVsE_endc","phi Shape Vs E (endcap); EE i#phi - i#phi_{SCseed}; EE E [GeV]", 35,-17,18,100,0,200); 
-  h_absPhiShapeVsE_endc = fs->make<TH2F>("h_absPhiShapeVsE_endc","phi AbsShape Vs E (endcap); EE  abs(i#phi - i#phi_{SCseed}); EE E [GeV] ", 18,0,18,100,0,200); 
+  h_phiShapeVsE_barl    = fs->make<TH2F>("h_phiShapeVsE_barl","phi Shape Vs E (barrel); EB i#phi - i#phi_{SCseed}; EB E [GeV]", 35,-17,18,100,0,300); 
+  h_phiShapeVsEt_barl   = fs->make<TH2F>("h_phiShapeVsEt_barl","phi Shape Vs E_{T} (barrel); EB i#phi - i#phi_{SCseed}; EB E_{T} [GeV]", 35,-17,18,100,0,200); 
+  h_absPhiShapeVsE_barl = fs->make<TH2F>("h_absPhiShapeVsE_barl","phi AbsShape Vs E (barrel); EB  abs(i#phi - i#phi_{SCseed}); EB E [GeV]", 18,0,18,100,0,300); 
+  h_phiShapeVsE_endc    = fs->make<TH2F>("h_phiShapeVsE_endc","phi Shape Vs E (endcap); EE i#phi - i#phi_{SCseed}; EE E [GeV]", 35,-17,18,100,0,300); 
+  h_phiShapeVsEt_endc    = fs->make<TH2F>("h_phiShapeVsEt_endc","phi Shape Vs E_{T} (endcap); EE i#phi - i#phi_{SCseed}; EE E_{T} [GeV]", 35,-17,18,100,0,200); 
+  h_absPhiShapeVsE_endc = fs->make<TH2F>("h_absPhiShapeVsE_endc","phi AbsShape Vs E (endcap); EE  abs(i#phi - i#phi_{SCseed}); EE E [GeV] ", 18,0,18,100,0,300); 
 
   h_etaShape_barl       = fs->make<TH1F>("h_etaShape_barl","eta Shape (barrel); EB i#eta_{BC} - i#eta_{SCseed}", 7,-3,3); 
   h_etaShape_barlPLus   = fs->make<TH1F>("h_etaShape_barlPLus","eta Shape (barrel plus); EB i#eta_{BC} - i#eta_{SCseed}", 7,-3,3); 
@@ -729,6 +735,8 @@ SCwithPUAnalysis::beginJob()
   h_maxCryInLocMaxVsPhi_barlPLus  = fs->make<TH2F>("h_maxCryInLocalMaxVsPhi_barlPlus","max Cry In Local Max Vs i#phi (EB+); EB i#phi_{BC} - i#phi_{SCseed}; EB+  i#eta_{BC} - i#eta_{SCseed}", 35,-17,18,5,-2,3); 
   h_maxCryInLocMax_barlMinus      = fs->make<TH1F>("h_maxCryInLocalMax_barlMinus","max Cry In Local Max (EB-); i#eta_{BC} - i#eta_{SCseed}", 5,-2,3); 
   h_maxCryInLocMaxVsPhi_barlMinus = fs->make<TH2F>("h_maxCryInLocalMaxVsPhi_barlMinus","max Cry In Local Max Vs i#phi (EB-); EB i#phi_{BC} - i#phi_{SCseed}; EB-  i#eta - i#eta_{SCseed}", 35,-17,18,5,-2,3); 
+
+
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
@@ -768,9 +776,6 @@ float SCwithPUAnalysis::etaTransformation(  float EtaParticle , float Zvertex)  
   //---end
 }
 
-
-//define this as a plug-in
-//DEFINE_FWK_MODULE(SCwithPUAnalysis);
 
 #include "FWCore/Framework/interface/MakerMacros.h"  
 DEFINE_FWK_MODULE( SCwithPUAnalysis );

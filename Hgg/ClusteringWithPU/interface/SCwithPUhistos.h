@@ -82,8 +82,10 @@ public:
   TH1F *h_phiShape_endc; // single-photon mult
   TH1F *h_absPhiShape_endc; // single-photon mult
   TH2F *h_phiShapeVsE_barl; // single-photon mult
+  TH2F *h_phiShapeVsEt_barl; // single-photon mult
   TH2F *h_absPhiShapeVsE_barl; // single-photon mult
   TH2F *h_phiShapeVsE_endc; // single-photon mult
+  TH2F *h_phiShapeVsEt_endc; // single-photon mult
   TH2F *h_absPhiShapeVsE_endc; // single-photon mult
   TH1F *h_etaShape_barl;// single-photon mult
   TH1F *h_etaShape_barlPLus;// single-photon mult
@@ -122,7 +124,13 @@ public:
   TH2F *h_maxCryInLocMaxVsPhi_barlMinus;// single-photon mult
   TH1F *h_maxCryInLocMax_barlSymm;// single-photon mult
   TH2F *h_maxCryInLocMaxVsPhi_barlSymm;// single-photon mult
-  
+
+  TH1F *h_numBC;
+  TH2F *h_EoverEtrue_VS_phiWidth_barl;
+  TH2F *h_EoverEtrue_VS_phiSize_barl;
+  TH2F *h_EoverEtrue_VS_DeltaPhi_TwoCl_barl;
+  TH2F *h_EoverEtrue_VS_bcminObcMax_barl;
+
 }; 
 
 #endif
