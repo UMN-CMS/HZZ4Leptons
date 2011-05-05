@@ -6,6 +6,7 @@
 <use name="SimDataFormats/GeneratorProducts"/>
 <use name="DataFormats/EgammaReco"/>
 <use name="DataFormats/EgammaCandidates"/>
+<use name="Hgg/ClusteringWithPU"/>
 <library   file="*.cc" name="HggClusteringWithPUPlugins">
   <flags   EDM_PLUGIN="1"/>
 </library>
