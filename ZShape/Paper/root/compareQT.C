@@ -7,6 +7,7 @@
 #include "readStandardFile.C"
 #include "tdrstyle.C"
 #include "zrapidityStandard.C"
+#include "../theory/database.C"
 
 int colorForId(int i) {
   const int colors[] = {kRed, kBlue, kGreen+2,
@@ -17,45 +18,10 @@ int colorForId(int i) {
 
 void draw_axis_labels( float pos, float size, int iV );
 
-
-
 void compareQT(const char* models,const char* outgoing=0) {
   setTDRStyle();
   bool limiNormal=false;
 
-  const char* knownModels[] = { 
-    "D6T","Pythia D6T","pythia_D6T.txt",
-    "P0","Pythia P0","pythia_P0.txt",
-    "ProPT0","Pythia ProPT0","pythia_ProPT0.txt",
-    "ProQ20","Pythia ProQ20","pythia_ProQ20.txt",
-    "Z2","Pythia Z2","pythia_Z2.txt",
-    "R0.50","Resbos #alpha=0.50","ptShape_Resbos_a0_50.txt",
-    "R0.70","Resbos #alpha=0.70","ptShape_Resbos_a0_70.txt",
-    "R0.75","Resbos #alpha=0.75","ptShape_Resbos_a0_75.txt",
-    "R0.80","Resbos #alpha=0.80","ptShape_Resbos_a0_80.txt",
-    "R0.85","Resbos #alpha=0.85","ptShape_Resbos_a0_85.txt",
-    "R0.90","Resbos #alpha=0.90","ptShape_Resbos_a0_90.txt",
-    "R0.95","Resbos #alpha=0.95","ptShape_Resbos_a0_95.txt",
-    "R1.00","Resbos #alpha=1.00","ptShape_Resbos_a1_0.txt",
-    "R1.25","Resbos #alpha=1.25","ptShape_Resbos_a1_25.txt",
-    "R1.50","Resbos #alpha=1.50","ptShape_Resbos_a1_5.txt",
-    "R1.75","Resbos #alpha=1.75","ptShape_Resbos_a1_75.txt",
-    "R2.00","Resbos #alpha=2.00","ptShape_Resbos_a2_0.txt",
-    "R2.25","Resbos #alpha=2.25","ptShape_Resbos_a2_25.txt",
-    "R2.50","Resbos #alpha=2.50","ptShape_Resbos_a2_5.txt",
-    "R2.75","Resbos #alpha=2.75","ptShape_Resbos_a2_75.txt",
-    "R3.00","Resbos #alpha=3.00","ptShape_Resbos_a3_0.txt",
-    "R3.25","Resbos #alpha=3.25","ptShape_Resbos_a3_25.txt",
-    "R3.50","Resbos #alpha=3.50","ptShape_Resbos_a3_5.txt",
-    "R3.75","Resbos #alpha=3.75","ptShape_Resbos_a3_75.txt",
-    "R4.00","Resbos #alpha=4.00","ptShape_Resbos_a4_0.txt",
-    "PWG_D6T","Powheg + Pythia Tune D6T","PtTL_pwg_PythiaUED6T.txt",
-    "PWG_P0","Powheg + Pythia P0","PtTL_pwg_PythiaUEP0.txt",
-    "PWG_ProPT0","Powheg + Pythia ProPT0","PtTL_pwg_PythiaUEProPT0.txt",
-    "PWG_ProQ20","Powheg + Pythia ProQ20","PtTL_pwg_PythiaUEProQ20.txt",
-    "PWG_Z2","Powheg + Pythia Tune Z2","PtTL_pwg_PythiaUEZ2.txt",
-    0,0,0
-    };
   int nhists=0;
   TH1* hists[10],*histsDelta[10];
   int imodels[10];
@@ -246,7 +212,7 @@ void compareQT(const char* models,const char* outgoing=0) {
   */
 
   for (int i=0; i<nhists; i++) {
-    histsDelta[i]->Draw("SAME HIST ][");
+    histsDelta[i]->Draw("SAME HIST L");
   }
 
   //  tl2->SetNColumns(2);

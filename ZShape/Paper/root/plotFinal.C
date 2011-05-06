@@ -240,11 +240,11 @@ void plotFinal(TFile* mctruth, int mode=1) {
     }
   }
 
-  DataSeries effSystGSF("effSystGSFError.csv");
-  DataSeries effSystWP80("effSystWP80Error.csv");
-  DataSeries effSystWP95("effSystWP95Error.csv");
-  DataSeries effSystHFEID("effSystHFEIDError.csv");
-  DataSeries effSystHLT("effSystHLTError.csv");
+  DataSeries effSystGSF("effSystGSFYError.csv");
+  DataSeries effSystWP80("effSystWP80YError.csv");
+  DataSeries effSystWP95("effSystWP95YError.csv");
+  DataSeries effSystHFEID("effSystHFEIDYError.csv");
+  DataSeries effSystHLT("effSystHLTYError.csv");
 
   DataSeries effSystErr;
 
@@ -369,7 +369,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
   fprintf(ftable,"\\hline\n\\end{tabular}");
   fclose(ftable);
  
-  truth->Scale(td/tt*1.0);
+  truth->Scale(td/tt*1.02);
   
   TGraph* rawd=data_all.makeTG(npoint,firsti-1);
   TGraph* rawdb=data_bkgd.makeTG(npoint,firsti-1);
@@ -441,10 +441,11 @@ void plotFinal(TFile* mctruth, int mode=1) {
   DataSeries corrDataFoldClone(corrDataFold);
   DataSeries corrDataSystFoldClone(corrDataSystFold);
     // use this to activate matrix (type-3) unsmearing for the folded rapidity distribution |Y|
+  const char* unfoldMatrixFile="../data/unfold_z2_apr24.root";
   if (mode==4) {
     TH1*      data_corr_fold_smeared      =corrDataFold.makeTH1("data_corr_fold_smeared",50,50);
-    TH1*      data_corr_unsmeared         =unfold(data_corr_fold_smeared,"../root/unfoldingMatrix_theOutPut.root",true);              // unfolding for |Y|
-    TFile*    theunfoldingMatrixInputFile =new TFile("../root/unfoldingMatrix_theOutPut.root","read");
+    TH1*      data_corr_unsmeared         =unfold(data_corr_fold_smeared,unfoldMatrixFile,true);              // unfolding for |Y|
+    TFile*    theunfoldingMatrixInputFile =new TFile(unfoldMatrixFile,"read");
     TMatrixD* theUnfoldingMatrix          =(TMatrixD*)theunfoldingMatrixInputFile->Get("unsmearMatrices/unfoldingMatrixTotalFolded"); // indices [0.. 49] X [0.. 49]
     double errorCumul=0;
     double errorCumulSyst=0;

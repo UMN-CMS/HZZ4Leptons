@@ -3,7 +3,8 @@
 #include "zrapidityStandard.C"
 
 void combineQt(int which=0) {
-  TH1* truth=readStandardFilePt("theory","../theory/powheg_pt_etapt_scaleUnc.txt");
+  //  TH1* truth=readStandardFilePt("theory","../theory/powheg_pt_etapt_scaleUnc.txt");
+  TH1* truth=readStandardFilePt("theory","../theory/PtTL_pwg_PythiaUEZ2.txt");
   truth->SetDirectory(0);  
 
 

@@ -3,10 +3,12 @@
 #include "TLegend.h"
 #include "TCanvas.h"
 #include "TGraph.h"
+#include "TGraphAsymmErrors.h"
 #include "TMath.h"
 #include "readStandardFile.C"
 #include "tdrstyle.C"
 #include "zrapidityStandard.C"
+#include "../theory/database.C"
 
 int colorForId(int i) {
   const int colors[] = {kCyan,kRed, kBlue, kGreen+2,
@@ -16,50 +18,11 @@ int colorForId(int i) {
 }
 
 
-void compareFEWZ(const char* models,const char* outgoing=0) {
+void compareFEWZ(const char* models,const char* outgoing=0,bool limiNormal=false) {
   setTDRStyle();
-  bool limiNormal=false;
   
-
-  const char* knownModels[] = { 
-    "D6T","Pythia Tune D6T","mcFile_D6T_TL.txt",
-    "P0","Pythia P0","mcFile_P0_TL.txt",
-    "ProPT0","Pythia ProPT0","mcFile_ProPT0_TL.txt",
-    "ProQ20","Pythia ProQ20","mcFile_ProQ20_TL.txt",
-    "Z2","Pythia Tune Z2 ","mcFile_Z2_TL.txt",
-    "FEWZ-1","FEWZ NLO","fewz_v1.txt",
-    "Powheg","Powheg","powheg_z2_scaleUnc.txt",
-    "Resbos-P","Resbos-P","ptShape_Resbos_a0_80.txt",
-    "Resbos-CP","ResBos","resbos-cp.txt",
-    "R0.50","Resbos #alpha=0.50","ptShape_Resbos_a0_50.txt",
-    "R0.70","Resbos #alpha=0.70","ptShape_Resbos_a0_70.txt",
-    "R0.75","Resbos #alpha=0.75","ptShape_Resbos_a0_75.txt",
-    "R0.80","Resbos #alpha=0.80","ptShape_Resbos_a0_80.txt",
-    "R0.85","Resbos #alpha=0.85","ptShape_Resbos_a0_85.txt",
-    "R0.90","Resbos #alpha=0.90","ptShape_Resbos_a0_90.txt",
-    "R0.95","Resbos #alpha=0.95","ptShape_Resbos_a0_95.txt",
-    "R1.00","Resbos #alpha=1.00","ptShape_Resbos_a1_0.txt",
-    "R1.25","Resbos #alpha=1.25","ptShape_Resbos_a1_25.txt",
-    "R1.50","Resbos #alpha=1.50","ptShape_Resbos_a1_5.txt",
-    "R1.75","Resbos #alpha=1.75","ptShape_Resbos_a1_75.txt",
-    "R2.00","Resbos #alpha=2.00","ptShape_Resbos_a2_0.txt",
-    "R2.25","Resbos #alpha=2.25","ptShape_Resbos_a2_25.txt",
-    "R2.50","Resbos #alpha=2.50","ptShape_Resbos_a2_5.txt",
-    "R2.75","Resbos #alpha=2.75","ptShape_Resbos_a2_75.txt",
-    "R3.00","Resbos #alpha=3.00","ptShape_Resbos_a3_0.txt",
-    "R3.25","Resbos #alpha=3.25","ptShape_Resbos_a3_25.txt",
-    "R3.50","Resbos #alpha=3.50","ptShape_Resbos_a3_5.txt",
-    "R3.75","Resbos #alpha=3.75","ptShape_Resbos_a3_75.txt",
-    "R4.00","Resbos #alpha=4.00","ptShape_Resbos_a4_0.txt",
-    "PWG_D6T","Powheg + Pythia Tune D6T","PtTL_pwg_PythiaUED6T.txt",
-    "PWG_P0","Powheg + Pythia P0","PtTL_pwg_PythiaUEP0.txt",
-    "PWG_ProPT0","POWHEG + Pythia ProPT0","PtTL_pwg_PythiaUEProPT0.txt",
-    "PWG_ProQ20","Powheg + Pythia ProQ20","PtTL_pwg_PythiaUEProQ20.txt",
-    "PWG_Z2","POWHEG + Pythia Tune Z2","PtTL_pwg_PythiaUEZ2.txt",
-    0,0,0
-    };
   int nhists=0;
-  TH1* hists[10],*histsDelta[10];
+  TGraphAsymmErrors* hists[10],*histsDelta[10];
   int imodels[10];
   char names[10][50];
   double chi2[10];
@@ -91,7 +54,7 @@ void compareFEWZ(const char* models,const char* outgoing=0) {
 
   
   TCanvas* c1=new TCanvas("c1","c1",750,1000);
-  c1->SetLogx()
+  c1->SetLogx();
   c1->SetRightMargin(0.02);
   c1->SetLeftMargin(0.20);
   TPad* p1=new TPad("p1","p1",0,0.38,1,0.98,0,0);
@@ -144,35 +107,42 @@ void compareFEWZ(const char* models,const char* outgoing=0) {
     char fullfname[1024];
     sprintf(fullfname,"../theory/%s",knownModels[imodels[i]*3+2]);
     printf("%s\n",fullfname);
-    hists[i]=readStandardFilePt(knownModels[imodels[i]*3],fullfname);
+    const int iskip=8;
+    hists[i]=readStandardFilePtTGE(fullfname,iskip);
 
-    if (strstr(fullfname,"Resbos")) {
-      double sum=hists[i]->Integral();
-      for (int j=1; j<=18; j++) 
-	hists[i]->SetBinContent(j,hists[i]->GetBinContent(j)/hists[i]->GetBinWidth(j)/sum);
-    }
+    if (limiNormal) {
+      double sum=0;
+      for (int j=9-iskip-1; j<=18-iskip-1; j++)  
+	sum+=hists[i]->GetY()[j];
+      sum=data->Integral(9,18)/sum;
 
-    if (strstr(fullfname,"fewz") || limiNormal) {
-      double sum=data->Integral(9,18)/hists[i]->Integral(9,18);
-      for (int j=9; j<=18; j++)  {
-	hists[i]->SetBinContent(j,hists[i]->GetBinContent(j)*sum);
-	hists[i]->SetBinError(j,hists[i]->GetBinError(j)*sum);
+      for (int j=9-iskip-1; j<=18-iskip-1; j++)  {
+	hists[i]->SetPoint(j,hists[i]->GetX()[j],sum*hists[i]->GetY()[j]);
+	hists[i]->SetPointEYlow(j,hists[i]->GetEYlow()[j]*sum);
+	hists[i]->SetPointEYhigh(j,hists[i]->GetEYhigh()[j]*sum);
       }
-      /*
-      hists[i]->SetBinContent(8,hists[i]->GetBinContent(9));
-      hists[i]->SetBinError(8,hists[i]->GetBinError(9));
-      */
+      
+      //      hists[i]->SetBinContent(8,hists[i]->GetBinContent(9));
+      //  hists[i]->SetBinError(8,hists[i]->GetBinError(9));
+      
     }
-
-
-
+   
     sprintf(fullfname,"%s-delta",knownModels[imodels[i]*3+2]);
-    histsDelta[i]=(TH1*)(hists[i]->Clone(fullfname));
+    //    histsDelta[i]=(TH1*)(hists[i]->Clone(fullfname));
 
     chi2[i]=0;
-    
+    histsDelta[i]=new TGraphAsymmErrors(hists[i]->GetN());
+        
+    double px,py;
     for (int j=1; j<=18; j++) {
-      if (hists[i]->GetBinContent(j)==0) continue;
+      int which=j-1-iskip;
+      hists[i]->GetPoint(which,px,py);
+      if (py==0) continue;
+      double eyl=hists[i]->GetErrorYlow(which);
+      double eyh=hists[i]->GetErrorYhigh(which);
+      double exl=hists[i]->GetErrorXlow(which);
+      double exh=hists[i]->GetErrorXhigh(which);
+      
       /*
       histsDelta[i]->SetBinContent(j,data->GetBinContent(j)/hists[i]->GetBinContent(j)-1);
       histsDelta[i]->SetBinError(j,data->GetBinError(j)/data->GetBinContent(j));
@@ -181,31 +151,42 @@ void compareFEWZ(const char* models,const char* outgoing=0) {
       histsDelta[i]->SetBinContent(j,(data->GetBinContent(j)-hists[i]->GetBinContent(j))/data->GetBinError(j));
       histsDelta[i]->SetBinError(j,hists[i]->GetBinError(j)/data->GetBinError(j));
       */
-      histsDelta[i]->SetBinContent(j,(data->GetBinContent(j)-hists[i]->GetBinContent(j))/hists[i]->GetBinError(j));
-      printf("%d %f %f %f %f\n",j,data->GetBinContent(j),hists[i]->GetBinContent(j),hists[i]->GetBinError(j),histsDelta[i]->GetBinContent(j));
 
-      histsDelta[i]->SetBinError(j,data->GetBinError(j)/hists[i]->GetBinError(j));
+      if (data->GetBinContent(j)>py) {
+	histsDelta[i]->SetPoint(which,px,(data->GetBinContent(j)-py)/(eyh));
+	histsDelta[i]->SetPointError(which,exl,exh,data->GetBinError(j)/eyh,data->GetBinError(j)/eyh);
+      } else {
+	histsDelta[i]->SetPoint(which,px,(data->GetBinContent(j)-py)/(eyl));
+	histsDelta[i]->SetPointError(which,exl,exh,data->GetBinError(j)/eyl,data->GetBinError(j)/eyl);
+      }
 
+      printf("%d %e %d %e %f\n",j,data->GetBinContent(j), j-iskip-1, py, histsDelta[i]->GetY()[which]);
+
+      //      histsDelta[i]->SetBinError(j,data->GetBinError(j)/hists[i]->GetBinError(j));
+      /*
       if (j>=9 && j<=18) {
 	double binerror2=pow(data->GetBinError(j),2) + pow(hists[i]->GetBinError(j),2);
 	chi2[i]+=pow(data->GetBinContent(j)-hists[i]->GetBinContent(j),2)/binerror2;
 
 	if (i==0) ndof++;
       }
+      */
     }
 
-    hists[i]=zpt_rebinForPlot(hists[i]);
-    histsDelta[i]=zpt_rebinForPlot(histsDelta[i]);
+    //    hists[i]=zpt_rebinForPlot(hists[i]);
+    //    histsDelta[i]=zpt_rebinForPlot(histsDelta[i]);
     
     hists[i]->SetLineWidth(2);
     hists[i]->SetLineColor(colorForId(i));
     hists[i]->SetFillColor(colorForId(i));
-
+    
     histsDelta[i]->SetLineWidth(2);
     histsDelta[i]->SetLineColor(colorForId(i));
-
+    
     tl->AddEntry(hists[i],knownModels[imodels[i]*3+1],"LF");
     tl2->AddEntry(hists[i],knownModels[imodels[i]*3+1],"L");
+
+    histsDelta[i]->SetMarkerStyle(20);
 
     hists[i]->GetXaxis()->SetRangeUser(20,600);
     hists[i]->SetMarkerStyle(1);
@@ -217,6 +198,7 @@ void compareFEWZ(const char* models,const char* outgoing=0) {
   tl->Draw();
   c1->SetLogx();
   c1->SetLogy();
+  data->SetMarkerStyle(20);
   data->Draw("E1 SAME");
 
   c1->cd();
@@ -230,7 +212,7 @@ void compareFEWZ(const char* models,const char* outgoing=0) {
 
   //  TCanvas* c2=new TCanvas("c2","c2",800,400);
   //  TH2* dummy=new TH2F("dummy","dummy",20,0.0,30.0,30,-0.35,0.35);
-  TH2* dummy=new TH2F("dummy","",20,20,600.0,30,-2.5,2.5);
+  TH2* dummy=new TH2F("dummy","",20,20,600.0,30,-5.0,5.0);
   dummy->Draw();
 
   dummy->GetXaxis()->SetTitle("p_{T} [GeV/c]");
@@ -281,7 +263,7 @@ void compareFEWZ(const char* models,const char* outgoing=0) {
 
   for (int i=0; i<nhists; i++) {
     histsDelta[i]->SetLineColor(kBlack);
-    histsDelta[i]->Draw("SAME ][ E1");
+    histsDelta[i]->Draw("SAME P E1");
   }
   /*
   tl2->SetNColumns(2);
@@ -301,11 +283,13 @@ void compareFEWZ(const char* models,const char* outgoing=0) {
     sprintf(outx,"%s.C",outgoing);
     c1->Print(outx);
     sprintf(outx,"%s_delta.png",outgoing);
-    //c2->Print(outx);
+    /*
+    c2->Print(outx);
     sprintf(outx,"%s_delta.eps",outgoing);
     c2->Print(outx);
     sprintf(outx,"%s_delta.C",outgoing);
     c2->Print(outx);
+    */
   }
   for (int i=0; i<nhists; i++) {
     printf(" Comparison %s : %f/%d %f \n",knownModels[imodels[i]*3+1],chi2[i],ndof,TMath::Prob(chi2[i],ndof));

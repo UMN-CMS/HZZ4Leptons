@@ -29,7 +29,7 @@ TH1* extractDistribution(const char* name, TFile* f, int mode) {
 void energyScale(TFile* base, TFile* vpe, TFile* vme,  
 		 TFile* vpf, TFile* vmf, 
 		 TFile* vpv, TFile* vmv, int mode,
-		 const char* errfilename=0 ) {
+		 const char* errfilename="energyScaleError.csv" ) {
 
   const char* smode=0;
   switch (mode) {

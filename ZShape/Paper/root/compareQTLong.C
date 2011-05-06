@@ -7,6 +7,7 @@
 #include "readStandardFile.C"
 #include "tdrstyle.C"
 #include "zrapidityStandard.C"
+#include "../theory/database.C"
 
 int colorForId(int i) {
   const int colors[] = {kRed, kBlue, kGreen+2,
@@ -20,42 +21,6 @@ void compareQTLong(const char* models,const char* outgoing=0) {
   setTDRStyle();
   bool limiNormal=true;
 
-  const char* knownModels[] = { 
-    "D6T","Pythia Tune D6T","mcFile_D6T_TL.txt",
-    "P0","Pythia P0","mcFile_P0_TL.txt",
-    "ProPT0","Pythia ProPT0","mcFile_ProPT0_TL.txt",
-    "ProQ20","Pythia ProQ20","mcFile_ProQ20_TL.txt",
-    "Z2","Pythia Tune Z2 ","mcFile_Z2_TL.txt",
-    "FEWZ-1","FEWZ NLO","fewz_v1.txt",
-    "Resbos-P","Resbos-P","ptShape_Resbos_a0_80.txt",
-    "Resbos-CP","ResBos","resbos-cp.txt",
-    "R0.50","Resbos #alpha=0.50","ptShape_Resbos_a0_50.txt",
-    "R0.70","Resbos #alpha=0.70","ptShape_Resbos_a0_70.txt",
-    "R0.75","Resbos #alpha=0.75","ptShape_Resbos_a0_75.txt",
-    "R0.80","Resbos #alpha=0.80","ptShape_Resbos_a0_80.txt",
-    "R0.85","Resbos #alpha=0.85","ptShape_Resbos_a0_85.txt",
-    "R0.90","Resbos #alpha=0.90","ptShape_Resbos_a0_90.txt",
-    "R0.95","Resbos #alpha=0.95","ptShape_Resbos_a0_95.txt",
-    "R1.00","Resbos #alpha=1.00","ptShape_Resbos_a1_0.txt",
-    "R1.25","Resbos #alpha=1.25","ptShape_Resbos_a1_25.txt",
-    "R1.50","Resbos #alpha=1.50","ptShape_Resbos_a1_5.txt",
-    "R1.75","Resbos #alpha=1.75","ptShape_Resbos_a1_75.txt",
-    "R2.00","Resbos #alpha=2.00","ptShape_Resbos_a2_0.txt",
-    "R2.25","Resbos #alpha=2.25","ptShape_Resbos_a2_25.txt",
-    "R2.50","Resbos #alpha=2.50","ptShape_Resbos_a2_5.txt",
-    "R2.75","Resbos #alpha=2.75","ptShape_Resbos_a2_75.txt",
-    "R3.00","Resbos #alpha=3.00","ptShape_Resbos_a3_0.txt",
-    "R3.25","Resbos #alpha=3.25","ptShape_Resbos_a3_25.txt",
-    "R3.50","Resbos #alpha=3.50","ptShape_Resbos_a3_5.txt",
-    "R3.75","Resbos #alpha=3.75","ptShape_Resbos_a3_75.txt",
-    "R4.00","Resbos #alpha=4.00","ptShape_Resbos_a4_0.txt",
-    "PWG_D6T","Powheg + Pythia Tune D6T","PtTL_pwg_PythiaUED6T.txt",
-    "PWG_P0","Powheg + Pythia P0","PtTL_pwg_PythiaUEP0.txt",
-    "PWG_ProPT0","POWHEG + Pythia ProPT0","PtTL_pwg_PythiaUEProPT0.txt",
-    "PWG_ProQ20","Powheg + Pythia ProQ20","PtTL_pwg_PythiaUEProQ20.txt",
-    "PWG_Z2","POWHEG + Pythia Tune Z2","PtTL_pwg_PythiaUEZ2.txt",
-    0,0,0
-    };
   int nhists=0;
   TH1* hists[10],*histsDelta[10];
   int imodels[10];
@@ -87,11 +52,23 @@ void compareQTLong(const char* models,const char* outgoing=0) {
   }
 
 
+  TCanvas* c1=new TCanvas("c1","c1",750,1000);
+  c1->SetRightMargin(0.05);
+  c1->SetLeftMargin(0.22);
+  TPad* p1=new TPad("p1","p1",0,0.38,1,0.98,0,0);
+  p1->SetNumber(1);
+  p1->SetFillStyle(0);
+  p1->Draw();
+  p1->SetLeftMargin(0.15);
+  p1->SetBottomMargin(0.02);
+  TPad* p2=new TPad("p2","p2",0,00,1,0.38,0,0);
+  p2->SetBottomMargin(0.25);  
+  p2->SetLeftMargin(0.15);
+  p2->SetNumber(2);
+  p2->Draw();
+  p1->cd();
   
-
-  TCanvas* c1=new TCanvas("c1","c1",800,800);
-  c1->SetBottomMargin(0.152);
-  TH1* dummya=new TH1F("dummy0","dummy0",20,20.0,600.0);
+  TH1* dummya=new TH1F("dummy0","dummy0",20,0.7,600.0);
 
   TH1* data=readStandardFilePt("data","../data/dsdqt_combined.csv");
   dummya->SetMaximum(0.08);
@@ -106,8 +83,10 @@ void compareQTLong(const char* models,const char* outgoing=0) {
   char* Leg="";
   //  if (limiNormal) Leg="MC Normalized over 0 < q_{T} < 30";
 
-  TLegend* tl=new TLegend(0.47,0.73,0.94,0.89,Leg);
+  TLegend* tl=new TLegend(0.18,0.22,0.74,0.40,Leg);
+  tl->SetFillStyle(0);
   TLegend* tl2=new TLegend(0.23,0.77,0.95,0.92,Leg);
+  tl2->SetFillStyle(0);
   tl->AddEntry(data,"Combined e + #mu","p");
   //  tl2->AddEntry(data,"Combined e + #mu","p");
 
@@ -148,7 +127,10 @@ void compareQTLong(const char* models,const char* outgoing=0) {
       histsDelta[i]->SetBinError(j,data->GetBinError(j)/data->GetBinContent(j));
       */
 
-      histsDelta[i]->SetBinContent(j,(data->GetBinContent(j)-hists[i]->GetBinContent(j))/data->GetBinError(j));
+      double binerror=sqrt(pow(data->GetBinError(j),2)+pow(hists[i]->GetBinError(j),2));
+      histsDelta[i]->SetBinContent(j,(data->GetBinContent(j)-hists[i]->GetBinContent(j))/binerror);
+      histsDelta[i]->SetBinError(j,hists[i]->GetBinError(j)/data->GetBinError(j));
+
       histsDelta[i]->SetBinError(j,hists[i]->GetBinError(j)/data->GetBinError(j));
       if (j>=9 && j<=18) {
 	chi2[i]+=pow(data->GetBinContent(j)-hists[i]->GetBinContent(j),2)/
@@ -170,25 +152,23 @@ void compareQTLong(const char* models,const char* outgoing=0) {
     tl2->AddEntry(hists[i],knownModels[imodels[i]*3+1],"L");
 
 
-    hists[i]->Draw("E0 ][ SAME");
+    hists[i]->Draw("HIST ][ SAME");
   }
+  tl->SetNColumns(2);
   tl->Draw();
-  c1->SetLogx();
-  c1->SetLogy();
+  p1->SetLogx();
+  p1->SetLogy();
   data->Draw("E SAME");
 
-  zrap_Prelim(0.4,0.25,0.4,0.17);
-  zrap_Lumi(0.40,0.21,36);
-
-  TCanvas* c2=new TCanvas("c2","c2",800,400);
   //  TH2* dummy=new TH2F("dummy","dummy",20,0.0,30.0,30,-0.35,0.35);
-  TH2* dummy=new TH2F("dummy","dummy",20,20,600.0,30,-4.0,6.0);
+  p2->cd();
+  TH2* dummy=new TH2F("dummy","dummy",20,0.7,600.0,30,-4.0,6.0);
   dummy->Draw();
-  c2->SetLogx();
+  p2->SetLogx();
 
   dummy->GetXaxis()->SetTitle("p_{T} [GeV/c]");
   dummy->GetYaxis()->SetTitleOffset(0.5);
-  dummy->GetYaxis()->SetTitle("(Data - Theory)/#sigma_{Data}");
+  dummy->GetYaxis()->SetTitle("(data-theory)/Error");
   dummy->GetYaxis()->SetTitleSize(0.09);
 
 
@@ -222,15 +202,18 @@ void compareQTLong(const char* models,const char* outgoing=0) {
   band1s->Draw("F SAME");
 
   for (int i=0; i<nhists; i++) {
-    histsDelta[i]->Draw("SAME ][ E1");
+    histsDelta[i]->Draw("SAME ][ LHISt");
   }
 
   tl2->SetNColumns(2);
 
-  tl2->Draw();
+  //  tl2->Draw();
 
-  zrap_Prelim(0.78,0.25,0.4,0.17);
-  zrap_Lumi(0.78,0.22,36);
+  c1->cd();
+  c1->Draw();
+  zrap_Prelim(0.80,0.98,0.4,0.17);
+  zrap_Lumi(0.75,0.90,36);
+  zqt_Cut(0.34,0.43,"l",0.75);
 
   char outx[1024];
   if (outgoing!=0) {
@@ -238,10 +221,10 @@ void compareQTLong(const char* models,const char* outgoing=0) {
     //    c1->Print(outx);
     sprintf(outx,"%s.eps",outgoing);
     c1->Print(outx);
-    sprintf(outx,"%s_delta.png",outgoing);
+    //sprintf(outx,"%s_delta.png",outgoing);
+    //p2->Print(outx);
+    //sprintf(outx,"%s_delta.eps",outgoing);
     //c2->Print(outx);
-    sprintf(outx,"%s_delta.eps",outgoing);
-    c2->Print(outx);
   }
   for (int i=0; i<nhists; i++) {
     printf(" Comparison %s : %f/%d %f \n",knownModels[imodels[i]*3+1],chi2[i],ndof,TMath::Prob(chi2[i],ndof));

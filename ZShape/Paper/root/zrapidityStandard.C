@@ -6,9 +6,9 @@
 #include "TDatime.h"
 
 static bool dotime=false;
-//static const char* y_xaxis_label="y_{ee}";
+static const char* y_xaxis_label="y_{ee}";
 static const char* qt_xaxis_label="p_{T,ee} [GeV/c]";
-//static const char* qt_xaxis_ll_label="p_{T} [GeV/c]";
+static const char* qt_xaxis_ll_label="p_{T} [GeV/c]";
 
 TH1* zpt_rebinForPlot(TH1* original) {
   char name[125];
