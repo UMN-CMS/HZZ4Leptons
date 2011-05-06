@@ -285,7 +285,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
     pdfTotal.y[i]=(pdfPos.y[i]+(-pdfNeg.y[i]))/2*corrDataBkgd.y[i];
     pdfFrac.y[i]=(pdfPos.y[i]+(-pdfNeg.y[i]))/2;
     
-    printf("%d %f %f %f %f\n",i+1,corrData.ey[i],corrData.y[i]*ea_statErr.y[i]);
+    printf("%d %f %f \n",i+1,corrData.ey[i],corrData.y[i]*ea_statErr.y[i]);
     corrDataSyst.ey[i]=sqrt(pow(corrDataBkgd.ey[i],2)+
 			    pow(corrDataBkgd.y[i]*ea_statErr.y[i],2)+
 			    pow(backgroundAllUnc.y[i]/effAcc.y[i],2)+
@@ -374,7 +374,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
   TGraph* rawd=data_all.makeTG(npoint,firsti-1);
   TGraph* rawdb=data_bkgd.makeTG(npoint,firsti-1);
   TGraph* corrd=corrData.makeTGE(npoint,firsti-1);
-  TGraph* corrdsys=corrDataSyst.makeTGE(npoint,firsti-1);
+  //  TGraph* corrdsys=corrDataSyst.makeTGE(npoint,firsti-1);
   TGraph* corrdbkgd=corrDataBkgd.makeTGE(npoint,firsti-1);
   // this is special
   TGraph* corrdsysb=new TGraphErrors(npoint,corrDataBkgd.xave+firsti-1,corrDataBkgd.y+firsti-1,corrDataSyst.xwidth+firsti-1,corrDataSyst.ey+firsti-1);
@@ -444,7 +444,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
   const char* unfoldMatrixFile="../data/unfold_z2_apr24.root";
   if (mode==4) {
     TH1*      data_corr_fold_smeared      =corrDataFold.makeTH1("data_corr_fold_smeared",50,50);
-    TH1*      data_corr_unsmeared         =unfold(data_corr_fold_smeared,unfoldMatrixFile,true);              // unfolding for |Y|
+    //    TH1*      data_corr_unsmeared         =unfold(data_corr_fold_smeared,unfoldMatrixFile,true);              // unfolding for |Y|
     TFile*    theunfoldingMatrixInputFile =new TFile(unfoldMatrixFile,"read");
     TMatrixD* theUnfoldingMatrix          =(TMatrixD*)theunfoldingMatrixInputFile->Get("unsmearMatrices/unfoldingMatrixTotalFolded"); // indices [0.. 49] X [0.. 49]
     double errorCumul=0;
