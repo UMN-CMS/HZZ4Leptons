@@ -441,7 +441,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
   DataSeries corrDataFoldClone(corrDataFold);
   DataSeries corrDataSystFoldClone(corrDataSystFold);
     // use this to activate matrix (type-3) unsmearing for the folded rapidity distribution |Y|
-  const char* unfoldMatrixFile="../data/unfold_z2_apr24.root";
+  const char* unfoldMatrixFile="../data/unfold_official.root";
   if (mode==4) {
     TH1*      data_corr_fold_smeared      =corrDataFold.makeTH1("data_corr_fold_smeared",50,50);
     //    TH1*      data_corr_unsmeared         =unfold(data_corr_fold_smeared,unfoldMatrixFile,true);              // unfolding for |Y|
