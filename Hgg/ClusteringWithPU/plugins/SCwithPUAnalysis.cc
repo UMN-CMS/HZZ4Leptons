@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  David Futyan,40 4-B32,+41227671591,
 //         Created:  Thu Dec  2 20:20:57 CET 2010
-// $Id: SCwithPUAnalysis.cc,v 1.2 2011/05/05 13:52:34 franzoni Exp $
+// $Id: SCwithPUAnalysis.cc,v 1.3 2011/05/05 18:50:42 franzoni Exp $
 //
 //
 
@@ -93,6 +93,7 @@ private:
 
   SCwithPUhistos allCase_;
   SCwithPUhistos oneCase_, twoCase_, threeCase_, moreCase_;
+  SCwithPUhistos twoDphiCase_, twoDphiLooseCase_, twoDphiTightCase_,twoAntiDphiCase_;
 
   TH1F *h_scet_barl;// single-photon mult
   TH1F *h_scet_endc;// single-photon mult
@@ -177,6 +178,9 @@ private:
   TH2F *h_maxCryInLocMaxVsPhi_barlMinus;// single-photon mult
   TH1F *h_maxCryInLocMax_barlSymm;// single-photon mult
   TH2F *h_maxCryInLocMaxVsPhi_barlSymm;// single-photon mult
+
+  TH1F *h_r9_barl;
+  TH1F *h_r9_endc;
 };
 
 //
@@ -310,6 +314,26 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	    else if (numOfBC==2){ twoCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
 	    else if (numOfBC==3){ threeCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
 	    else                { moreCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
+
+	    // study the properties of SC according to the separation of the BC constituents
+	    if(numOfBC==2){
+	      float phi1= (*scIt->clustersBegin())      ->phi();
+	      float phi2= (*(scIt->clustersBegin()+1))  ->phi();
+	      float deltaPhi = phi1-phi2;
+	      if ( deltaPhi > pi ) deltaPhi -= twopi;
+	      if ( deltaPhi < -pi) deltaPhi += twopi;
+	      
+	      float et1=(*scIt->clustersBegin())->energy()/cosh(scIt->eta());
+	      float et =scIt->energy()/cosh(scIt->eta());
+	      
+	      float deltaPhiCut = 1.39*1.39 /2 * 0.3 * 3.8 * (1/et1 + 1/(et-et1));
+	      deltaPhiCut      *= 0.75; //tuning
+	      if ( std::fabs(deltaPhi) < deltaPhiCut) twoDphiCase_.FillSc(scIt,p,ebRecHits,eeRecHits);
+	      else                                    twoAntiDphiCase_.FillSc(scIt,p,ebRecHits,eeRecHits);
+	      if ( std::fabs(deltaPhi) < (0.75*deltaPhiCut)) twoDphiTightCase_.FillSc(scIt,p,ebRecHits,eeRecHits);
+	      if ( std::fabs(deltaPhi) < (1.25*deltaPhiCut)) twoDphiLooseCase_.FillSc(scIt,p,ebRecHits,eeRecHits);
+	    }
+	    
 
 	    // COPY1 //
 	    h_scet_barl->Fill((scIt->energy()/cosh(scIt->eta()))/et_true);   // using: h_scet_barl as counter of EB matched photons
@@ -475,6 +499,25 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	    else if (numOfBC==3){ threeCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
 	    else                { moreCase_.FillSc(scIt,p,ebRecHits,eeRecHits);}
 
+	    if(numOfBC==2){
+	      float phi1= (*scIt->clustersBegin())      ->phi();
+	      float phi2= (*(scIt->clustersBegin()+1))  ->phi();
+	      float deltaPhi = phi1-phi2;
+	      if ( deltaPhi > pi ) deltaPhi -= twopi;
+	      if ( deltaPhi < -pi) deltaPhi += twopi;
+	      
+	      float et1=(*scIt->clustersBegin())->energy()/cosh(scIt->eta());
+	      float et =scIt->energy()/cosh(scIt->eta());
+	      
+	      float deltaPhiCut = 1.39*1.39 /2 * 0.3 * 3.8 * (1/et1 + 1/(et-et1));
+	      deltaPhiCut      *= 0.75; //tuning
+	      if ( std::fabs(deltaPhi) < deltaPhiCut) twoDphiCase_.FillSc(scIt,p,ebRecHits,eeRecHits);
+	      else                                    twoAntiDphiCase_.FillSc(scIt,p,ebRecHits,eeRecHits);
+	      if ( std::fabs(deltaPhi) < (0.75*deltaPhiCut)) twoDphiTightCase_.FillSc(scIt,p,ebRecHits,eeRecHits);
+	      if ( std::fabs(deltaPhi) < (1.25*deltaPhiCut)) twoDphiLooseCase_.FillSc(scIt,p,ebRecHits,eeRecHits);
+	    }
+
+
 	    // COPY2 //
 	    h_scet_endc->Fill((scIt->energy()/cosh(scIt->eta()))/et_true); // using: h_scet_barl as counter of EE matched photons
 	    h_EoverEtrue_endc->Fill(scIt->energy()/(*p)->momentum().e());
@@ -525,6 +568,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);
 	  if ( delta<0.1 && phoIt->energy()/cosh(phoIt->caloPosition().eta())>20.) {
 	    
+
 	    allCase_.FillGamma(phoIt,p);
 	    // use this variable to classify the SC's associated to PHOTONS
 	    int numOfBC = phoIt->superCluster()->clustersSize();
@@ -534,6 +578,27 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 	    else if (numOfBC==2){ twoCase_.FillGamma(phoIt,p);}
 	    else if (numOfBC==3){ threeCase_.FillGamma(phoIt,p);}
 	    else                { moreCase_.FillGamma(phoIt,p);}
+
+	    if(numOfBC==2){
+	      //SuperClusterCollection::const_iterator scIt = phoIt->superCluster();
+	      float phi1= (*phoIt->superCluster()->clustersBegin())      ->phi();
+	      float phi2= (*(phoIt->superCluster()->clustersBegin()+1))      ->phi();
+	      float deltaPhi = phi1-phi2;
+	      if ( deltaPhi > pi ) deltaPhi -= twopi;
+	      if ( deltaPhi < -pi) deltaPhi += twopi;
+	      
+	      float et1=(*phoIt->superCluster()->clustersBegin())->energy()/cosh(phoIt->superCluster()->eta());
+	      float et =phoIt->superCluster()->energy()/cosh(phoIt->superCluster()->eta());
+	      
+	      float deltaPhiCut = 1.39*1.39 /2 * 0.3 * 3.8 * (1/et1 + 1/(et-et1));
+	      deltaPhiCut      *= 0.75; //tuning
+	      if ( std::fabs(deltaPhi) < deltaPhiCut) twoDphiCase_.FillGamma(phoIt,p);
+	      else                                    twoAntiDphiCase_.FillGamma(phoIt,p);
+	      if ( std::fabs(deltaPhi) < (0.75*deltaPhiCut)) twoDphiTightCase_.FillGamma(phoIt,p);
+	      if ( std::fabs(deltaPhi) < (1.25*deltaPhiCut)) twoDphiLooseCase_.FillGamma(phoIt,p);
+	    }
+
+
 
 	    // COPY 3 //
 	    if (phoIt->isEB()) {
@@ -580,7 +645,7 @@ SCwithPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 		//cout << phoIt->et() << " " << localPho.et() << " " << trueVtx << " " << recoVtx << endl;
 	      }
 	    } // if mother
-	  }// if matching between SC and photon
+	  }// if matching between SC and photon and ET_{pho} > 20
 	}// loop over photons
 	
       }// if it's MC-truth photon
@@ -646,7 +711,13 @@ SCwithPUAnalysis::beginJob()
   subDir=fs->mkdir("twoBC");     twoCase_.Book(subDir);
   subDir=fs->mkdir("threeBC");   threeCase_.Book(subDir);
   subDir=fs->mkdir("moreBC");    moreCase_.Book(subDir);
+
+  subDir=fs->mkdir("twoDphiCase");       twoDphiCase_.Book(subDir);
+  subDir=fs->mkdir("twoDphiLooseCase");  twoDphiLooseCase_.Book(subDir);
+  subDir=fs->mkdir("twoDphiTightCase");  twoDphiTightCase_.Book(subDir);
+  subDir=fs->mkdir("twoAntiDphiCase");   twoAntiDphiCase_.Book(subDir);
   
+
   // keeping these ones for COMPARISON and validation
   h_scet_barl = fs->make<TH1F>("h_scet_barl","SC ET over true, barrel; EB: E_{T,superC}/E_{T,true}",90,0.75,1.2);  // using: h_scet_barl as counter of EB matched photons 
   h_scet_endc = fs->make<TH1F>("h_scet_endc","SC ET over true, endcap; EE: E_{T,superC}/E_{T,true}",90,0.75,1.2);  // using: h_scet_endc as counter of EE matched photons 
@@ -736,7 +807,7 @@ SCwithPUAnalysis::beginJob()
   h_maxCryInLocMax_barlMinus      = fs->make<TH1F>("h_maxCryInLocalMax_barlMinus","max Cry In Local Max (EB-); i#eta_{BC} - i#eta_{SCseed}", 5,-2,3); 
   h_maxCryInLocMaxVsPhi_barlMinus = fs->make<TH2F>("h_maxCryInLocalMaxVsPhi_barlMinus","max Cry In Local Max Vs i#phi (EB-); EB i#phi_{BC} - i#phi_{SCseed}; EB-  i#eta - i#eta_{SCseed}", 35,-17,18,5,-2,3); 
 
-
+  // add histos to the class, instead!
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
