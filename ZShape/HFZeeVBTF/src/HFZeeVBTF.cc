@@ -13,7 +13,7 @@
 //
 // Original Author:  Jeremy M Mans
 //         Created:  Mon May 31 07:00:26 CDT 2010
-// $Id: HFZeeVBTF.cc,v 1.22 2011/04/13 19:08:46 mansj Exp $
+// $Id: HFZeeVBTF.cc,v 1.23 2011/04/15 01:45:06 mansj Exp $
 //
 //
 
@@ -323,7 +323,7 @@ void HFZeeVBTF::HistPerDef::fill(pat::ElectronCollection::const_iterator ecalE,
     isEe=0;
   }
   
-  float e9e25      = hfshape.e9e25();
+  float e9e25      = hfshape.eLong3x3()/hfshape.eLong5x5();
   float var2d      = hfshape.eCOREe9()-(hfshape.eSeL()*9./8.);
   float eCOREe9    = hfshape.eCOREe9();
   float eSeL       = hfshape.eSeL();

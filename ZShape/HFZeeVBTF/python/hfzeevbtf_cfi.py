@@ -10,6 +10,7 @@ hfzeevbtf = cms.EDFilter('HFZeeVBTF',
                     minEtECAL = cms.double(20),
                     minEtHF   = cms.double(20),
                     Zmass     = cms.vdouble(40,130),
+                    FILTERid  = cms.untracked.string(''),
                     # the following params are, respectively: e9e25_loose, e9e25_tight,  var2d_loose, var2d_tight,  eCOREe9_loose, eCOREe9_tight,  eSeL_loose, eSeL_tight;
                     # set to -9999/+9999 if you want to neglect a cut, resp eCOREe9/eSeL
                     hFselParams =  cms.vdouble(0.90, 0.94,      0.32, 0.45,    -9999, -9999,     9999, 9999),

@@ -19,6 +19,7 @@ class EffExtraHistos {
 
  private:
 
+  TH1 *sc_mZ_, *sc_Y_, *sc_pt_, *sc_ptMon_;
   
   TH1 *DmZ_,*DYZ_, *DptZ_;
   TH1 *De1eta_,*De2eta_,*De1phi_,*De2phi_,*De1pt_,*De2pt_;

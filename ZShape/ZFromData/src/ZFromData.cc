@@ -238,8 +238,16 @@ void ZFromData::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		
 	    reco::SuperClusterRef SCt = tag->get<reco::SuperClusterRef>();
 	    reco::SuperClusterRef SCp = vprobes->get<reco::SuperClusterRef>();
+
+	    evt_.elec(0).scEnergy_ = SCt->energy();
+	    evt_.elec(1).scEnergy_ = SCp->energy();
+
 	    evt_.elec(0).detEta_ = SCt->eta();
 	    evt_.elec(1).detEta_ = SCp->eta();
+	    evt_.elec(0).detEtaVtx_ = evt_.elec(0).detectorEta(tag->vertex());
+	    evt_.elec(1).detEtaVtx_ = evt_.elec(1).detectorEta(tag->vertex());
+	    evt_.elec(0).detPhi_ = SCt->phi();
+	    evt_.elec(1).detPhi_ = SCp->phi();
 		
 	    //std::cout << "Got the 4-vectors " << std::endl;
 	    // If there are two probes with the tag continue
