@@ -62,10 +62,10 @@ void EffExtraHistos::Book(TFileDirectory& tdf) {
   MCe1pt_  = tdf.make<TH1F>("e1_P_t_MC","e1_P_t_MC;p_{T,e1}", 200, 0., maxPt);  
   MCe2pt_  = tdf.make<TH1F>("e2_P_t_MC","e2_P_t_MC;p_{T,e2}", 200, 0., maxPt);
 
-  sc_mZ_  = tdf.make<TH1F>("Z0_mass","Z0_mass;m_{Z} (GeV/c^{2})", binsZmass, minZmass, maxZmass);
-  sc_Y_  = tdf.make<TH1F>("Z0_Y","Z0_Y;Y_{Z0}", zshape::y_bins, -zshape::y_max, zshape::y_max);
-  sc_pt_  = tdf.make<TH1F>("Z0_Pt","Z0_Pt;p_{T,Z0}", zshape::pt_bins, zshape::pt_binning);
-  sc_ptMon_ = tdf.make<TH1F>("Z0_PtMon","Z0_PtMon;p_{T,Z0}", 200, 0, maxPt);
+  sc_mZ_  = tdf.make<TH1F>("Z0_mass_sc","Z0_mass_sc;m_{Z} (GeV/c^{2})", binsZmass, minZmass, maxZmass);
+  sc_Y_  = tdf.make<TH1F>("Z0_Y_sc","Z0_Y_sc;Y_{Z0}", zshape::y_bins, -zshape::y_max, zshape::y_max);
+  sc_pt_  = tdf.make<TH1F>("Z0_Pt_sc","Z0_Pt_sc;p_{T,Z0}", zshape::pt_bins, zshape::pt_binning);
+  sc_ptMon_ = tdf.make<TH1F>("Z0_PtMon_sc","Z0_PtMon_sc;p_{T,Z0}", 200, 0, maxPt);
 
 
 }
