@@ -1,25 +1,52 @@
-//Hello C++
+/*
+
+Minnesota BLUE Results Combiner
+Version 1.0
+May 10, 2011
+
+J. Pastika and J. Mans
+
+This tar contains version 1.0 of the UMN BLUE results combiner.
+
+This will combine the results of 2 independant measurements each with
+their own covariance matrix.  The method is summarized in [1].  The
+method is implemented as a root script which accepts the input files
+of the seperate measurements as text files. 
+
+[1] Valassi, A. "Combining correlated measurements of several
+different physical quantities."  Nuclear instruments & methods in
+physics research. Section A, Accelerators, spectrometers, detectors
+and associated equipment 500.1-3 (2003):391
+
+ */
 
 #include "TMatrixT.h"
 #include "TVectorT.h"
-#include "stdio.h"
-#include "math.h"
+#include <stdio.h>
+#include <math.h>
 #include <vector>
+#include <iostream>
 
-void readDataVector(const char * name, TVectorD& dv, double binLimits[][2] = 0);
+void readDataVector(const char * name, TVectorD& dv, double binLimits[][2] = 0, int ftr = 1, double* ccCovar = NULL);
 void readCovMatrix(const char * name, TMatrixT<double>& dv);
 
-void resultCombiner(const char * name_dv1, const char * name_cm1, const int length1, const char * name_dv2, const char * name_cm2, const int length2, const char * outputNameStub = "output")
+void resultCombiner(const char * name_dv1, const char * name_cm1, const int length1, const char * name_dv2, const char * name_cm2, const int length2, int ftr = 1, const char * outputNameStub = "output")
 {
     TVectorD dv1(length1), dv2(length2);
     TMatrixT<double> cm1(length1, length1), cm2(length2, length2);
-    double binLimits1[length1][2], binLimits2[length2][2];
+    double binLimits1[length1][2], binLimits2[length2][2], ccCov1[length1];
 
-    readDataVector(name_dv1, dv1, binLimits1);
+    readDataVector(name_dv1, dv1, binLimits1, ftr, ccCov1);
+    printf("Read data vector 1\n");
+
     readDataVector(name_dv2, dv2, binLimits2);
+    printf("Read data vector 2\n");
 
     readCovMatrix(name_cm1, cm1);
+    printf("Read covariance matrix 1\n");
+
     readCovMatrix(name_cm2, cm2);
+    printf("Read covariance matrix 2\n");
 
     std::vector<double*> binLimits;
     std::vector<std::vector<int > > preU;
@@ -103,7 +130,10 @@ void resultCombiner(const char * name_dv1, const char * name_cm1, const int leng
     {
         if(preU[i][0] >= 0) U[preU[i][0]][i] = 1;
         if(preU[i][1] >= 0) U[preU[i][1] + length1][i] = 1;
+        if(ftr > 1 && preU[i][0] >= 0 && preU[i][1] >= 0)  cm[preU[i][0]][preU[i][1] + length1] = cm[preU[i][1] + length1][preU[i][0]] = ccCov1[preU[i][0]];
     }
+    
+    cm.Print();
 
     TMatrixT<double> Ut(U);
     Ut.T();
@@ -115,6 +145,8 @@ void resultCombiner(const char * name_dv1, const char * name_cm1, const int leng
     TMatrixT<double> lambda = step1.Invert() * step2;
     TVectorD bV = lambda*dv;
     TMatrixT<double> bcm = (Ut * cmInv * U).Invert();
+
+    printf("Done with combination.\n");
 
     //write output
     FILE *file;
@@ -147,15 +179,16 @@ void resultCombiner(const char * name_dv1, const char * name_cm1, const int leng
         }
         fclose(file);
     }
+    printf("Output complete.\n");
 }
 
-void readDataVector(const char * name, TVectorD& dv, double binLimits[][2])
+void readDataVector(const char * name, TVectorD& dv, double binLimits[][2], int ftr, double* ccCovar)
 {
     //read data vectors
     FILE *file;
     char *c, buff[2048], *k;
     int i;
-    float d1, d2, d3;
+    float d1, d2, d3, f;
 
     file = fopen(name, "r");
     if(file)
@@ -175,6 +208,21 @@ void readDataVector(const char * name, TVectorD& dv, double binLimits[][2])
                         binLimits[i - 1][1] = d2;
                     }
                     dv[i - 1] = d3;
+                }
+                if(ccCovar != NULL && ftr > 1)
+                {
+                	ccCovar[i] = 0.0;
+                	char delim[128];
+                	sprintf(delim, "%%*d");
+                	for(int j = 0; j <= ftr; j++)
+                	{
+                		sprintf(delim, "%s %%*f", delim);
+                	}
+                	sprintf(delim, "%s %%f", delim);
+                	if(sscanf(buff, delim, &f) == 1) 
+                	{
+                		ccCovar[i - 1] = f;
+                	}
                 }
             }
         }
