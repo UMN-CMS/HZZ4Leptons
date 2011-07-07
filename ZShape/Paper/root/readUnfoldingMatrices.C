@@ -1,3 +1,5 @@
+
+
 #include <iostream> 
 #include <fstream>
 #include <stdlib.h>
@@ -130,7 +132,7 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
       int found=sscanf(line," %d %f %f %f %f %f",&i,&a,&b,&c,&d,&e);
 
       errorsArray[errorsCounter] = d*d; // use statistical to compute covariance matrix
-      systErrosArray[errorsCounter] = d*d+e*e;
+      systErrosArray[errorsCounter] = e*e;
       std::cout << "stat errors2 directly from unfolded distribution - bin : " << i  <<"\t" << " err2: " << sqrt(errorsArray[errorsCounter])  << std::endl;    
       myfileData << scientific << progressive << "\t"
 		 << a << "\t" //bin_min
@@ -195,7 +197,6 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
   else                         std::cout << " NOT adding systematic errors in quadrature to the diagonal of the cov matrix\n" << std::endl;
   for(int i=0; i<errorsCounter; i++){
     for(int j=0; j<errorsCounter; j++){
-      //std::cout << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;     
       if(addSystematicsOnDiagonal) {
 	float theMatrixElement = covarianceMatrix(i,j);
 	if(i==j) theMatrixElement+= systErrosArray[i]*systErrosArray[i];
