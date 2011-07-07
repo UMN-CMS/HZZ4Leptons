@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  Giovanni FRANZONI
 //         Created:  Mon Feb 18 21:18:39 CET 2008
-// $Id: ZEventProducer.cc,v 1.1 2010/12/14 21:26:26 mansj Exp $
+// $Id: ZEventProducer.cc,v 1.2 2011/04/21 15:30:31 mansj Exp $
 //
 //
 
@@ -342,7 +342,44 @@ ZEventProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   iEvent.put(pZeeEle1,"ZEventEle1");
   iEvent.put(pZeeEle3,"ZEventEle3");
   iEvent.put(pZeeParticles,"ZEventParticles");
-  
+
+  std::auto_ptr<std::vector<int> > _PartonId(  new std::vector<int> );
+  _PartonId->clear();
+  std::auto_ptr<std::vector<float> > _PartonMomFraction(  new std::vector<float> );
+  _PartonMomFraction->clear();
+  std::auto_ptr<std::vector<float> > _ScaleQ(  new std::vector<float> );
+  _ScaleQ->clear();
+  // Test parton info in HepMC ...... VR 2009/04/02
+  edm::Handle<edm::HepMCProduct> MC; 
+  iEvent.getByType( MC ); 
+  // Get GenEvent 
+  const HepMC::GenEvent * genEvt = MC->GetEvent(); 
+  //Get PdfInfo 
+  const HepMC::PdfInfo* pdfstuff = genEvt->pdf_info(); 
+  if (pdfstuff != 0) { 
+   //cout << "First incoming parton:  (id/flavour = " 
+   //   << pdfstuff->id1() << "/" <<  pdfstuff->x1()  << ")" << endl
+   //   << "second incoming parton: (id/flavour = " 
+   //   << pdfstuff->id2() << "/" <<  pdfstuff->x2()  << ")" << endl
+   //   << "Scale Q = " << pdfstuff->scalePDF() << endl;
+   _PartonId->push_back(pdfstuff->id1());
+   _PartonId->push_back(pdfstuff->id2());
+   _PartonMomFraction->push_back(pdfstuff->x1());
+   _PartonMomFraction->push_back(pdfstuff->x2());
+   _ScaleQ->push_back(pdfstuff->scalePDF());
+  }
+  else {
+   _PartonId->push_back(-999);
+   _PartonId->push_back(-999);
+   _PartonMomFraction->push_back(-999);
+   _PartonMomFraction->push_back(-999);
+   _ScaleQ->push_back(-999);
+  }
+
+  // End of thing 
+  iEvent.put(_PartonId,"PartonId");
+  iEvent.put(_PartonMomFraction,"PartonMomFraction");
+  iEvent.put(_ScaleQ,"ScaleQ");  
   
 }
 
