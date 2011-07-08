@@ -61,10 +61,13 @@ void SCwithPUhistos::Book(TFileDirectory& fs) {
   h_absPhiShape_endc    = fs.make<TH1F>("h_absPhiShape_endc","phi AbsShape (endcap); EE  abs(i#phi - i#phi_{SCseed})", 18,0,18); 
   h_phiShapeVsE_barl    = fs.make<TH2F>("h_phiShapeVsE_barl","phi Shape Vs E (barrel); EB i#phi - i#phi_{SCseed}; EB E [GeV]", 35,-17,18,100,0,300);
   h_phiShapeVsEt_barl   = fs.make<TH2F>("h_phiShapeVsEt_barl","phi Shape Vs E_{T} (barrel); EB i#phi - i#phi_{SCseed}; EB E_{T} [GeV]", 35,-17,18,100,0,200); 
-  h_absPhiShapeVsE_barl = fs.make<TH2F>("h_absPhiShapeVsE_barl","phi AbsShape Vs E (barrel); EB  abs(i#phi - i#phi_{SCseed}); EB E [GeV]", 18,0,18,100,0,300); 
+  h_absPhiShapeVsE_barl = fs.make<TH2F>("h_absPhiShapeVsE_barl","abs phi Shape Vs E (barrel); EB  |i#phi - i#phi_{SCseed}|); EB E [GeV]", 18,0,17,100,0,300); 
+  h_absPhiShapeVsEt_barl = fs.make<TH2F>("h_absPhiShapeVsE_barl","abs phi Shape Vs E_{T} (barrel); EB  |i#phi - i#phi_{SCseed}|); EB E_{T} [GeV]", 18,0,17,100,0,200); 
   h_phiShapeVsE_endc    = fs.make<TH2F>("h_phiShapeVsE_endc","phi Shape Vs E (endcap); EE i#phi - i#phi_{SCseed}; EE E [GeV]", 35,-17,18,100,0,300); 
+  h_phiShapeVsEt_endc    = fs.make<TH2F>("h_phiShapeVsE_endc","phi Shape Vs E (endcap); EE i#phi - i#phi_{SCseed}; EE E [GeV]", 35,-17,18,100,0,300); 
   h_phiShapeVsEt_endc   = fs.make<TH2F>("h_phiShapeVsEt_endc","phi Shape Vs E_{T} (endcap); EE i#phi - i#phi_{SCseed}; EE E_{T} [GeV]", 35,-17,18,100,0,200); 
-  h_absPhiShapeVsE_endc = fs.make<TH2F>("h_absPhiShapeVsE_endc","phi AbsShape Vs E (endcap); EE  abs(i#phi - i#phi_{SCseed}); EE E [GeV] ", 18,0,18,100,0,300); 
+  h_absPhiShapeVsE_endc = fs.make<TH2F>("h_absPhiShapeVsE_endc","abs phi Shape Vs E (endcap); EE  |i#phi - i#phi_{SCseed}|); EE E [GeV] ", 18,0,18,100,0,300); 
+  h_absPhiShapeVsEt_endc = fs.make<TH2F>("h_absPhiShapeVsE_endc","abs phi Shape Vs E (endcap); EE  |i#phi - i#phi_{SCseed}|); EE E_{T} [GeV] ", 18,0,18,100,0,200); 
 
   h_etaShape_barl       = fs.make<TH1F>("h_etaShape_barl","eta Shape (barrel); EB i#eta_{BC} - i#eta_{SCseed}", 7,-3,3); 
   h_etaShape_barlPLus   = fs.make<TH1F>("h_etaShape_barlPLus","eta Shape (barrel plus); EB i#eta_{BC} - i#eta_{SCseed}", 7,-3,3); 
@@ -108,12 +111,19 @@ void SCwithPUhistos::Book(TFileDirectory& fs) {
   h_maxCryInLocMaxVsPhi_barlMinus = fs.make<TH2F>("h_maxCryInLocalMaxVsPhi_barlMinus","max Cry In Local Max Vs i#phi (EB-); EB i#phi_{BC} - i#phi_{SCseed}; EB-  i#eta - i#eta_{SCseed}", 35,-17,18,5,-2,3); 
 
   h_numBC = fs.make<TH1F>("h_numBC","num BC in SC; num BC in SC",10,0,10); ;
+  h_numBC_barl = fs.make<TH1F>("h_numBC_barl","EB: num BC in SC; EB: num BC in SC",10,0,10); ;
+  h_numBC_endc = fs.make<TH1F>("h_numBC_endc","EE: num BC in SC; EB: num BC in SC",10,0,10); ;
   h_EoverEtrue_VS_phiWidth_barl         = fs.make<TH2F>("h_EoverEtrue_VS_phiWidth_barl","E_SC/Etrue vs #sigma_{#phi#phi} (EB); EB: E_{photon}/E_{true}; EB: i#phi width",45,0.75,1.2,10,0,0.25); 
   h_EoverEtrue_VS_phiSize_barl = fs.make<TH2F>("h_EoverEtrue_VS_phiSize_barl","E_SC/Etrue vs  #phi size (EB);  EB: E_{photon}/E_{true}; EB: i#phi size",45,0.75,1.2,35,0,34); 
-  h_EoverEtrue_VS_bcminObcMax_barl = fs.make<TH2F>("h_EoverEtrue_VS_bcminObcMax_barl","E_SC/Etrue VS E_{BC min}/E_{BC Max} (two BC - EB); EB: E_{photon}/E_{true}; EB: E_{BC min}/E_{BC Max}",45,0.75,1.2,10,0,1);
-  h_EoverEtrue_VS_DeltaPhi_TwoCl_barl = fs.make<TH2F>("h_EoverEtrue_VS_DeltaPhi_TwoCl_barl","E_SC/Etrue VS |#phi_{Max}-#phi_{min}|; EB: E_{photon}/E_{true}; EB: |#phi_{Max}-#phi_{min}|",45,0.75,1.2,10,0,0.3);
-  h_EoverEtrue_VS_DeltaPhibcminObcMax_barl = fs.make<TH2F>("h_EoverEtrue_VS_DeltaPhibcminObcMax_barl","E_SC/Etrue VS |#phi_{Max}-#phi_{min}|; EB: E_{photon}/E_{true}; EB: |#phi_{Max}-#phi_{min}|",45,0.75,1.2,10,0,0.3);
-
+  h_EoverEtrue_VS_bcminObcMax_barl = fs.make<TH2F>("h_EoverEtrue_VS_bcminObcMax_barl","E_SC/Etrue VS E_{BC min}/E_{BC Max} (two BC - EB); EB: E_{photon}/E_{true}; EB: E_{BC min}/E_{BC Max}",45,0.75,1.2,40,0,1);
+  h_EoverEtrue_VS_DeltaPhi_TwoCl_barl = fs.make<TH2F>("h_EoverEtrue_VS_DeltaPhi_TwoCl_barl","E_SC/Etrue VS |#phi_{Max}-#phi_{min}|; EB: E_{photon}/E_{true}; EB: |#phi_{Max}-#phi_{min}|",45,0.75,1.2,34,0,0.3);
+  h_EoverEtrue_VS_DeltaPhibcminObcMax_barl = fs.make<TH2F>("h_EoverEtrue_VS_DeltaPhibcminObcMax_barl","E_SC/Etrue VS |#phi_{Max}-#phi_{min}|; EB: E_{photon}/E_{true}; EB: |#phi_{Max}-#phi_{min}|",45,0.75,1.2,34,0,0.3);
+  h_bcminObcMax_VS_DeltaPhibcminObcMax_barl = fs.make<TH2F>("h_bcminObcMax_VS_DeltaPhibcminObcMax_barl","E_{BC min}/E_{BC Max} VS |#phi_{Max}-#phi_{min}|; EB: E_{BC min}/E_{BC Max}; EB: |#phi_{Max}-#phi_{min}|",40,0,1,34,0,0.3);
+  h_DeltaPhibcminObcMax_VS_bcminObcMax_barl = fs.make<TH2F>("h_DeltaPhibcminObcMax_VS_bcminObcMax_barl","|#phi_{Max}-#phi_{min}| VS E_{BC min}/E_{BC Max}; EB: |#phi_{Max}-#phi_{min}|; EB: E_{BC min}/E_{BC Max}",34,0,0.3,40,0,1);
+  
+  h_r9_barl           = fs.make<TH1F>("h_r9_barl","R9 (barrel); R9", 100,0,1); 
+  h_r9_endc           = fs.make<TH1F>("h_r9_endc","R9 (endcap); R9", 100,0,1); 
+  
 }
 
 void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator sc1, HepMC::GenEvent::particle_const_iterator particle1,
@@ -121,7 +131,7 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
 {
  
   int numOfBC = sc1->clustersSize();
-  h_numBC->Fill(numOfBC);
+
   
   // initial photon true variables 
   float phi_true=(*particle1)->momentum().phi();
@@ -137,7 +147,9 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
 
   // this is a SC in the EB case
   if (fabs(sc1->eta())<1.4442 && energySc/cosh(sc1->eta())>20.) {
-    
+    h_numBC     ->Fill(numOfBC);
+    h_numBC_barl->Fill(numOfBC);
+
     // perform SC-MCparticle matching
     float deltaPhi = sc1->phi()-phi_true;
     if ( deltaPhi > PI ) deltaPhi -= TWOPI;
@@ -153,11 +165,7 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
     
     h_EoverEtrue_VS_phiWidth_barl->Fill((energySc/cosh(sc1->eta()))/et_true, phiWidth);
     h_EoverEtrue_VS_phiSize_barl ->Fill((energySc/cosh(sc1->eta()))/et_true, phiSize);
-    //    if(numOfBC==0)       std::cout << "[SCwithPUhistos] SC with 0 BC??? " << std::endl; 
-    //    else if(numOfBC==1)  h_EoverEtrue_VS_phiWidth_OneCl_barl
-    //    else if(numOfBC==2)  h_EoverEtrue_VS_phiWidth_TwoCl_barl
-    //    else if(numOfBC==3)  
-      
+    
     h_phiWidth->Fill(phiWidth);
     h_phiWidthVsE->Fill(phiWidth,(*particle1)->momentum().e());	  
     h_phiSize->Fill(phiSize);
@@ -179,12 +187,14 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
 	float thePhiDistance = getPhiDistance( (*sc1->seed()).seed() , 
 					       (*idsIt).first );
 	float currEbEnergy    = (ebRecHits->find( (*idsIt).first ))->energy();
+	//float currEbET        = ((ebRecHits->find( (*idsIt).first ))->energy());
 	energySCtoCheck       += currEbEnergy;
 	h_phiShape_barl       -> Fill(thePhiDistance, currEbEnergy/energyScRAW);
 	h_absPhiShape_barl    -> Fill(fabs(thePhiDistance), currEbEnergy/energyScRAW);
 	h_phiShapeVsE_barl    -> Fill(thePhiDistance, energyScRAW , currEbEnergy/energyScRAW);   
 	h_phiShapeVsEt_barl   -> Fill(thePhiDistance, energyScRAW/cosh(sc1->eta()) , currEbEnergy/energyScRAW);   
 	h_absPhiShapeVsE_barl -> Fill(fabs(thePhiDistance), energyScRAW , currEbEnergy/energyScRAW);   
+	h_absPhiShapeVsEt_barl-> Fill(fabs(thePhiDistance), energyScRAW/cosh(sc1->eta()) , currEbEnergy/energyScRAW);   
       
 	float theEtaDistance = getEtaDistance( (*sc1->seed()).seed() , 
 					       (*idsIt).first );
@@ -309,7 +319,9 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
       float deltaPhi = phiMax-phimin;
       if ( deltaPhi > PI ) deltaPhi -= TWOPI;
       if ( deltaPhi < -PI) deltaPhi += TWOPI;
-      h_EoverEtrue_VS_DeltaPhibcminObcMax_barl->Fill(energySc/cosh(sc1->eta())/et_true, std::fabs(deltaPhi));
+      h_EoverEtrue_VS_DeltaPhibcminObcMax_barl  ->Fill(energySc/cosh(sc1->eta())/et_true, std::fabs(deltaPhi));
+      h_bcminObcMax_VS_DeltaPhibcminObcMax_barl ->Fill(emin/eMax, std::fabs(deltaPhi));
+      h_DeltaPhibcminObcMax_VS_bcminObcMax_barl ->Fill(std::fabs(deltaPhi), emin/eMax);
     }
     
 
@@ -319,7 +331,8 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
 
   // this is a SC in the EE case
   if (fabs(sc1->eta())>1.566 && fabs(sc1->eta())<2.5 && energySc/cosh(sc1->eta())>20.) {
-    
+    h_numBC     ->Fill(numOfBC);
+    h_numBC_endc->Fill(numOfBC);
 
     float deltaPhi = sc1->phi()-phi_true;
     //float deltaEta = sc1->eta()-etaEcal_true;
@@ -352,8 +365,9 @@ void SCwithPUhistos::FillSc(const reco::SuperClusterCollection::const_iterator s
 	h_absPhiShape_endc    -> Fill(fabs(thePhiDistance), currEeEnergy/energyScRAW);
 	h_phiShapeVsE_endc    -> Fill(thePhiDistance, energyScRAW , currEeEnergy/energyScRAW);   
 	h_phiShapeVsEt_endc   -> Fill(thePhiDistance, energyScRAW/cosh(sc1->eta()) , currEeEnergy/energyScRAW);   
-	h_absPhiShapeVsE_endc -> Fill(fabs(thePhiDistance), energyScRAW, currEeEnergy/energyScRAW );     }// end EE case
-
+	h_absPhiShapeVsE_endc -> Fill(fabs(thePhiDistance), energyScRAW, currEeEnergy/energyScRAW );     // end EE case
+	h_absPhiShapeVsEt_endc -> Fill(fabs(thePhiDistance), energyScRAW/cosh(sc1->eta()) , currEeEnergy/energyScRAW );     }// end EE case
+    
   }// end ENDCAP case
 }
 
@@ -372,6 +386,7 @@ void SCwithPUhistos::FillGamma(const reco::PhotonCollection::const_iterator pho1
     h_PhoEoverEtrue_barl->Fill(energyPho/(*particle1)->momentum().e());
     h_E5x5overEtrue_barl->Fill(pho1->e5x5()/(*particle1)->momentum().e());
     h_E5x5overEtrueVsEphoEtrue_barl->Fill(pho1->e5x5()/(*particle1)->momentum().e(),energyPho/(*particle1)->momentum().e());
+    h_r9_barl->Fill(pho1->r9());
     if (pho1->r9()>0.94) { // r9 cut is 0.94 for EB and 0.95 for EE  
       h_E5x5R9overEtrue_barl->Fill(pho1->e5x5()/(*particle1)->momentum().e());
       h_PhoER9overEtrue_barl->Fill(energyPho/(*particle1)->momentum().e()); // counter r9 EB
@@ -380,11 +395,12 @@ void SCwithPUhistos::FillGamma(const reco::PhotonCollection::const_iterator pho1
       h_PhoEnotR9overEtrue_barl->Fill(energyPho/(*particle1)->momentum().e()); // counter !r9 EB
     }
     //isEB++;
-  }// if photon in EB
+  }// END if photon in EB
   else if (pho1->isEE()) {
     h_PhoEoverEtrue_endc->Fill(energyPho/(*particle1)->momentum().e());
     h_E5x5overEtrue_endc->Fill(pho1->e5x5()/(*particle1)->momentum().e());
     h_E5x5overEtrueVsEphoEtrue_endc->Fill(pho1->e5x5()/(*particle1)->momentum().e(),energyPho/(*particle1)->momentum().e());
+    h_r9_endc->Fill(pho1->r9());
     if (pho1->r9()>0.94) { // r9 cut is 0.94 for EB and 0.95 for EE  
       h_E5x5R9overEtrue_endc->Fill(pho1->e5x5()/(*particle1)->momentum().e());
       h_PhoER9overEtrue_endc->Fill(energyPho/(*particle1)->momentum().e());

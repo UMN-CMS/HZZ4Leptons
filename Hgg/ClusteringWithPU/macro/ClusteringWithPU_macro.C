@@ -50,43 +50,38 @@ int scwithpu(char myword[100]){
   myfile << "<h1><A name=\"EB\"><FONT color=\"Blue\">ECAL Superclusters with pile up studies</FONT></A><BR></h1>"<<std::endl;; 
 
   gStyle->SetOptTitle(0);
-  
+
   std::vector<TFile*>      theFiles;
   std::vector<std::string> theLabels;
   std::vector<int>         theColors;
   std::vector<int>         theFillStyle;
 
-  TFile *file1 = new TFile("PU-0-bis.root","READ");
-  theFiles.push_back(file1);   theLabels.push_back(std::string("PU-0 #xi=0")); theColors.push_back(kBlue); theFillStyle.push_back(3395);
-  TFile *file2 = new TFile("PU-20-bis.root","READ");
-  theFiles.push_back(file2);   theLabels.push_back(std::string("PU-20 #xi=0")); theColors.push_back(kRed); theFillStyle.push_back(3365);
+  TFile *file1 = new TFile("PU-0-bis.root","READ");//ok
+  theFiles.push_back(file1);   
+  //theLabels.push_back(std::string("PU-0 #xi=0")); 
+  theLabels.push_back(std::string("PU-0")); theColors.push_back(kBlue); theFillStyle.push_back(3395);
+  TFile *file2 = new TFile("PU-20-bis.root","READ");//ok
+  theFiles.push_back(file2);
+  theLabels.push_back(std::string("PU-20 #xi=0"));
+  //theLabels.push_back(std::string("PU-20"));
+  theColors.push_back(kRed); theFillStyle.push_back(3365);
 
-  TFile *file11 = new TFile("PU-20-0.02.root","READ");
+  TFile *file11 = new TFile("PU-20-0.02-bis.root","READ");//ok
   theFiles.push_back(file11);   theLabels.push_back(std::string("PU-20 #xi=0.02")); theColors.push_back(kGreen); theFillStyle.push_back(3365);
-  TFile *file12 = new TFile("PU-20-0.04.root","READ");
-  theFiles.push_back(file12);   theLabels.push_back(std::string("PU-20 #xi=0.04")); theColors.push_back(kOrange); theFillStyle.push_back(3365);
+  TFile *file12 = new TFile("PU-20-0.03.root","READ");
+  theFiles.push_back(file12);   theLabels.push_back(std::string("PU-20 #xi=0.03")); theColors.push_back(kOrange); theFillStyle.push_back(3365);
 
   TFile *file0 = new TFile("PU-0.root","READ");
-  theFiles.push_back(file0);   theLabels.push_back(std::string("PU-0 #xi=0")); theColors.push_back(kBlue); theFillStyle.push_back(3395);
+  //  theFiles.push_back(file0);   theLabels.push_back(std::string("PU-0 #xi=0")); theColors.push_back(kBlue); theFillStyle.push_back(3395);
 
   std::string myPlot;
   std::vector<std::string> allMyPlots;
   myPlot = std::string("h_phiShape_barl"); allMyPlots.push_back(myPlot);
-  
   myPlot = std::string("h_phiSize_barl"); allMyPlots.push_back(myPlot);
+  myPlot = std::string("h_phiWidth_barl"); allMyPlots.push_back(myPlot);
 
-  //myPlot = std::string("h_absEtaBCminusAbsEtaSeed_barl"); allMyPlots.push_back(myPlot);
-  //myPlot = std::string("h_absEtaBCminusAbsEtaSeed_barlm1"); allMyPlots.push_back(myPlot);
-  //myPlot = std::string("h_absEtaBCminusAbsEtaSeed_barlm2"); allMyPlots.push_back(myPlot);
-  //myPlot = std::string("h_absEtaBCminusAbsEtaSeed_barlm3"); allMyPlots.push_back(myPlot);
-  //myPlot = std::string("h_absEtaBCminusAbsEtaSeed_barlm4"); allMyPlots.push_back(myPlot);
-
-  //myPlot = std::string("h_phiBCminusPhiSeed_barl"); allMyPlots.push_back(myPlot);
-  //myPlot = std::string("h_phiBCminusPhiSeed_barlm1"); allMyPlots.push_back(myPlot);
-  //myPlot = std::string("h_phiBCminusPhiSeed_barlm2"); allMyPlots.push_back(myPlot);
-  //myPlot = std::string("h_phiBCminusPhiSeed_barlm3"); allMyPlots.push_back(myPlot);
-  //myPlot = std::string("h_phiBCminusPhiSeed_barlm4"); allMyPlots.push_back(myPlot);
-
+  myPlot = std::string("h_r9_barl"); allMyPlots.push_back(myPlot);
+  myPlot = std::string("h_numBC_barl"); allMyPlots.push_back(myPlot);
   myPlot = std::string("h_EoverEtrue_barl"); allMyPlots.push_back(myPlot);
   myPlot = std::string("h_PhoEoverEtrue_barl"); allMyPlots.push_back(myPlot);
   myPlot = std::string("h_PhoER9overEtrue_barl"); allMyPlots.push_back(myPlot);
@@ -104,6 +99,10 @@ int scwithpu(char myword[100]){
   theCases.push_back(std::string ("allCase/"));
   theCases.push_back(std::string ("oneBC/"));
   theCases.push_back(std::string ("twoBC/"));
+  theCases.push_back(std::string ("twoDphiCase/"));
+  theCases.push_back(std::string ("twoDphiTightCase/"));
+  theCases.push_back(std::string ("twoDphiLooseCase/"));
+  theCases.push_back(std::string ("twoAntiDphiCase/"));
   theCases.push_back(std::string ("threeBC/"));
   theCases.push_back(std::string ("moreBC/"));
 
@@ -140,7 +139,7 @@ int scwithpu(char myword[100]){
   theLineForHtml = std::string("<th> !R9 pho in cat: </th>");    myfile << theLineForHtml << std::endl;
   theLineForHtml = std::string("</tr>"); myfile << theLineForHtml << std::endl;     // new  table line
   for ( constIterator = theFiles.begin();
-	constIterator != (theFiles.end()-1); constIterator++ ) {
+	constIterator != (theFiles.end()); constIterator++ ) {
     int numEvents      = ( (TH1F*)  (*constIterator)->Get( (absPath+          std::string("h_nVtx")).c_str() ) ) ->GetEntries();
     int scMatchedEB    = ( (TH1F*)  (*constIterator)->Get( (absPath+ std::string("h_scet_barl")).c_str() ) ) ->GetEntries(); 
     int scMatchedEE    = ( (TH1F*)  (*constIterator)->Get( (absPath+ std::string("h_scet_endc")).c_str() ) ) ->GetEntries();
@@ -199,14 +198,15 @@ int scwithpu(char myword[100]){
   //  theLabels.clear();
   //  theLabels.push_back(std::string("PU-0 #xi=0"));   theLabels.push_back(std::string("PU-20 #xi=0"));
   std::vector<std::string> the2DLabels;
-  the2DLabels.push_back(std::string("PU-20 #xi=0"));    // file2
-  the2DLabels.push_back(std::string("PU-20 #xi=0.04")); // file12
+  the2DLabels.push_back(std::string("PU-0"));    // file1
+  //the2DLabels.push_back(std::string("PU-20 #xi=0.02")); // file12
+  the2DLabels.push_back(std::string("PU-20")); // file2
   //the2DLabels = theLabels;
-  make2dAplot(file2 , file12, the2DLabels, theColors, theFillStyle, (casePath+std::string("h_DeltaPhibcminObcMax_VS_bcminObcMax_barl")),myfile,/*true,*/ theDirectory);
-  make2dAplot(file2 , file12, the2DLabels, theColors, theFillStyle, (casePath+std::string("h_bcminObcMax_VS_DeltaPhibcminObcMax_barl")),myfile,/*true,*/ theDirectory);
-  make2dAplot(file2 , file12, the2DLabels, theColors, theFillStyle, (casePath+std::string("h_EoverEtrue_VS_DeltaPhi_TwoCl_barl")),myfile,/*true,*/ theDirectory);
-  make2dAplot(file2 , file12, the2DLabels, theColors, theFillStyle, (casePath+std::string("h_EoverEtrue_VS_bcminObcMax_barl")),myfile,/*true,*/ theDirectory);
-  make2dAplot(file2 , file12, the2DLabels, theColors, theFillStyle, (casePath+std::string("h_EoverEtrue_VS_phiSize_barl")),myfile,/*true,*/ theDirectory);
+  make2dAplot(file1 , file2, the2DLabels, theColors, theFillStyle, (casePath+std::string("h_DeltaPhibcminObcMax_VS_bcminObcMax_barl")),myfile,/*true,*/ theDirectory);
+  make2dAplot(file1 , file2, the2DLabels, theColors, theFillStyle, (casePath+std::string("h_bcminObcMax_VS_DeltaPhibcminObcMax_barl")),myfile,/*true,*/ theDirectory);
+  make2dAplot(file1 , file2, the2DLabels, theColors, theFillStyle, (casePath+std::string("h_EoverEtrue_VS_DeltaPhi_TwoCl_barl")),myfile,/*true,*/ theDirectory);
+  make2dAplot(file1 , file2, the2DLabels, theColors, theFillStyle, (casePath+std::string("h_EoverEtrue_VS_bcminObcMax_barl")),myfile,/*true,*/ theDirectory);
+  make2dAplot(file1 , file2, the2DLabels, theColors, theFillStyle, (casePath+std::string("h_EoverEtrue_VS_phiSize_barl")),myfile,/*true,*/ theDirectory);
   //  make2dAplot(file1 , file2, theLabels, theColors, theFillStyle, std::string("h_phiSizeVsEt_barl"),myfile,/*true,*/ theDirectory);
 
   }
@@ -220,7 +220,6 @@ int scwithpu(char myword[100]){
   return 0;
 
 }
-
 
 
 
@@ -246,7 +245,7 @@ void makeAplot( std::vector<TFile*> theFiles, std::vector<std::string> theLabels
   //std::vector< TFile* >::const_iterator constIterator;
   std::vector< TFile* >::iterator constIterator;
   for ( constIterator = theFiles.begin();
-	constIterator != (theFiles.end()-1); constIterator++ ) {
+	constIterator != (theFiles.end()); constIterator++ ) {
 
     std::string thePlot = theBasePath + myPlot;
     //std::cout << "trying to access: " << thePlot << std::endl;
@@ -254,14 +253,10 @@ void makeAplot( std::vector<TFile*> theFiles, std::vector<std::string> theLabels
     aHisto->SetNormFactor(1);
     aHisto->SetLineWidth(2);
     aHisto->SetLineColor(theColors.at(countPlots));
-    //aHisto->SetFillColor(theColors.at(countPlots));
-    //aHisto->SetFillStyle(theFillStyle.at(countPlots));
-    //std::cout << "here 1 " << std::endl; 
     aHisto->SetStats(0);
     aHisto->Draw(drawOption.c_str());
     //}
     
-    //    std::cout << "here 1,01 " << std::endl; 
     std::string sigEffLabel("");
     std::vector<std::string> theHistosNeedingEffSigna;
     theHistosNeedingEffSigna.push_back("h_EoverEtrue_barl");
@@ -272,7 +267,7 @@ void makeAplot( std::vector<TFile*> theFiles, std::vector<std::string> theLabels
     theHistosNeedingEffSigna.push_back("h_PhoEoverEtrue_barl");
     theHistosNeedingEffSigna.push_back("h_PhoER9overEtrue_barl");
     theHistosNeedingEffSigna.push_back("h_PhoEnotR9overEtrue_barl");
-    //std::cout << "here 1,02 " << std::endl; 
+
     for(std::vector<std::string>::iterator iter=theHistosNeedingEffSigna.begin(); iter!=theHistosNeedingEffSigna.end(); iter++){
       size_t found = myPlot.find(   (*iter)   );
       if( found!=string::npos ){
@@ -282,15 +277,13 @@ void makeAplot( std::vector<TFile*> theFiles, std::vector<std::string> theLabels
 	sigEffLabel = std::string("    #sigma_{eff} = ") + std::string( buffer )  + std::string("");
       }
     }// loop over hist needing sigmaeff
-    //std::cout << "here 1,03 " << std::endl; 
+
     std::string theFullLabel = theLabels.at(countPlots) + sigEffLabel;
-    //std::cout << "here 1.04 " << std::endl; 
-    leg->AddEntry(aHisto,theFullLabel.c_str());
-    //std::cout << "here 1.1 " << std::endl; 
+
+    if(constIterator != (theFiles.end()-1)) {leg->AddEntry(aHisto,theFullLabel.c_str());}
 
     drawOption = std::string("hesames");
     countPlots++;
-    //std::cout << "here 2 " << std::endl; 
 
   }
   // loop over the files 
@@ -298,7 +291,6 @@ void makeAplot( std::vector<TFile*> theFiles, std::vector<std::string> theLabels
   leg->Draw();
   std::string replaceSlash = myPlot;
   std::replace(replaceSlash.begin(), replaceSlash.end(), '/', '-');
-  //std::cout << "here 3 " << myPlot << "\t" << replaceSlash << "\t" << (thePath+replaceSlash+std::string(".png")) << std::endl; 
   //theCanvas->Print( (thePath+myPlot+std::string(".png")) .c_str() );
   theCanvas->Print( (thePath+replaceSlash+std::string(".png")) .c_str() );
   std::string theLineForHtml = std::string("<A HREF=") +replaceSlash+std::string(".png") + std::string("> <img height=\"300\" src=\"")+replaceSlash+std::string(".png") + std::string("\"> </A>"); 

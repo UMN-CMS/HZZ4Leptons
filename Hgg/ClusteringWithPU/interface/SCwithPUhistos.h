@@ -84,9 +84,13 @@ public:
   TH2F *h_phiShapeVsE_barl; // single-photon mult
   TH2F *h_phiShapeVsEt_barl; // single-photon mult
   TH2F *h_absPhiShapeVsE_barl; // single-photon mult
+  TH2F *h_absPhiShapeVsEt_barl; // single-photon mult
   TH2F *h_phiShapeVsE_endc; // single-photon mult
   TH2F *h_phiShapeVsEt_endc; // single-photon mult
+  TH2F *h_absphiShapeVsE_end; // single-photon mult
+  TH2F *h_absphiShapeVsEt_endc; // single-photon mult
   TH2F *h_absPhiShapeVsE_endc; // single-photon mult
+  TH2F *h_absPhiShapeVsEt_endc; // single-photon mult
   TH1F *h_etaShape_barl;// single-photon mult
   TH1F *h_etaShape_barlPLus;// single-photon mult
   TH1F *h_etaShape_barlMinus;// single-photon mult
@@ -126,11 +130,18 @@ public:
   TH2F *h_maxCryInLocMaxVsPhi_barlSymm;// single-photon mult
 
   TH1F *h_numBC;
+  TH1F *h_numBC_barl;
+  TH1F *h_numBC_endc;
   TH2F *h_EoverEtrue_VS_phiWidth_barl;
   TH2F *h_EoverEtrue_VS_phiSize_barl;
   TH2F *h_EoverEtrue_VS_DeltaPhi_TwoCl_barl;
   TH2F *h_EoverEtrue_VS_DeltaPhibcminObcMax_barl;
   TH2F *h_EoverEtrue_VS_bcminObcMax_barl;
+  TH2F *h_bcminObcMax_VS_DeltaPhibcminObcMax_barl;
+  TH2F *h_DeltaPhibcminObcMax_VS_bcminObcMax_barl;
+
+  TH1F *h_r9_barl;
+  TH1F *h_r9_endc;
 
 }; 
 

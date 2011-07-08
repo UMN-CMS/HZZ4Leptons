@@ -13,7 +13,7 @@
 //
 // Original Author:  Giovanni Franzoni,27 2-013,+41227678347,
 //         Created:  Mon Jun 20 15:07:58 CEST 2011
-// $Id$
+// $Id: SCwithPUData.cc,v 1.1 2011/07/08 21:31:52 franzoni Exp $
 //
 //
 
@@ -49,7 +49,7 @@
 #include <DataFormats/VertexReco/interface/VertexFwd.h>
 #include "RecoVertex/VertexPrimitives/interface/TransientVertex.h"
 
-#include "ECALTime/SCwithPUData/interface/SelectElectron.h"
+#include "Hgg/ClusteringWithPU/interface/SelectElectron.h"
 
 //////////////////////////////////////////////////////////////////
 // generically maximum
