@@ -90,10 +90,20 @@ TH1* unfold(const TH1* source, TMatrixD * theUnfoldingMatrix)  {
   return h_RapidityUNSmeared;
 }
 
-void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
+void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix, int whichMeasurement)  {
   
   setTDRStyle();
   zrap_colors();
+  
+  bool isRapidity(false);
+  bool isPt(false);
+  if      (whichMeasurement==0)  isRapidity=true;
+  else if (whichMeasurement==1)  isPt=true;
+  else {
+    std::cout << "makeCovarianceMatrix called with invalid value for whichMeasurement: " << whichMeasurement << std::endl;
+    return;
+  }
+
 
   // get unfolding matrix and make its transpose
 
@@ -131,9 +141,17 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix)  {
       //      int ate, atetotal=0;
       int found=sscanf(line," %d %f %f %f %f %f",&i,&a,&b,&c,&d,&e);
 
-      errorsArray[errorsCounter] = d*d; // use statistical to compute covariance matrix
-      systErrosArray[errorsCounter] = e*e;
-      std::cout << "stat errors2 directly from unfolded distribution - bin : " << i  <<"\t" << " err2: " << sqrt(errorsArray[errorsCounter])  << std::endl;    
+      if(isPt){
+      errorsArray[errorsCounter]    = d*d;          // use statistical only to compute covariance matrix
+      systErrosArray[errorsCounter] = e*e;          // systematics to be added back to the diagonal
+      }
+      if(isRapidity){
+      errorsArray[errorsCounter]    = d*d+e*e;      // use statistical and syst to compute covariance matrix
+      systErrosArray[errorsCounter] = 0;            // nothing to be added back to the diagonal
+      }
+      
+      std::cout << "errors2 directly from unfolded distribution used to compute covariance - bin : " 
+		<< i  <<"\t" << " err2: " << sqrt(errorsArray[errorsCounter])  << std::endl;    
       myfileData << scientific << progressive << "\t"
 		 << a << "\t" //bin_min
 		 << b << "\t"  //bin_max
