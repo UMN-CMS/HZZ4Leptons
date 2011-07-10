@@ -33,7 +33,10 @@ TH1* readStandardFilePt(const char* name, const char* fname, int ec=0) {
   dist->Sumw2();
 
   FILE* af=fopen(fname,"rt");
-  if (af==0) return 0;
+  if (af==0) {
+    fprintf(stderr,"Unable to open '%s'\n",fname);
+    return 0;
+  }
   char buffer[1024];
 
   int irow;

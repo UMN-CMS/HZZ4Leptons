@@ -37,10 +37,10 @@ void resultCombiner(const char * name_dv1, const char * name_cm1, const int leng
     double binLimits1[length1][2], binLimits2[length2][2], ccCov1[length1], ccCov2[length1];
 
     readDataVector(name_dv1, dv1, binLimits1, ftr, ccCov1);
-    printf("Read data vector 1\n");
+    printf("Read data vector 1 (%d)\n",length1);
 
     readDataVector(name_dv2, dv2, binLimits2, ftr, ccCov2);
-    printf("Read data vector 2\n");
+    printf("Read data vector 2 (%d)\n",length2);
 
     readCovMatrix(name_cm1, cm1);
     printf("Read covariance matrix 1\n");
@@ -133,7 +133,7 @@ void resultCombiner(const char * name_dv1, const char * name_cm1, const int leng
         if(ftr > 1 && preU[i][0] >= 0 && preU[i][1] >= 0)  cm[preU[i][0]][preU[i][1] + length1] = cm[preU[i][1] + length1][preU[i][0]] = ccCov1[preU[i][0]]*ccCov2[preU[i][1]];
     }
     
-    //cm.Print();
+    //    cm.Print();
 
     TMatrixT<double> Ut(U);
     Ut.T();

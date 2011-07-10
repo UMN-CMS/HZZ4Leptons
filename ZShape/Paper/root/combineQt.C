@@ -10,20 +10,13 @@ void combineQt(int which=0) {
 
 
   setTDRStyle();
-  TH1* elec_stat,*elec_syst;
 
-  if (which==1) {
-    elec_stat=readStandardFilePt("elec_stat","dsdqt_zee_final_avemig.csv",0);
-    elec_syst=readStandardFilePt("elec_syst","dsdqt_zee_final_avemig.csv",1);
-  } else {
-    elec_stat=readStandardFilePt("elec_stat","dsdqt_zee_final_matrix.csv",0);
-    elec_syst=readStandardFilePt("elec_syst","dsdqt_zee_final_matrix.csv",1);
-  }
-  TH1* mu_all=readStandardFilePt("mu_syst","dsdqt_muons.txt",0);
+  TH1* mu_all=readStandardFilePt("mu_all","dsdqt_muons.txt",0);
 
-  TH1* elec_all=elec_syst->Clone("mu_all");
+  TH1* elec_all=readStandardFilePt("elec_all","dsdqt_zee_final_matrix.csv",0);
+
   //  TH1* mu_all=mu_syst->Clone("mu_all");
-  TH1* comb_all=elec_syst->Clone("comb_all");
+  TH1* combo_all=readStandardFilePt("combo_all","dsdqt_combined.csv",0);
 
   TH1* pull_elec=new TH1F("pull_elec","pull_elec",20,-3,3);
   TH1* pull_mu=new TH1F("pull_mu","pull_mu",20,-3,3);
@@ -35,18 +28,16 @@ void combineQt(int which=0) {
 
   double td=0,tt=0;
   for (int i=1; i<=18; i++) {
-    double total_err_elec=sqrt(pow(elec_stat->GetBinError(i),2)+pow(elec_syst->GetBinError(i),2));
-    elec_all->SetBinError(i,total_err_elec);
     double bestEstimate,sumerr;
     double pelec=0,pmu=0;
 
+    double total_err_elec=elec_all->GetBinError(i);
     double total_err_mu=mu_all->GetBinError(i);
+
     sumerr=1.0/(total_err_elec*total_err_elec)+1.0/(total_err_mu*total_err_mu);
     
-    bestEstimate=(elec_all->GetBinContent(i)/pow(total_err_elec,2)+mu_all->GetBinContent(i)/pow(total_err_mu,2))/sumerr;
+    bestEstimate=combo_all->GetBinContent(i);
 
-    sumerr=sqrt(1.0/sumerr);
-    
     pelec=(elec_all->GetBinContent(i)-bestEstimate)/total_err_elec;
     pull_elec->Fill(pelec);
 
@@ -69,15 +60,7 @@ void combineQt(int which=0) {
 			      0,
 			      total_err_mu/bestEstimate);
 
-    /*
-    pull_mu_qt->SetBinContent(i,(mu_all->GetBinContent(i)/bestEstimate)-1);
-    pull_mu_qt->SetBinError(i,(total_err_mu)/bestEstimate);
-    */
-
-
-    printf("%2d %.5e %.5e %.5e %.5e %.1f %.1f\n",i,elec_stat->GetBinContent(i),mu_all->GetBinContent(i),bestEstimate,sumerr,pelec,pmu);
-    comb_all->SetBinContent(i,bestEstimate);
-    comb_all->SetBinError(i,sumerr);
+    printf("%2d %.5e %.5e %.5e %.5e %.1f %.1f\n",i,elec_all->GetBinContent(i),mu_all->GetBinContent(i),bestEstimate,sumerr,pelec,pmu);
     td+=bestEstimate;
     tt+=truth->GetBinContent(i);
   }
@@ -92,8 +75,8 @@ void combineQt(int which=0) {
   TGraphErrors* truth3=new TGraphErrors(18);
 
   for (int i=1; i<=18; i++) {
-    truth2->SetBinContent(i,truth->GetBinContent(i)/comb_all->GetBinContent(i)-1);
-    truth2->SetBinError(i,comb_all->GetBinError(i));
+    truth2->SetBinContent(i,truth->GetBinContent(i)/combo_all->GetBinContent(i)-1);
+    truth2->SetBinError(i,combo_all->GetBinError(i));
 
     truth3->SetPoint(i-1,truth2->GetBinCenter(i),truth2->GetBinContent(i));
     truth3->SetPointError(i-1,truth2->GetBinWidth(i)/2,truth->GetBinError(i)/truth->GetBinContent(i));
@@ -103,103 +86,120 @@ void combineQt(int which=0) {
   TCanvas* c1=new TCanvas("c1","c1",800,800);
   c1->SetLeftMargin(0.17);  
   c1->SetBottomMargin(0.16);
-  comb_all=zpt_rebinForPlot(comb_all);
-  comb_all->SetMaximum(0.08);
+  combo_all=zpt_rebinForPlot(combo_all);
+  combo_all->SetMaximum(0.1);
   elec_all->GetXaxis()->SetRangeUser(0.7,500);
-  comb_all->GetXaxis()->SetRangeUser(0.7,500);
+  combo_all->GetXaxis()->SetRangeUser(0.7,500);
 
   elec_all->SetMarkerStyle(25);
   mu_all->SetMarkerStyle(20);
-  comb_all->SetMarkerStyle(21);
-  comb_all->SetTitle(0);
-  comb_all->GetYaxis()->SetTitleOffset(1.3);
-  comb_all->GetXaxis()->SetTitle(qt_xaxis_ll_label);
-  comb_all->GetXaxis()->CenterTitle();
-  comb_all->GetXaxis()->SetTitleOffset(1.2);
+  combo_all->SetMarkerStyle(21);
+  combo_all->SetTitle(0);
+  combo_all->GetYaxis()->SetTitleOffset(1.3);
+  combo_all->GetXaxis()->SetTitle(qt_xaxis_ll_label);
+  combo_all->GetXaxis()->CenterTitle();
+  combo_all->GetXaxis()->SetTitleOffset(1.2);
 
-  comb_all->GetYaxis()->SetTitle("1/#sigma d#sigma/dp_{T,ll}");
-  comb_all->GetYaxis()->CenterTitle();
+  combo_all->GetYaxis()->SetTitle("1/#sigma d#sigma/dp_{T,ll}");
+  combo_all->GetYaxis()->CenterTitle();
 
-  comb_all->Draw("E");
+  combo_all->Draw("E");
   truth=zpt_rebinForPlot(truth);
 
   truth->SetMarkerSize(0);
   truth->SetLineColor(kGreen+2);
   truth->SetLineWidth(1);
 
-  truth->Draw("SAME][ HIST");
-  /*
   TH1* t3=truth->Clone("t3");
   t3->SetFillStyle(1001);
   t3->SetFillColor(kGreen);
-  t3->Draw("E2");
+  t3->Draw("E2 SAME");
 
+  truth->Draw("SAME ][ HIST");
+  combo_all->Draw("E SAME");
+  /*
   TH1* t4=truth->Clone("t4");
   t4->SetFillStyle(3256);
   t4->SetFillColor(kGreen+2);
   t4->Draw("E2");
   */
-  zrap_Prelim(0.29,0.97,0.75,0.82);
-  zrap_Lumi(0.80,0.97,36);
+  zrap_Prelim(0.82,0.975,0.75,0.82);
+  zrap_Lumi(0.80,0.90,36);
 
-  TLegend* tl=new TLegend(0.20,0.25,0.75,0.40);
+  TLegend* tl=new TLegend(0.17,0.25,0.86,0.40);
+  TLegend* tl2=new TLegend(0.21,0.68,0.90,0.84);
   tl->SetFillStyle(0);
-  //  tl->AddEntry(comb_all,"Z#rightarrow e^{+}e^{-} and Z#rightarrow #mu^{+}#mu^{-} combined","P");
-  tl->AddEntry(comb_all,"e^{+}e^{-} and #mu^{+}#mu^{-} combined","P");
-  tl->AddEntry(truth,"POWHEG + CT10","L");
+  tl2->SetFillStyle(0);
+  //  tl->AddEntry(combo_all,"Z#rightarrow e^{+}e^{-} and Z#rightarrow #mu^{+}#mu^{-} combined","P");
+  tl->AddEntry(combo_all,"e^{+}e^{-} and #mu^{+}#mu^{-} combined","P");
+  tl->AddEntry(truth,"POWHEG + PYTHIA(Z2) + CT10","L");
+  tl2->AddEntry(combo_all,"e^{+}e^{-} and #mu^{+}#mu^{-} combined","P");
+  tl2->AddEntry(truth,"POWHEG + PYTHIA(Z2) + CT10","L");
 
-  tl->Draw();
+  tl2->Draw();
 
   c1->SetLogx();
 
-  c1->Print("dsdqt_combined_linear.C");
-  c1->Print("dsdqt_combined_linear.eps");
-
+  zrapPrint(c1,"dsdqt_combined_linear");
   
   c1->SetLogy();
 
-  c1->Print("dsdqt_combined_log.C");
-  c1->Print("dsdqt_combined_log.eps");
-  
+  delete tl2;
 
-  /*
-  elec_all->Draw("E");
-  mu_all->Draw("E SAME");
-  comb_all->Draw("E SAME");
-  */
+  tl->Draw();
+
+
+  zrapPrint(c1,"dsdqt_combined_log");
 
   int ndof=-1;
   double chi2=0;
   
   FILE* ftable=fopen("dsdqt_combined.tex","wt");
-  FILE* fcsv=fopen("dsdqt_combined.csv","wt");
   fprintf(ftable,"\\begin{tabular}{|c|c||l|l|}\n\\hline\n");
-  fprintf(ftable,"$p_{\\mathrm{T,min}}$ & $q_{\\mathrm{T,max}}$ & Measurement & Uncertainty  \\\\ \\hline\n");
-  TDatime now;
-  fprintf(fcsv,"# combined result electron/muon as of %s\n",now.AsString());
-  fprintf(fcsv,"#bin qt_min qt_max value error\n");
+  fprintf(ftable,"$p_{\\mathrm{T,min}}$ & $p_{\\mathrm{T,max}}$ & Measurement & Uncertainty  \\\\ \\hline\n");
   for (int i=1; i<=18; i++) {
-    double bl=comb_all->GetXaxis()->GetBinLowEdge(i);
-    double bh=comb_all->GetXaxis()->GetBinUpEdge(i);
+    double bl=combo_all->GetXaxis()->GetBinLowEdge(i);
+    double bh=combo_all->GetXaxis()->GetBinUpEdge(i);
     if (i==1) bl=0;
-    int prec=int(-log10(comb_all->GetBinError(i)))+2;
+    int prec=int(-log10(combo_all->GetBinError(i)))+2;
     fprintf(ftable,"%7.1f & %7.1f & %7.*f & %7.*f \\\\ \n",
 	    bl,bh,
-	    prec,comb_all->GetBinContent(i),
-	    prec,comb_all->GetBinError(i));
-    fprintf(fcsv, "%4d %5.1f %5.1f %.9f %.9f\n",
-	    i,bl,bh,
-	    comb_all->GetBinContent(i),
-	    comb_all->GetBinError(i));
+	    prec,combo_all->GetBinContent(i),
+	    prec,combo_all->GetBinError(i));
     ndof++;
 
-    double toadd=pow(comb_all->GetBinContent(i)-truth->GetBinContent(i),2)/pow(comb_all->GetBinError(i),2);
+    double toadd=pow(combo_all->GetBinContent(i)-truth->GetBinContent(i),2)/pow(combo_all->GetBinError(i),2);
     chi2+=toadd;
-    printf("%d %f\n",i,toadd);
   }
   fprintf(ftable,"\\hline\n\\end{tabular}\n");
   fclose(ftable);
-  fclose(fcsv);
+
+  ftable=fopen("dsdqt_combined_all.tex","wt");
+  fprintf(ftable,"\\begin{tabular}{|c|c||ll|ll|ll|}\n\\hline\n");
+  fprintf(ftable,"$p_{\\mathrm{T,min}}$ & $p_{\\mathrm{T,max}}$ & \\multicolumn{2}{c|}{Electron Channel} & \\multicolumn{2}{c|}{Muon Channel} & \\multicolumn{2}{c|}{Combination} \\\\ \\hline\n");
+  for (int i=1; i<=18; i++) {
+    double bl=combo_all->GetXaxis()->GetBinLowEdge(i);
+    double bh=combo_all->GetXaxis()->GetBinUpEdge(i);
+    if (i==1) bl=0;
+    int prec=int(-log10(combo_all->GetBinError(i)))+2;
+    fprintf(ftable,"%7.1f & %7.1f ",bl,bh);
+
+    fprintf(ftable,"& %7.*f & $\\pm$%7.*f ",
+	    prec,elec_all->GetBinContent(i),
+	    prec,elec_all->GetBinError(i));
+
+    fprintf(ftable,"& %7.*f & $\\pm$%7.*f ",
+	    prec,mu_all->GetBinContent(i),
+	    prec,mu_all->GetBinError(i));
+
+    fprintf(ftable,"& %7.*f & $\\pm$%7.*f ",
+	    prec,combo_all->GetBinContent(i),
+	    prec,combo_all->GetBinError(i));
+
+    fprintf(ftable,"\\\\ \n");
+  }
+  fprintf(ftable,"\\hline\n\\end{tabular}\n");
+  fclose(ftable);
 
   TCanvas* c2=new TCanvas("c2","c2",1000,600);
   truth2=zpt_rebinForPlot(truth2);
@@ -265,8 +265,7 @@ void combineQt(int which=0) {
   zrap_Prelim(0.82,0.975,0.35,0.82);
   zrap_Lumi(0.35,0.90,36);
   zqt_Cut(0.4,0.23);
-  c3->Print("dsdqt_combined_deltas.eps");
-  c3->Print("dsdqt_combined_deltas.C");
+  zrapPrint(c3,"dsdqt_combined_deltas");
 
   printf(" Comparison : %f/%d %f \n",chi2,ndof,TMath::Prob(chi2,ndof));
 

@@ -6,9 +6,15 @@
 #include "TDatime.h"
 
 static bool dotime=false;
-static const char* y_xaxis_label="y_{ee}";
-static const char* qt_xaxis_label="p_{T,ee} [GeV/c]";
+#ifndef __CINT__ 
+static const char* y_xaxis_label __attribute__ ((unused)) ="y_{ee}" ;
+static const char* qt_xaxis_label __attribute__ ((unused)) ="p_{T,ee} [GeV/c]" ;
+static const char* qt_xaxis_ll_label __attribute__ ((unused)) ="p_{T} [GeV/c]";
+#else
+static const char* y_xaxis_label ="y_{ee}" ;
+static const char* qt_xaxis_label ="p_{T,ee} [GeV/c]" ;
 static const char* qt_xaxis_ll_label="p_{T} [GeV/c]";
+#endif
 
 TH1* zpt_rebinForPlot(TH1* original) {
   char name[125];
@@ -101,4 +107,13 @@ void zqt_Cut(double px, double py, const char* lept="l",double sizef=1.0) {
   plabel -> Draw();
 
 }
+
+void zrapPrint(TCanvas* c1, const char* fnameBase) {
+  char fullname[1034],cmd[1024];
+  sprintf(fullname,"%s.eps",fnameBase);
+  c1->Print(fullname);
+  sprintf(cmd,"eps2pdf %s",fullname);
+  system(cmd);
+}
+
 #endif // ZRAPIDITY_STANDARD_INCLUDED

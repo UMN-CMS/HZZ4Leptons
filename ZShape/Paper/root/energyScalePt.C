@@ -113,7 +113,7 @@ void energyScalePt(TFile* base, TFile* vpe, TFile* vme, TFile* tpe, TFile* tme, 
 
     valave->SetTitle(0);
     valave->SetStats(0);
-    valave->GetXaxis()->SetTitle("q_{T} [GeV/c]");
+    valave->GetXaxis()->SetTitle("p_{T,ee} [GeV/c]");
     valave->GetXaxis()->SetTitleOffset(1.2);
     valave->GetXaxis()->SetRangeUser(0.7, 500);
     valave->GetXaxis()->CenterTitle(true);

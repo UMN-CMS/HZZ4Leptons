@@ -206,9 +206,12 @@ void plotFinalQt(TFile* mctruth, int mode) {
 
   bool doUnsmearing(mode==3); // use this to activate unsmearing + associated errors or leave it completely off
   if (doUnsmearing) {
+    const char* unfoldingFile="unfold_pt_official.root"; 
+    //    const char* unfoldingFile="../root/unfoldingMatrix-pt_theOutPut.root"; 
+
     TH1* data_corr_smeared=corrData.makeTH1("data_corr_smeared");
-    TH1* data_corr_unsmeared=unfold(data_corr_smeared,"../root/unfoldingMatrix-pt_theOutPut.root");
-    TFile*    theunfoldingMatrixInputFile = new TFile("../root/unfoldingMatrix-pt_theOutPut.root","read");
+    TH1* data_corr_unsmeared=unfold(data_corr_smeared,unfoldingFile);
+    TFile*    theunfoldingMatrixInputFile = new TFile(unfoldingFile,"read");
     TMatrixD* theUnfoldingMatrix          = (TMatrixD*)theunfoldingMatrixInputFile->Get("unsmearMatrices/unfoldingMatrixTotal");
     double errorCumul=0;
     for (int i=0; i<BINCOUNT; i++) {  
@@ -236,6 +239,7 @@ void plotFinalQt(TFile* mctruth, int mode) {
   DataSeries effSystWP80("effSystWP80PtError.csv");
   DataSeries effSystWP95("effSystWP95PtError.csv");
   DataSeries effSystHLT("effSystHLTPtError.csv");
+  DataSeries alignmentSyst("zpt_ee_alignment_uncertainty.csv");
   
   // pick unfolding systematic consistent with unfolding performed
   DataSeries unfoldSyst;
@@ -283,18 +287,22 @@ void plotFinalQt(TFile* mctruth, int mode) {
     corrDataSyst.ey[i]=sqrt(pow(corrDataBkgd.ey[i],2)+                // this is stat error - if mode==3, after unfolding
 			    pow(corrDataBkgd.y[i]*ea_statErr.y[i],2)+ // corrDataBkgd is unfolded, if mode==3
 			    pow(backgroundAllUnc.y[i]/effAcc.y[i],2)+
+			    pow(backgroundUncFrac.y[i]*corrData.y[i],2)+
 			    pow(energyScale.y[i]*corrData.y[i],2)+    // corrData=corrDataBkgd at this point (except removing 0-eff bins) 
 			    pow(unfoldSyst.y[i]*corrData.y[i],2)+
 			    pow(effSystErr.y[i]*corrData.y[i],2)+
+			    pow(alignmentSyst.y[i]*corrData.y[i],2)+
 			    0
 			    //			    pow(pdfTotal.y[i],2)
 			    );
     
-    totalSyst.ey[i]=sqrt( pow(corrDataBkgd.y[i]*ea_statErr.y[i],2)+
-			  pow(backgroundAllUnc.y[i]/effAcc.y[i],2)+
+    totalSyst.ey[i]=sqrt( //pow(corrDataBkgd.ey[i],2)+
+			  pow(corrDataBkgd.y[i]*ea_statErr.y[i],2)+
+			  pow(backgroundUncFrac.y[i]*corrData.y[i],2)+
 			  pow(energyScale.y[i]*corrData.y[i],2)+
 			  pow(unfoldSyst.y[i]*corrData.y[i],2)+
 			  pow(effSystErr.y[i]*corrData.y[i],2)+
+			  pow(alignmentSyst.y[i]*corrData.y[i],2)+
 			  0
 			  //			  pow(pdfTotal.y[i],2)
 			  );
@@ -333,7 +341,7 @@ void plotFinalQt(TFile* mctruth, int mode) {
   FILE* ftable=fopen(fnamework,"w");
 
   fprintf(ftable,"\\begin{tabular}{|c|c||c|c|c|}\n\\hline\n");
-  fprintf(ftable,"$|q_{T,min}|$ & $|q_{T,max}|$ & Measurement & Statistical Error & Systematic Error \\\\ \\hline\n");
+  fprintf(ftable,"$|p_{T,min}|$ & $|p_{T,max}|$ & Measurement & Statistical Error & Systematic Error \\\\ \\hline\n");
   for (int j=firsti-1; j<lasti; j++) {
     fprintf(ftable,"%7.2f & %7.2f & ",
 	    corrData.xave[j]-corrData.xwidth[j],
@@ -376,7 +384,7 @@ void plotFinalQt(TFile* mctruth, int mode) {
 
   double ybinage[21];
   for (int i=0; i<21; i++) {
-    ybinage[i]=1e-6+0.07/20.0*i;
+    ybinage[i]=1e-7+0.07/20.0*i;
   }
 
   TH2* dummy=new TH2F("dummy","",18,pt_binning_vis,20,ybinage);
@@ -424,10 +432,8 @@ void plotFinalQt(TFile* mctruth, int mode) {
   zrap_Prelim(0.22,0.97,0.82,0.17);
   zrap_Lumi(0.85,0.97,lumi);
 
-  sprintf(fnamework,"ZQt_final%s.eps",postfix);
-  c1->Print(fnamework);
-  sprintf(fnamework,"ZQt_final%s.C",postfix);
-  c1->Print(fnamework);
+  sprintf(fnamework,"ZQt_final%s",postfix);
+  zrapPrint(c1,fnamework);
 
   TCanvas* c1l=new TCanvas("finalZQtLog","finalZQtLog",800,600);
   c1l->cd();
@@ -472,11 +478,8 @@ void plotFinalQt(TFile* mctruth, int mode) {
   zrap_Prelim(0.22,0.97,0.82,0.17);
   zrap_Lumi(0.85,0.97,lumi);
 
-  sprintf(fnamework,"ZQt_final-log%s.eps",postfix);
-  c1l->Print(fnamework);
-  sprintf(fnamework,"ZQt_final-log%s.C",postfix);
-  c1l->Print(fnamework);
-
+  sprintf(fnamework,"ZQt_final-log%s",postfix);
+  zrapPrint(c1l,fnamework);
 
   TCanvas* c3=new TCanvas("finalZQtErrors","finalZQtErrors",800,600);
   TH1* dummy3=new TH1F("dummy3","",10,0.7,600);
@@ -500,6 +503,7 @@ void plotFinalQt(TFile* mctruth, int mode) {
   TH1* gr_energyscale=energyScale.makeTH1("es_unc");
   TH1* gr_unfolding=unfoldSyst.makeTH1("unfold unc");
   TH1* gr_systotal=totalSyst.makeTH1("total_syst");
+  TH1* gr_alignment=alignmentSyst.makeTH1("align_unc");
   dummy3->Draw();
 
   effacc_stat_gr->SetLineWidth(2);
@@ -518,6 +522,10 @@ void plotFinalQt(TFile* mctruth, int mode) {
   gr_energyscale->SetLineWidth(2);
   gr_energyscale->SetLineColor(kBlue);
 
+  gr_alignment->SetLineWidth(2);
+  gr_alignment->SetLineColor(kAzure-4);
+  gr_alignment->SetLineStyle(5);
+
   gr_unfolding->SetLineWidth(2);
   gr_unfolding->SetLineColor(kViolet);
 
@@ -535,6 +543,7 @@ void plotFinalQt(TFile* mctruth, int mode) {
   gr_energyscale->Draw("HSAME ][");
   gr_pdf->Draw("HSAME ][");
   gr_unfolding->Draw("HSAME ][");
+  gr_alignment->Draw("HSAME ][");
   gr_systotal->Draw("HISTSAME ][");
 
   tl=new TLegend(0.15,0.75,0.75,0.94,"");
@@ -546,6 +555,7 @@ void plotFinalQt(TFile* mctruth, int mode) {
   tl->AddEntry(effacc_stat_gr,"Efficiency Statistics","L");
   tl->AddEntry(gr_pdf,"PDF (#epsilon #times A) Uncertainty","L");
   tl->AddEntry(gr_unfolding,"Unfolding Uncertainty","L");
+  tl->AddEntry(gr_alignment,"Alignment Uncertainty","L");
   tl->AddEntry(gr_energyscale,"Energy Scale Uncertainty","L");
   tl->AddEntry(effacc_syst_gr,"Efficiency Systematics","L");
   tl->Draw();
@@ -553,12 +563,8 @@ void plotFinalQt(TFile* mctruth, int mode) {
   zrap_Prelim(0.85,0.975,0.82,0.17);
   zrap_Lumi(0.25,0.18,lumi);
 
-  sprintf(fnamework,"ZQt_final_errors%s.eps",postfix);
-  c3->Print(fnamework);
-  //  sprintf(fnamework,"ZQt_final_errors%s.png",postfix);
-  // c3->Print(fnamework);
-  sprintf(fnamework,"ZQt_final_errors%s.C",postfix);
-  c3->Print(fnamework);
+  sprintf(fnamework,"ZQt_final_errors%s",postfix);
+  zrapPrint(c3,fnamework);
 
   sprintf(fnamework,"ZQt_final_errtable%s.tex",postfix);
   ftable=fopen(fnamework,"w");
@@ -567,9 +573,9 @@ void plotFinalQt(TFile* mctruth, int mode) {
   {
 
     if (i==0) {
-      fprintf(ftable,"\\begin{tabular}{|c|c||c|c|c|c|c|}\\hline\n");
-      fprintf(ftable,"            &             & Efficiency &   Bin     & Energy Scale  & Background & PDF\\\\ \n");
-      fprintf(ftable,"$|q_{T,min}|$ & $|q_{T,max}|$ & Uncertainties & Migration & Uncertainty & Estimation & Uncertainty \\\\ \\hline \n");
+      fprintf(ftable,"\\begin{tabular}{|c|c||c|c|c|c|c|c|}\\hline\n");
+      fprintf(ftable,"            &             & Efficiency &   Bin     & Tracker & Energy Scale  & Background & PDF\\\\ \n");
+      fprintf(ftable,"$|p_{T,min}|$ & $|p_{T,max}|$ & Uncertainties & Migration & Alignment & Uncertainty & Estimation & Uncertainty \\\\ \\hline \n");
     }
 
     double staterr=ea_statErr.y[i];
@@ -579,12 +585,15 @@ void plotFinalQt(TFile* mctruth, int mode) {
     double bkgderr=backgroundUncFrac.y[i]*corrData.y[i];
     double migerr=unfoldSyst.y[i]*corrData.y[i];
     double pdferr=pdfFrac.y[i]*corrData.y[i];
-    
+    double alignerr=alignmentSyst.y[i]*corrData.y[i];
+
     //    fprintf(ftable," %7.2f & %7.2f & %.5f & %.5f & %.5f & %.5f \\\\ \n",
-    fprintf(ftable," %7.2f & %7.2f & $%.3f \\times 10^{-4}$ &  $%.3f \\times 10^{-4}$ & $%.3f \\times 10^{-4}$ & $%.3f \\times 10^{-4}$ & $%.3f \\times 10^{-4}$ \\\\ \n",
+    fprintf(ftable," %7.2f & %7.2f & $%.3f \\times 10^{-4}$ &  $%.3f \\times 10^{-4}$  & $%.3f \\times 10^{-4}$ & $%.3f \\times 10^{-4}$ & $%.3f \\times 10^{-4}$ & $%.3f \\times 10^{-4}$ \\\\ \n",
 	    corrData.xave[i]-corrData.xwidth[i],
 	    corrData.xave[i]+corrData.xwidth[i],
-	    efferr*10000,migerr*10000,energyerr*10000,bkgderr*10000,
+	    efferr*10000,migerr*10000,
+	    alignerr*10000,
+	    energyerr*10000,bkgderr*10000,
 	    pdferr*10000);
     
   }
@@ -599,13 +608,14 @@ void plotFinalQt(TFile* mctruth, int mode) {
   sprintf(fnamework,"dsdqt_zee_final%s.csv",postfix);
   FILE* outFile = fopen(fnamework, "wt");
 
-  fprintf(outFile, "#%9s %9s %9s %9s %12s %12s\n", "bin", "lower", "upper", "data", "stat error", "syst error");
+  fprintf(outFile, "#%9s %9s %9s %9s %12s %12s\n", "bin", "lower", "upper", "data", "error", "channel correlated");
   for(int i = 0; i < BINCOUNT-1; i++)
     {
-      fprintf(outFile, "%9i %9.1f %9.1f %9f %12.10f %12.10f\n", i+1, pt_binning[i], pt_binning[i+1], corrData.y[i], corrData.ey[i], sqrt(pow(corrDataSyst.ey[i],2)-pow(corrData.ey[i],2)));
+      fprintf(outFile, "%9i %9.1f %9.1f %9f %12.10f %12.10f\n", i+1, pt_binning[i], pt_binning[i+1], corrData.y[i], corrDataSyst.ey[i], unfoldSyst.y[i]*corrData.y[i]);
+
       // for scientific notation
       // fprintf(outFile, "%9i %9.1f %9.1f %9e %12.10e %12.10e\n", i+1, pt_binning[i], pt_binning[i+1], corrData.y[i], corrData.ey[i], 
-sqrt(pow(corrDataSyst.ey[i],2)-pow(corrData.ey[i],2)));
+      //sqrt(pow(corrDataSyst.ey[i],2)-pow(corrData.ey[i],2)));
 
       double toadd=pow(corrData.y[i]-truth_vis->GetBinContent(i+1),2)/pow(corrDataSyst.ey[i],2);
       //      printf("%d %f %f %f %f\n",i,corrData.y[i],truth_vis->GetBinContent(i+1),corrDataSyst.ey[i],toadd);

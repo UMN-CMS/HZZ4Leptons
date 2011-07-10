@@ -9,6 +9,8 @@
 #include "zrapidityStandard.C"
 #include "../theory/database.C"
 
+TMatrixD readCov(const char* covFile);
+
 int colorForId(int i) {
   const int colors[] = {kRed, kBlue, kGreen+2,
 			kViolet, kGray
@@ -27,6 +29,7 @@ void compareQT(const char* models,const char* outgoing=0) {
   int imodels[10];
   char names[10][50];
   double chi2[10];
+  TMatrixD deltas[10];
   
   // find the models
   int nmatch=sscanf(models,"%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,]",
@@ -72,6 +75,18 @@ void compareQT(const char* models,const char* outgoing=0) {
   p1->cd();
   //  c1->Divide(1,2);
   // c1->cd(1);
+
+  TMatrixD comboCovFull=readCov("dsdqt_combined_covariance.dat");
+  TMatrixD comboCov(1,9,1,9);
+  for (int i=1; i<=9; i++) 
+    for (int j=1; j<=9; j++)
+      comboCov(i,j)=comboCovFull(i,j);
+
+  //  comboCov.Print();
+
+  for (int i=0; i<10; i++) {
+    deltas[i].ResizeTo(1,9,1,1);
+  }
 
   TH1* data=readStandardFilePt("data","../data/dsdqt_combined.csv");
   data->SetMaximum(0.08);
@@ -122,9 +137,11 @@ void compareQT(const char* models,const char* outgoing=0) {
     for (int j=1; j<18; j++) {
       histsDelta[i]->SetBinContent(j,(data->GetBinContent(j)-hists[i]->GetBinContent(j))/data->GetBinError(j));
       histsDelta[i]->SetBinError(j,data->GetBinError(j)/hists[i]->GetBinContent(j));
-      if (j<10) 
+      if (j<10) {
 	chi2[i]+=pow(data->GetBinContent(j)-hists[i]->GetBinContent(j),2)/
 	  pow(data->GetBinError(j),2);
+	deltas[i](1,j)=data->GetBinContent(j)-hists[i]->GetBinContent(j);
+      }
     }
     
     hists[i]->SetLineWidth(2);
@@ -224,22 +241,29 @@ void compareQT(const char* models,const char* outgoing=0) {
 
   char outx[1024];
   if (outgoing!=0) {
-    sprintf(outx,"%s.png",outgoing);
-    //    c1->Print(outx);
-    sprintf(outx,"%s.eps",outgoing);
-    c1->Print(outx);
-    sprintf(outx,"%s.C",outgoing);
-    c1->Print(outx);
-    sprintf(outx,"%s_delta.png",outgoing);
-    //c2->Print(outx);
-    sprintf(outx,"%s_delta.eps",outgoing);
-    //    c2->Print(outx);
-    sprintf(outx,"%s_delta.C",outgoing);
-    //c2->Print(outx);
+    sprintf(outx,"%s",outgoing);
+    zrapPrint(c1,outx);
+    sprintf(outx,"%s_delta",outgoing);
+    //    zrapPrint(c2,outx);
   }
 
+  comboCov.Invert();
+
   for (int i=0; i<nhists; i++) {
-    printf(" Comparison %s : %f/%d %f \n",knownModels[imodels[i]*3+1],chi2[i],ndof,TMath::Prob(chi2[i],ndof));
+    double chi2mat=0;
+    
+    TMatrix deltaT(deltas[i]);
+    deltaT.Transpose(deltaT);
+
+    TMatrix a2=deltaT*comboCov*deltas[i];
+
+    chi2mat=a2(1,1);
+    
+
+    printf(" Comparison %s : %f/%d %f | %f/%d %f\n",knownModels[imodels[i]*3+1],
+	   chi2[i],ndof,TMath::Prob(chi2[i],ndof),
+	   chi2mat,ndof,TMath::Prob(chi2mat,ndof)
+	   );
 
   }
 
@@ -277,4 +301,23 @@ void draw_axis_labels( float pos, float size, int iV )
 	}
       txt_->SetText(x_,y_,Form("%-2.0f",mass[ii])); txt_->DrawClone();
     }
+}
+
+TMatrixD readCov(const char* covFile) {
+  TMatrixD m(1,18,1,18);
+
+  FILE* f=fopen(covFile,"rt");
+  int i,j;
+  float val;
+  char buffer[256];
+  while (f!=0 && !feof(f)) {
+    buffer[0]=0;
+    fgets(buffer,200,f);
+    int igot=sscanf(buffer," %d %d %f ",&i,&j,&val);
+    if (igot==3) {
+      m(i,j)=val;
+    }
+  }
+  fclose(f);
+  return m;
 }

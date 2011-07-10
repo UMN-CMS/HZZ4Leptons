@@ -234,7 +234,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
   DataSeries unfoldSystAverage("averageUnfolding-relative-errors.txt");
   DataSeries unfoldSyst(unfoldSystAverage);
   // there's a switch doMatrixUnsmearing  to activate matrix (type 3) unsmearing + associated errors or leave it  off (e.g. when type-2 is done)
-  if(doMatrixUnsmearing){
+  if(mode==3 || mode==4){
     for (int i=0; i<BINCOUNT; i++) {
       unfoldSyst.y[i]=unfoldSystMatrix.y[i];
     }

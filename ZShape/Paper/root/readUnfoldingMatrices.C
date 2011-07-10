@@ -1,4 +1,15 @@
+/*
+The code to produce the covariance matrix is in:
+ZShape/Paper/root/readUnfoldingMatrices.C
 
+These are the instructions:
+
+TFile *_file0 = TFile::Open("../root/Y-matrix-apr13.root")
+TMatrixD *a = (TMatrixD*)_file0->Get("unsmearMatrices/unfoldingMatrixTotalFolded")
+a->Draw("colz")
+.L ../root/readUnfoldingMatrices.C
+makeCovarianceMatrix("ZRapidity_fold_zee_smeared.txt",a)
+*/
 
 #include <iostream> 
 #include <fstream>
@@ -133,6 +144,7 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix, int 
   }
   char line[4096];
   while (!feof(f)) {
+    using namespace std;
     line[0]=0;
     fgets(line,4095,f);
     if (strlen(line)<5 || line[0]=='#') continue;
@@ -218,11 +230,11 @@ void makeCovarianceMatrix(const char* file,  TMatrixD * theUnfoldingMatrix, int 
       if(addSystematicsOnDiagonal) {
 	float theMatrixElement = covarianceMatrix(i,j);
 	if(i==j) theMatrixElement+= systErrosArray[i]*systErrosArray[i];
-	  myfile << scientific << (i+1) << "\t" << (j+1) << "\t" << theMatrixElement << std::endl;
+	  myfile << scientific << (i+1) << " " << (j+1) << " " << theMatrixElement << std::endl;
 	  if(i==j) std::cout << "cov matrix diagonal (sig^2): " << theMatrixElement << "\t sig: " << sqrt(theMatrixElement) << std::endl;
       }
       else{
-	myfile << scientific << (i+1) << "\t" << (j+1) << "\t" << covarianceMatrix(i,j) << std::endl;
+	myfile << scientific << (i+1) << " " << (j+1) << " " << covarianceMatrix(i,j) << std::endl;
 	if(i==j) std::cout << "cov matrix diagonal (sig^2): " << covarianceMatrix(i,j) << "\t sig: " << sqrt(covarianceMatrix(i,j)) << std::endl;
       }
     }// loop on matrixIndex

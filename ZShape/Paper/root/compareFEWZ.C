@@ -9,6 +9,9 @@
 #include "tdrstyle.C"
 #include "zrapidityStandard.C"
 #include "../theory/database.C"
+#include <algorithm>
+
+TMatrixD readCov(const char* covFile);
 
 int colorForId(int i) {
   const int colors[] = {kCyan,kRed, kBlue, kGreen+2,
@@ -18,7 +21,7 @@ int colorForId(int i) {
 }
 
 
-void compareFEWZ(const char* models,const char* outgoing=0,bool limiNormal=false) {
+void compareFEWZ(const char* models,const char* outgoing=0,bool limiNormal=true) {
   setTDRStyle();
   
   int nhists=0;
@@ -26,7 +29,10 @@ void compareFEWZ(const char* models,const char* outgoing=0,bool limiNormal=false
   int imodels[10];
   char names[10][50];
   double chi2[10];
+  TMatrixD deltas[10];
   
+  double terror[20];
+
   // find the models
   int nmatch=sscanf(models,"%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,]",
 		    names[0],
@@ -101,7 +107,10 @@ void compareFEWZ(const char* models,const char* outgoing=0,bool limiNormal=false
   //  tl2->AddEntry(data,"Combined e + #mu","p");
 
   int ndof=-1;
-  
+
+  for (int i=0; i<10; i++) {
+    deltas[i].ResizeTo(1,10,1,1);
+  }  
   
   for (int i=0; i<nhists; i++) {
     char fullfname[1024];
@@ -163,14 +172,16 @@ void compareFEWZ(const char* models,const char* outgoing=0,bool limiNormal=false
       printf("%d %e %d %e %f\n",j,data->GetBinContent(j), j-iskip-1, py, histsDelta[i]->GetY()[which]);
 
       //      histsDelta[i]->SetBinError(j,data->GetBinError(j)/hists[i]->GetBinError(j));
-      /*
+      
       if (j>=9 && j<=18) {
-	double binerror2=pow(data->GetBinError(j),2) + pow(hists[i]->GetBinError(j),2);
-	chi2[i]+=pow(data->GetBinContent(j)-hists[i]->GetBinContent(j),2)/binerror2;
+	double binerror2=pow(data->GetBinError(j),2) + pow(std::max(fabs(eyh),fabs(eyl)),2);
+	deltas[i](1,j-8)=(data->GetBinContent(j)-py);
+	chi2[i]+=pow(data->GetBinContent(j)-py,2)/binerror2;
+	if (i==0) terror[j]=std::max(fabs(eyh),fabs(eyl));
 
 	if (i==0) ndof++;
       }
-      */
+      
     }
 
     //    hists[i]=zpt_rebinForPlot(hists[i]);
@@ -186,13 +197,13 @@ void compareFEWZ(const char* models,const char* outgoing=0,bool limiNormal=false
     tl->AddEntry(hists[i],knownModels[imodels[i]*3+1],"LF");
     tl2->AddEntry(hists[i],knownModels[imodels[i]*3+1],"L");
 
-    histsDelta[i]->SetMarkerStyle(20);
+    histsDelta[i]->SetMarkerStyle(20+i);
 
     hists[i]->GetXaxis()->SetRangeUser(20,600);
     hists[i]->SetMarkerStyle(1);
     hists[i]->SetMarkerSize(0.0001);
     hists[i]->SetFillStyle(1001);
-    hists[i]->Draw("E3 SAME");
+    hists[i]->Draw("L SAME");
     
   }
   tl->Draw();
@@ -229,7 +240,17 @@ void compareFEWZ(const char* models,const char* outgoing=0,bool limiNormal=false
   dummy->GetXaxis()->SetNoExponent(true);
   dummy->GetXaxis()->SetMoreLogLabels(true);
   
-  
+  TMatrixD comboCovFull=readCov("dsdqt_combined_covariance.dat");
+  TMatrixD comboCov(1,10,1,10);
+  for (int i=9; i<=18; i++) 
+    for (int j=9; j<=18; j++) {
+      if (i==j) 
+	comboCov(i-8,j-8)=comboCovFull(i,j)+pow(terror[i],2);
+      else 
+	comboCov(i-8,j-8)=comboCovFull(i,j);
+    }
+
+  //comboCov.Print();
 
   /*
   static const int magicn=17;
@@ -276,23 +297,55 @@ void compareFEWZ(const char* models,const char* outgoing=0,bool limiNormal=false
 
   char outx[1024];
   if (outgoing!=0) {
-    sprintf(outx,"%s.png",outgoing);
-    //    c1->Print(outx);
-    sprintf(outx,"%s.eps",outgoing);
-    c1->Print(outx);
-    sprintf(outx,"%s.C",outgoing);
-    c1->Print(outx);
-    sprintf(outx,"%s_delta.png",outgoing);
-    /*
-    c2->Print(outx);
-    sprintf(outx,"%s_delta.eps",outgoing);
-    c2->Print(outx);
-    sprintf(outx,"%s_delta.C",outgoing);
-    c2->Print(outx);
-    */
+    sprintf(outx,"%s",outgoing);
+    zrapPrint(c1,outx);
   }
+
+  comboCov.Invert();
+
   for (int i=0; i<nhists; i++) {
-    printf(" Comparison %s : %f/%d %f \n",knownModels[imodels[i]*3+1],chi2[i],ndof,TMath::Prob(chi2[i],ndof));
+
+    double chi2mat=0;
+    
+    TMatrix deltaT(deltas[i]);
+    deltaT.Transpose(deltaT);
+    //    deltaT.Print();
+
+    //    comboCov.Print();
+
+    TMatrix a1=comboCov*deltas[i];
+
+    //    a1.Print();
+    
+    TMatrix a2=deltaT*a1;
+
+    //    a2.Print();
+
+    chi2mat=a2(1,1);
+
+    printf(" Comparison %s : %f/%d %f | %f/%d %f \n",knownModels[imodels[i]*3+1],
+	   chi2[i],ndof,TMath::Prob(chi2[i],ndof),
+	   chi2mat,ndof,TMath::Prob(chi2mat,ndof)
+	   );
 
   }
+}
+
+TMatrixD readCov(const char* covFile) {
+  TMatrixD m(1,18,1,18);
+
+  FILE* f=fopen(covFile,"rt");
+  int i,j;
+  float val;
+  char buffer[256];
+  while (f!=0 && !feof(f)) {
+    buffer[0]=0;
+    fgets(buffer,200,f);
+    int igot=sscanf(buffer," %d %d %f ",&i,&j,&val);
+    if (igot==3) {
+      m(i,j)=val;
+    }
+  }
+  fclose(f);
+  return m;
 }
