@@ -149,7 +149,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
     postfix="_foldMatrix";
     //    label="Folded Matrix-based Unsmearing";
   }
-  DataSeries ea_statErr("effStatError.csv");
+  DataSeries ea_statErr("effStatYError.csv");
 
   const int firsti=16;
   const int lasti=85;
@@ -312,20 +312,16 @@ void plotFinal(TFile* mctruth, int mode=1) {
   
   DataSeries corrDataFold(corrData),corrDataSystFold(corrData);
 
-  sprintf(fnamework,"ZRapidity_final_fold_table%s.tex",postfix);
-
-  FILE* ftable=fopen(fnamework,"w");
-
-  fprintf(ftable,"\\begin{tabular}{|c|c||c|c|c|}\n\\hline\n");
-  fprintf(ftable,"$|Y_{min}|$ & $|Y_{max}|$ & Measurement & Statistical Error & Systematic Error \\\\ \\hline\n");
   
   const int izero=51;
   const double binwidth=0.1;
+  const double containment=0.983; // fraction of total in the measurement region
+
   //  double binwidth=1.0;
   for (int i=0; i<=(lasti-firsti)/2; i++) {
     int j=izero+i-1;
     int jadd=izero-i-2;
-    corrDataFold.y[j]=(corrDataBkgd.y[j]+corrDataBkgd.y[jadd])/std::max(1.0,sumtotal);
+    corrDataFold.y[j]=(corrDataBkgd.y[j]+corrDataBkgd.y[jadd])/std::max(1.0,sumtotal)*containment;
 
 
     //    printf("%d %d (%f) %d (%f) \n",i,j,corrDataBkgd.y[j],jadd,corrDataBkgd.y[jadd]);
@@ -333,12 +329,12 @@ void plotFinal(TFile* mctruth, int mode=1) {
     double ea_Ave=(effAcc.y[j]+effAcc.y[jadd])/2;
 
     double pdferr=(pdfFrac.y[j]+pdfFrac.y[jadd])/2*corrDataFold.y[j];
-    double bkgderr=sqrt(pow(backgroundAllUnc.y[j],2)+pow(backgroundAllUnc.y[jadd],2))/ea_Ave/sumtotal;
+    double bkgderr=sqrt(pow(backgroundAllUnc.y[j],2)+pow(backgroundAllUnc.y[jadd],2))/ea_Ave/sumtotal*containment;
     double energyerr=(energyScale.y[j]+energyScale.y[jadd])/2*corrDataFold.y[j];
     double unfolder=(unfoldSyst.y[j]+unfoldSyst.y[jadd])/2*corrDataFold.y[j];
 
     //corrDataFold.ey[j]=sqrt(data_all.y[j]+data_all.y[jadd]+backgroundAll.y[j]+backgroundAll.y[jadd])/ea_Ave/sumtotal;//FG
-    corrDataFold.ey[j]=sqrt(data_bkgd.y[j]+data_bkgd.y[jadd])/ea_Ave/sumtotal;
+    corrDataFold.ey[j]=sqrt(data_bkgd.y[j]+data_bkgd.y[jadd])/ea_Ave/sumtotal*containment;
     //corrData.ey[j]*effAcc.y[j],2) + pow(corrData.ey[jadd]*effAcc.y[j],2) )/ea_Ave/sumtotal;
 
     corrDataSystFold.y[j]=corrDataFold.y[j];
@@ -357,17 +353,8 @@ void plotFinal(TFile* mctruth, int mode=1) {
     corrDataSystFold.ey[j]/=binwidth;
 
 
-    fprintf(ftable,"%7.2f & %7.2f & %7.4f & %7.4f & %7.4f \\\\ \n",
-	    corrDataFold.xave[j]-corrDataFold.xwidth[j],
-	    corrDataFold.xave[j]+corrDataFold.xwidth[j],
-	    corrDataFold.y[j],
-	    corrDataFold.ey[j],
-	    sqrt(pow(corrDataSystFold.ey[j],2)-pow(corrDataFold.ey[j],2))
-	    );
   }
 
-  fprintf(ftable,"\\hline\n\\end{tabular}");
-  fclose(ftable);
  
   truth->Scale(td/tt*1.02);
   
@@ -408,6 +395,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
   corrdsysb->SetMarkerStyle(0);
   corrdsysb->Draw("PSAME");
 
+  
   truth->Draw("SAMEHIST");
 
   TLegend* tl=new TLegend(0.4,0.16,0.72,0.34,label);
@@ -421,11 +409,8 @@ void plotFinal(TFile* mctruth, int mode=1) {
   zrap_Prelim(0.85,0.975,0.82,0.80);
   zrap_Lumi(0.81,0.89,lumi);
 
-  sprintf(fnamework,"ZRapidity_final%s.eps",postfix);
-  c1->Print(fnamework);
-  sprintf(fnamework,"ZRapidity_final%s.png",postfix);
-  c1->Print(fnamework);
-
+  sprintf(fnamework,"ZRapidity_final%s",postfix);
+  zrapPrint(c1,fnamework);
 
   TCanvas* c2=new TCanvas("finalZRapFold","finalZRapFold",800,600);
   TH2* dummy2=new TH2F("dummy2","dummy2",10,0.0,3.5,30,0,0.4);
@@ -443,15 +428,24 @@ void plotFinal(TFile* mctruth, int mode=1) {
     // use this to activate matrix (type-3) unsmearing for the folded rapidity distribution |Y|
   const char* unfoldMatrixFile="../data/unfold_official.root";
   if (mode==4) {
-    TH1*      data_corr_fold_smeared      =corrDataFold.makeTH1("data_corr_fold_smeared",50,50);
-    //    TH1*      data_corr_unsmeared         =unfold(data_corr_fold_smeared,unfoldMatrixFile,true);              // unfolding for |Y|
+    TH1*      data_corr_fold_smeared      =corrDataFold.makeTH1("data_corr_fold_smeared",35,50);
+    for (int jj=36; jj<=50; jj++) data_corr_fold_smeared->SetBinContent(jj,0);
+
+    TH1*      data_corr_unsmeared         =unfold(data_corr_fold_smeared,unfoldMatrixFile,true);              // unfolding for |Y|
+
+    TCanvas* c6=new TCanvas("c6","c6");
+    c6->cd();
+    data_corr_fold_smeared->Draw("HIST");
+    data_corr_unsmeared->Draw("E0 SAME");
+
     TFile*    theunfoldingMatrixInputFile =new TFile(unfoldMatrixFile,"read");
     TMatrixD* theUnfoldingMatrix          =(TMatrixD*)theunfoldingMatrixInputFile->Get("unsmearMatrices/unfoldingMatrixTotalFolded"); // indices [0.. 49] X [0.. 49]
     double errorCumul=0;
     double errorCumulSyst=0;
     for (int i=0; i<=(lasti-firsti)/2; i++) { 
       int j=izero+i-1;
-      corrDataFold.y[j]=data_corr_fold_smeared->GetBinContent(i+1);
+      corrDataFold.y[j]=data_corr_unsmeared->GetBinContent(i+1);
+	//data_corr_unsmeared->GetBinContent(i);
       // now do error propagation
       for (int s=0; s<=(lasti-firsti)/2; s++) { 
 	int js=izero+s-1;
@@ -471,12 +465,12 @@ void plotFinal(TFile* mctruth, int mode=1) {
 
   double chi2=0;
   int ndof=0;
-  for (int i=0; i<=(lasti-firsti)/2+2; i++) {
+  for (int i=0; i<=(lasti-firsti)/2+1; i++) {
 
     int j=izero+i-1;
     int jadd=izero-i-2;
 
-    truth2->SetBinContent(j+1,(truth2->GetBinContent(j+1)+truth2->GetBinContent(jadd+1))/sumtotal/binwidth);
+    truth2->SetBinContent(j+1,(truth2->GetBinContent(j+1)+truth2->GetBinContent(jadd+1))/sumtotal/binwidth*containment);
 
     double toadd=pow(truth2->GetBinContent(j+1)-corrDataFold.y[j],2)/pow(corrDataSystFold.ey[j],2);
     printf("%d %f\n",i,toadd);
@@ -503,9 +497,20 @@ void plotFinal(TFile* mctruth, int mode=1) {
   corrdfoldsys->SetMarkerStyle(0);
   corrdfoldsys->Draw("PSAME"); // is this stat-only error?
 
-  truth2->Draw("SAMEHIST");
-  truthalt->SetLineColor(kRed);
-  truthalt->Draw("SAMEHIST");
+  truth2->SetLineWidth(2);
+  truth2->SetLineColor(kRed);
+  truth2->Draw("SAMEHIST ][");
+  corrdfold->Draw("PSAME");
+  corrdfoldsys->Draw("PSAME"); // is this stat-only error?
+
+  TLegend* tlf=new TLegend(0.2,0.2,0.8,0.4);
+  tlf->SetFillStyle(0);
+  tlf->AddEntry(truth2,"POWHEG + CT10","L");
+  tlf->AddEntry(corrdfold,"Data","LP");
+  tlf->Draw();
+
+  //  truthalt->SetLineColor(kRed);
+  //  truthalt->Draw("SAMEHIST");
 
   zrap_Prelim(0.85,0.975,0.32,0.15);
   zrap_Lumi(0.82,0.89,lumi);
@@ -521,10 +526,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
       plabel -> Draw();
   }
 
-  sprintf(fnamework,"ZRapidity_final_fold%s.eps",postfix);
-  c2->Print(fnamework);
-  sprintf(fnamework,"ZRapidity_final_fold%s.png",postfix);
-  c2->Print(fnamework);
+  zrapPrint(c2,fnamework);
 
   TCanvas* c3=new TCanvas("finalZRapErrors","finalZRapErrors",800,600);
   TH1* dummy3=new TH1F("dummy3","dummy3",10,-3.5,3.5);
@@ -610,16 +612,36 @@ void plotFinal(TFile* mctruth, int mode=1) {
   zrap_Prelim(0.85,0.975,0.3,0.16);
   zrap_Lumi(0.84,0.90,lumi);
 
-  sprintf(fnamework,"ZRapidity_final_errors%s.eps",postfix);
-  c3->Print(fnamework);
-  sprintf(fnamework,"ZRapidity_final_errors%s.png",postfix);
-  c3->Print(fnamework);
+  sprintf(fnamework,"ZRapidity_final_errors%s",postfix);
+  zrapPrint(c3,fnamework);
+
+  sprintf(fnamework,"ZRapidity_final_fold_table%s.tex",postfix);
+
+  FILE* ftable=fopen(fnamework,"w");
+
+  fprintf(ftable,"\\begin{tabular}{|c|c||c|c|c|}\n\\hline\n");
+  fprintf(ftable,"$|y_{min}|$ & $|y_{max}|$ & Measurement & Statistical Error & Systematic Error \\\\ \\hline\n");
+
+  for (int i=0; i<=(lasti-firsti)/2; i++) {
+    int j=izero+i-1;
+    fprintf(ftable,"%7.2f & %7.2f & %7.4f & %7.4f & %7.4f \\\\ \n",
+	    corrDataFold.xave[j]-corrDataFold.xwidth[j],
+	    corrDataFold.xave[j]+corrDataFold.xwidth[j],
+	    corrDataFold.y[j],
+	    corrDataFold.ey[j],
+	    sqrt(pow(corrDataSystFold.ey[j],2)-pow(corrDataFold.ey[j],2))
+	    );
+  }
+  fprintf(ftable,"\\hline\n\\end{tabular}");
+  fclose(ftable);
+
 
   sprintf(fnamework,"ZRapidity_final_fold_errtable%s.tex",postfix);
   ftable=fopen(fnamework,"w");
 
   sprintf(fnamework,"ZRapidity_fold_zee%s.txt",postfix);
   FILE* ftxt=fopen(fnamework,"w");
+
   
   for (int i=0; i<=(lasti-firsti)/2; i++) {
     int j=izero+i-1;
@@ -645,7 +667,7 @@ void plotFinal(TFile* mctruth, int mode=1) {
     if (i==0) {
       fprintf(ftable,"\\begin{tabular}{|c|c||c|c|c|c|c|}\\hline\n");
       fprintf(ftable,"            &             &  Background & Efficiency & Energy Scale & PDF \\effacc & Unfolding  \\\\ \n");
-      fprintf(ftable,"$|Y_{min}|$ & $|Y_{max}|$ & Estimation & Determination & Systematics & Error & Uncertainty \\\\ \\hline \n");
+      fprintf(ftable,"$|y_{min}|$ & $|y_{max}|$ & Estimation & Determination & Systematics & Error & Uncertainty \\\\ \\hline \n");
       fprintf(ftxt,"# Zee rapidity results\n");
       fprintf(ftxt,"# bin  y_min  y_max value staterr systerr allerr \n");
     }
