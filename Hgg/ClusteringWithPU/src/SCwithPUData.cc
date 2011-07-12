@@ -13,7 +13,7 @@
 //
 // Original Author:  Giovanni Franzoni,27 2-013,+41227678347,
 //         Created:  Mon Jun 20 15:07:58 CEST 2011
-// $Id: SCwithPUData.cc,v 1.1 2011/07/08 21:31:52 franzoni Exp $
+// $Id: SCwithPUData.cc,v 1.2 2011/07/08 21:39:11 franzoni Exp $
 //
 //
 
@@ -86,7 +86,7 @@ float removePU(const pat::ElectronCollection::const_iterator oneEle, const float
       }
     }
 
-  if(1) std::cout  << "cumulateRawEnergy / scr->rawEnergy() " << cumulateRawEnergy / scr->rawEnergy() << " xi being: " << xi << " num_BC:  " << scr->clustersSize() << " seed/rawEnergy: " << (scr->seed())->energy() << "/" << scr->rawEnergy() << std::endl;
+  if(0) std::cout  << "cumulateRawEnergy / scr->rawEnergy() " << cumulateRawEnergy / scr->rawEnergy() << " xi being: " << xi << " num_BC:  " << scr->clustersSize() << " seed/rawEnergy: " << (scr->seed())->energy() << "/" << scr->rawEnergy() << std::endl;
   return (cumulateRawEnergy / scr->rawEnergy() );
 
 }
@@ -148,9 +148,9 @@ private:
 
     TH1* eleLEta,   *eleLPhi,   *eleLEt, *eleLNumBC, *eleLFrac;
     TH1* eleSubEta, *eleSubPhi, *eleSubEt, *eleSubNumBC, *eleSubFrac;
-    TH1* massPlots[10];
-    TH1* massPlotsPUOrig[10];
-    TH1* massPlotsPUMod[10];
+    TH1* massPlots[20];
+    TH1* massPlotsPUOrig[20];
+    TH1* massPlotsPUMod[20];
     TH2* massVsVertex;
 
     float theXi;
@@ -212,7 +212,7 @@ void SCwithPUData::HistSet::book(edm::Service<TFileService> &td, const std::stri
   title=std::string("num electrons ")+post+std::string("; num electrons");
   nElec=td->make<TH1D>("num electrons","num electrons; num electrons",10,-0.5,9.5);
   title=std::string("num vertices ")+post+std::string("; num vertices");
-  nVertices=td->make<TH1D>("num vertices","num vertices; num vertices",21,-0.5,20.5);
+  nVertices=td->make<TH1D>("num vertices","num vertices; num vertices",41,-0.5,40.5);
 
   title=std::string("eta_{elLead} ")+post+std::string(";#eta_{elLead}");
   eleLEta=td->make<TH1D>("eta_{elLead}",title.c_str(),60,-3,3);
@@ -221,7 +221,7 @@ void SCwithPUData::HistSet::book(edm::Service<TFileService> &td, const std::stri
   title=std::string("et_{elLead} ")+post+std::string(";Et_{elLead} [GeV]");
   eleLEt=td->make<TH1D>("et_{elLead}",title.c_str(),120,0,120);
   title=std::string("frac_{elLead} ")+post+std::string(";frac_{elLead}");
-  eleLFrac=td->make<TH1D>("frac_{elLead}",title.c_str(),100,0,1);
+  eleLFrac=td->make<TH1D>("frac_{elLead}",title.c_str(),1100,0,1.1);
 
   title=std::string("eta_{elSub} ")+post+std::string(";#eta_{elSub}");
   eleSubEta=td->make<TH1D>("eta_{elSub}",title.c_str(),60,-3,3);
@@ -230,14 +230,14 @@ void SCwithPUData::HistSet::book(edm::Service<TFileService> &td, const std::stri
   title=std::string("et_{elSub} ")+post+std::string(";Et_{elSub} [GeV]");
   eleSubEt=td->make<TH1D>("et_{elSub}",title.c_str(),120,0,120);
   title=std::string("frac_{elSub} ")+post+std::string(";frac_{elSub}");
-  eleSubFrac=td->make<TH1D>("frac_{elSub}",title.c_str(),100,0,1);
+  eleSubFrac=td->make<TH1D>("frac_{elSub}",title.c_str(),1100,0,1.1);
     
   title=std::string("numBC_{elLead} ")+post+std::string("; numBC_{elLead}");
   eleLNumBC=td->make<TH1D>("numBC_{elLead}",title.c_str(),20,0,20);
   title=std::string("numBC_{elSub} ")+post+std::string("; numBC_{elSub}");
   eleSubNumBC=td->make<TH1D>("numBC_{elSub}",title.c_str(),20,0,20);
 
-  for(uint vertex=1; vertex<=10; vertex++){
+  for(uint vertex=1; vertex<=20; vertex++){
     title=std::string("m_{ee} num vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))+post+std::string(";m_{ee} [GeV/c^{2}]");
     massPlots[vertex-1]=td->make<TH1D>( (std::string("m_{ee} num. vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),140,50,120);
     title=std::string("m_{ee} PU orig  num vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))+post+std::string(";m_{ee} [GeV/c^{2}]");
@@ -246,7 +246,7 @@ void SCwithPUData::HistSet::book(edm::Service<TFileService> &td, const std::stri
     massPlotsPUMod[vertex-1]=td->make<TH1D>( (std::string("m_{ee} PU mod num. vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),140,50,120);
 
   }
-  massVsVertex=td->make<TH2D>("m_{ee} Vs NumVertex","m_{ee} Vs NumVertex; m_{ee} [GeV/c^{2}]; NumVertex  ",20,0,20,140,50,120);
+  massVsVertex=td->make<TH2D>("m_{ee} Vs NumVertex","m_{ee} Vs NumVertex; m_{ee} [GeV/c^{2}]; NumVertex  ",40,0,40,140,50,120);
 
   theXi = xi;
 
@@ -282,7 +282,7 @@ void SCwithPUData::HistSet::fill(const pat::ElectronCollection::const_iterator l
 
 
 
-  if( theRecVtxs->size()>0 && theRecVtxs->size()<=20) {
+  if( theRecVtxs->size()>0 && theRecVtxs->size()<=40) {
     massPlots[( (theRecVtxs->size()-1) /2 )] -> Fill(Z.M());
     if(   fractionLead * fractionSub <1  ){
       massPlotsPUOrig[( (theRecVtxs->size()-1) /2 )] -> Fill(Zraw.M());
@@ -290,10 +290,10 @@ void SCwithPUData::HistSet::fill(const pat::ElectronCollection::const_iterator l
     }
   }
   else {
-    massPlots[ 9 ] -> Fill(Z.M());
+    massPlots[ 19 ] -> Fill(Z.M());
     if(  ( fractionLead * fractionSub ) <1  ){
-      massPlotsPUMod[ 9 ]  -> Fill(Zraw.M());
-      massPlotsPUOrig[ 9 ] -> Fill(Z.M());
+      massPlotsPUMod[ 19 ]  -> Fill(Zraw.M());
+      massPlotsPUOrig[ 19 ] -> Fill(Z.M());
     }
   }
   massVsVertex->Fill( theRecVtxs->size(), Z.M() );
@@ -390,7 +390,7 @@ SCwithPUData::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    }
    
    
-   if (1) std::cout  << myName_ << " xi: " << xi_ << " leading electron pt: " << theLeadingEle->pt() 
+   if (0) std::cout  << myName_ << " xi: " << xi_ << " leading electron pt: " << theLeadingEle->pt() 
 		     << " fraction leading is: " << removePU(theLeadingEle,xi_) 
 		     << " subleading pt: " << theSubLEle->pt() << " fraction is: " << removePU(theSubLEle,xi_) << std::endl;
 
