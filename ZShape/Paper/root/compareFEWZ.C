@@ -79,7 +79,7 @@ void compareFEWZ(const char* models,const char* outgoing=0,bool limiNormal=true)
   p2->Draw();
   p1->cd();
 
-  TH1* dummya=new TH1F("dummy0","",20,20.0,600.0);
+  TH1* dummya=new TH1F("dummy0","",20,19.5,600.0);
 
   TH1* data=readStandardFilePt("data","../data/dsdqt_combined.csv");
   dummya->SetMaximum(0.08);
@@ -203,7 +203,8 @@ void compareFEWZ(const char* models,const char* outgoing=0,bool limiNormal=true)
     hists[i]->SetMarkerStyle(1);
     hists[i]->SetMarkerSize(0.0001);
     hists[i]->SetFillStyle(1001);
-    hists[i]->Draw("L SAME");
+    //    hists[i]->Draw("L SAME");
+    hists[i]->Draw("E3 SAME");
     
   }
   tl->Draw();
@@ -223,7 +224,7 @@ void compareFEWZ(const char* models,const char* outgoing=0,bool limiNormal=true)
 
   //  TCanvas* c2=new TCanvas("c2","c2",800,400);
   //  TH2* dummy=new TH2F("dummy","dummy",20,0.0,30.0,30,-0.35,0.35);
-  TH2* dummy=new TH2F("dummy","",20,20,600.0,30,-5.0,5.0);
+  TH2* dummy=new TH2F("dummy","",20,19.5,600.0,30,-5.0,5.0);
   dummy->Draw();
 
   dummy->GetXaxis()->SetTitle("p_{T} [GeV/c]");
