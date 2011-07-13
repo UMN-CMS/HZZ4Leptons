@@ -214,11 +214,16 @@ process.ecalTimeEleTree.runNum = 999999
 
 # this is where Il 
 #process.load("ECALTime.SCwithPUData.scwithpudata_cfi")
-from ECALTime.SCwithPUData.scwithpudata_cfi import *
+from Hgg.ClusteringWithPU.scwithpudata_cfi import *
 process.base          = SCwithPUData.clone()
 process.base.myName   = cms.string('base')
 process.base.eleWorkingPoint   = cms.string('simpleEleId95relIso')
 process.base.xi       = cms.double(0.01)
+
+process.base_0          = SCwithPUData.clone()
+process.base_0.myName   = cms.string('base-xi0.0')
+process.base_0.eleWorkingPoint   = cms.string('simpleEleId95relIso')
+process.base_0.xi       = cms.double(0.0)
 
 process.base_0005          = SCwithPUData.clone()
 process.base_0005.myName   = cms.string('base-xi0.005')
@@ -340,7 +345,7 @@ process.WP80Seq = cms.Sequence(process.ElectronID80 * process.ElectronID80Cut
                                process.plotsWP80_001 * process.plotsWP80_0015 * process.plotsWP80_002 * process.plotsWP80_0025
                              * process.plotsWP80_003 * process.plotsWP80_0035 * process.plotsWP80_004 * process.plotsWP80_005)
 process.WP90Seq = cms.Sequence(process.ElectronID90 * process.ElectronID90Cut * process.plotsWP90)
-process.baseSeq  = cms.Sequence(process.ElectronID95 * process.ElectronID95Cut * process.base
+process.baseSeq  = cms.Sequence(process.ElectronID95 * process.ElectronID95Cut * process.base * process.base_0
                                 * process.base_0005  * process.base_001  * process.base_0015 * process.base_002 * process.base_0025
                                 * process.base_003   * process.base_0035 * process.base_004
                                 * process.base_005)
