@@ -43,7 +43,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.2 $'),
+    version = cms.untracked.string('$Revision: 1.3 $'),
     annotation = cms.untracked.string('H120GGgluonfusion_7TeV_cfi.py nevts:10'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -78,7 +78,7 @@ process.HLTEndSequence = cms.Sequence(process.reconstructionWithFamos)
 process.Realistic7TeVCollisionVtxSmearingParameters.type = cms.string("BetaFunc")
 process.famosSimHits.VertexGenerator = process.Realistic7TeVCollisionVtxSmearingParameters
 process.famosPileUp.VertexGenerator = process.Realistic7TeVCollisionVtxSmearingParameters
-process.GlobalTag.globaltag = 'MC_311_V2::All'
+process.GlobalTag.globaltag = 'MC_42_V12::All'
 
 
 process.famosPileUp.PileUpSimulator.averageNumber = 20
