@@ -31,10 +31,9 @@ process.GlobalTag.globaltag = 'GR_R_42_V14::All'
 # Source
 process.source = cms.Source(
     "PoolSource",
-    #fileNames = cms.untracked.vstring('file:/data/franzoni/data/CMSSW_4_2_0_pre8__EG__RECO__GR_R_42_V7_RelVal_wzEG2010A-v1__0043__069662C9-9A56-E011-9741-0018F3D096D2.root')
     fileNames = cms.untracked.vstring('file:/data/franzoni/data/Run2011A_DoubleElectron_AOD_PromptReco-v4_000_166_946_CE9FBCFF-4B98-E011-A6C3-003048F11C58.root')
     )
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(10))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(20))
 
 
 # Output

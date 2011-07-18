@@ -2,7 +2,8 @@
 # using: 
 # Revision: 1.284.2.2 
 # Source: /cvs_server/repositories/CMSSW/CMSSW/Configuration/PyReleaseValidation/python/ConfigBuilder.py,v 
-# with command line options: H130GGgluonfusion_7TeV_cfi.py -s GEN,FASTSIM,HLT:GRun --pileup=NoPileUp --geometry DB --conditions=auto:mc --eventcontent=RECOSIM --datatier GEN-SIM-DIGI-RECO -n 10 --no_exec
+# with command line options:
+# H130GGgluonfusion_7TeV_cfi.py -s GEN,FASTSIM,HLT:GRun --pileup=NoPileUp --geometry DB --conditions=auto:mc --eventcontent=RECOSIM --datatier GEN-SIM-DIGI-RECO -n 10 --no_exec
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process('HLT')
@@ -42,7 +43,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.1 $'),
+    version = cms.untracked.string('$Revision: 1.2 $'),
     annotation = cms.untracked.string('H120GGgluonfusion_7TeV_cfi.py nevts:10'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -153,6 +154,7 @@ process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
 #process.RECOSIMoutput_step = cms.EndPath(process.RECOSIMoutput)
 
 process.scwithpuanalyzer = cms.EDAnalyzer('SCwithPUAnalysis')
+process.scwithpuanalyzer.useRawEnergy = cms.bool(False)
 process.analysisPath = cms.Path(process.scwithpuanalyzer)
 
 # Schedule definition

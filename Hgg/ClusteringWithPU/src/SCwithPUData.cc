@@ -13,7 +13,7 @@
 //
 // Original Author:  Giovanni Franzoni,27 2-013,+41227678347,
 //         Created:  Mon Jun 20 15:07:58 CEST 2011
-// $Id: SCwithPUData.cc,v 1.2 2011/07/08 21:39:11 franzoni Exp $
+// $Id: SCwithPUData.cc,v 1.3 2011/07/12 08:47:18 franzoni Exp $
 //
 //
 
@@ -77,20 +77,34 @@ float removePU(const pat::ElectronCollection::const_iterator oneEle, const float
   float seedBCEnergy      = (scr->seed())->energy(); // this should be replaced by the 5x5 around the seed, to reproduce earlier study
   float eSeed             = 0.35;                    // standard eSeed in EB 
   float cumulateRawEnergy = 0;
+  float totalRawEnergy    = 0;
   
   // looping on basic clusters within the Supercluster
   for(reco::CaloCluster_iterator bcIt = scr->clustersBegin(); bcIt!=scr->clustersEnd(); bcIt++)
     {
-      if( (*bcIt)->energy() > sqrt( eSeed*eSeed + xi*xi*seedBCEnergy*seedBCEnergy/cosh((*bcIt)->eta())/cosh((*bcIt)->eta())  ) ) {
-	cumulateRawEnergy+=(*bcIt)->energy();
+      totalRawEnergy += (*bcIt)->energy();  // the plain sum of the BC's I get
+      if( (*bcIt)->energy() > sqrt( eSeed*eSeed + xi*xi*seedBCEnergy*seedBCEnergy/cosh((*bcIt)->eta())/cosh((*bcIt)->eta())  ) ) 
+      	{	
+	  cumulateRawEnergy+=(*bcIt)->energy();
+	}// the sum only of the BC's that pass the Esee selection 
+      
+      // print out recHits fractions, to see of there's some rechits with weight less than one
+      bool  debugremovePU_=false;
+      if(debugremovePU_ )  std::cout << "fractions: ";
+      const std::vector< std::pair<DetId, float> > & vHitsAndFracts = (*bcIt)->hitsAndFractions();
+      for( std::vector< std::pair<DetId, float> >::const_iterator diIt = vHitsAndFracts.begin();
+	   diIt != vHitsAndFracts.end();
+	   ++diIt ) {
+      	if(debugremovePU_ && (*diIt).second!=1)  std::cout << (*diIt).second << "   ";
       }
-    }
-
+      if(debugremovePU_)  std::cout <<  " ---  " << std::endl;
+      
+    }// loop on basic clusters
+  
   if(0) std::cout  << "cumulateRawEnergy / scr->rawEnergy() " << cumulateRawEnergy / scr->rawEnergy() << " xi being: " << xi << " num_BC:  " << scr->clustersSize() << " seed/rawEnergy: " << (scr->seed())->energy() << "/" << scr->rawEnergy() << std::endl;
-  return (cumulateRawEnergy / scr->rawEnergy() );
-
+  //return (cumulateRawEnergy / scr->rawEnergy() );
+  return (cumulateRawEnergy /  totalRawEnergy);
 }
-
 
 
 
@@ -144,13 +158,15 @@ private:
 	      const pat::ElectronCollection::const_iterator subEle,
 	      const reco::VertexCollection * theRecVtxs  );
 
-    TH1 *nElec, *nVertices;
+    TH1 *nElec, *nVertices, *massPlotAny;
 
     TH1* eleLEta,   *eleLPhi,   *eleLEt, *eleLNumBC, *eleLFrac;
     TH1* eleSubEta, *eleSubPhi, *eleSubEt, *eleSubNumBC, *eleSubFrac;
     TH1* massPlots[20];
     TH1* massPlotsPUOrig[20];
     TH1* massPlotsPUMod[20];
+    TH1* fractionsL[20];
+    TH1* fractionsSub[20];
     TH2* massVsVertex;
 
     float theXi;
@@ -196,9 +212,7 @@ SCwithPUData::SCwithPUData(const edm::ParameterSet& iConfig)
   
   // book all the histograms of the structure
   theHists.book( fs, "", xi_ );
-  
   std::cout << ">>> this is SCwithPUData instance: " << myName_ << " eleWP: " << workingPoint_ << " xi: " << xi_ << std::endl;
-
 }
 
 
@@ -221,7 +235,7 @@ void SCwithPUData::HistSet::book(edm::Service<TFileService> &td, const std::stri
   title=std::string("et_{elLead} ")+post+std::string(";Et_{elLead} [GeV]");
   eleLEt=td->make<TH1D>("et_{elLead}",title.c_str(),120,0,120);
   title=std::string("frac_{elLead} ")+post+std::string(";frac_{elLead}");
-  eleLFrac=td->make<TH1D>("frac_{elLead}",title.c_str(),1100,0,1.1);
+  eleLFrac=td->make<TH1D>("frac_{elLead}",title.c_str(),11000,0,1.1);
 
   title=std::string("eta_{elSub} ")+post+std::string(";#eta_{elSub}");
   eleSubEta=td->make<TH1D>("eta_{elSub}",title.c_str(),60,-3,3);
@@ -230,13 +244,15 @@ void SCwithPUData::HistSet::book(edm::Service<TFileService> &td, const std::stri
   title=std::string("et_{elSub} ")+post+std::string(";Et_{elSub} [GeV]");
   eleSubEt=td->make<TH1D>("et_{elSub}",title.c_str(),120,0,120);
   title=std::string("frac_{elSub} ")+post+std::string(";frac_{elSub}");
-  eleSubFrac=td->make<TH1D>("frac_{elSub}",title.c_str(),1100,0,1.1);
+  eleSubFrac=td->make<TH1D>("frac_{elSub}",title.c_str(),11000,0,1.1);
     
   title=std::string("numBC_{elLead} ")+post+std::string("; numBC_{elLead}");
   eleLNumBC=td->make<TH1D>("numBC_{elLead}",title.c_str(),20,0,20);
   title=std::string("numBC_{elSub} ")+post+std::string("; numBC_{elSub}");
   eleSubNumBC=td->make<TH1D>("numBC_{elSub}",title.c_str(),20,0,20);
 
+  title=std::string("m_{ee} any vertex: ;m_{ee} [GeV/c^{2}]");
+  massPlotAny=td->make<TH1D>(title.c_str(),title.c_str(),140,50,120);
   for(uint vertex=1; vertex<=20; vertex++){
     title=std::string("m_{ee} num vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))+post+std::string(";m_{ee} [GeV/c^{2}]");
     massPlots[vertex-1]=td->make<TH1D>( (std::string("m_{ee} num. vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),140,50,120);
@@ -244,12 +260,14 @@ void SCwithPUData::HistSet::book(edm::Service<TFileService> &td, const std::stri
     massPlotsPUOrig[vertex-1]=td->make<TH1D>( (std::string("m_{ee} PU orig num. vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),140,50,120);
     title=std::string("m_{ee} PU mod num vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))+post+std::string(";m_{ee} [GeV/c^{2}]");
     massPlotsPUMod[vertex-1]=td->make<TH1D>( (std::string("m_{ee} PU mod num. vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),140,50,120);
-
+    title=std::string("lead E_{dyn}/E_{SC} num vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))+post+std::string("; lead E_{dyn}/E_{SC}");
+    fractionsL[vertex-1]=td->make<TH1D>( (std::string("lead E_{dyn}/E_{SC} num vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),11000,0,1.1);
+    title=std::string("sub E_{dyn}/E_{SC} num vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))+post+std::string("; sub E_{dyn}/E_{SC}");
+    fractionsSub[vertex-1]=td->make<TH1D>( (std::string("lead E_{dyn}/E_{SC} num vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),11000,0,1.1);
   }
+  
   massVsVertex=td->make<TH2D>("m_{ee} Vs NumVertex","m_{ee} Vs NumVertex; m_{ee} [GeV/c^{2}]; NumVertex  ",40,0,40,140,50,120);
-
   theXi = xi;
-
 }
 
 
@@ -274,26 +292,32 @@ void SCwithPUData::HistSet::fill(const pat::ElectronCollection::const_iterator l
 
   if( 0 ) std::cout  <<  " number of vertices: " << theRecVtxs->size() << std::endl;
   
-  reco::Particle::LorentzVector Z( fractionLead * leadEle->p4());
-  Z+= ( fractionSub * subEle->p4() );
-
   reco::Particle::LorentzVector Zraw( leadEle->p4() );
   Zraw+= ( subEle->p4() );
-
-
-
+  massPlotAny->Fill(Zraw.M());
+  
+  reco::Particle::LorentzVector Z( fractionLead * leadEle->p4());
+  Z+= ( fractionSub * subEle->p4() );
+  
+  bool doLogFractions_=false;
   if( theRecVtxs->size()>0 && theRecVtxs->size()<=40) {
     massPlots[( (theRecVtxs->size()-1) /2 )] -> Fill(Z.M());
     if(   fractionLead * fractionSub <1  ){
+      if(doLogFractions_) std::cout << "f1*f2: " << (fractionLead * fractionSub) << " leadPT:  " << leadEle->pt() << " subPT: " << subEle->pt() << std::endl;
       massPlotsPUOrig[( (theRecVtxs->size()-1) /2 )] -> Fill(Zraw.M());
       massPlotsPUMod[( (theRecVtxs->size()-1) /2 )]  -> Fill(Z.M());
+      fractionsL[( (theRecVtxs->size()-1) /2 )]      -> Fill(fractionLead);
+      fractionsSub[( (theRecVtxs->size()-1) /2 )]    -> Fill(fractionSub);
     }
   }
   else {
     massPlots[ 19 ] -> Fill(Z.M());
     if(  ( fractionLead * fractionSub ) <1  ){
-      massPlotsPUMod[ 19 ]  -> Fill(Zraw.M());
-      massPlotsPUOrig[ 19 ] -> Fill(Z.M());
+      if(doLogFractions_) std::cout  << "(19) f1*f2: " << (fractionLead * fractionSub) << " leadPT:  " << leadEle->pt() << " subPT: " << subEle->pt() << std::endl;
+      massPlotsPUMod[ 19 ]  -> Fill(Z.M());
+      massPlotsPUOrig[ 19 ] -> Fill(Zraw.M());
+      fractionsL[ 19 ]      -> Fill(fractionLead);
+      fractionsSub[ 19 ]    -> Fill(fractionSub);
     }
   }
   massVsVertex->Fill( theRecVtxs->size(), Z.M() );
