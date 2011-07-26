@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  G. Franzoni (previous instance was inspired to D. Futyans's)
 //         Created:  Mon Jul 18 14:50:50 CEST 2011
-// $Id: SCwithTruthPUAnalysis.cc,v 1.1 2011/07/18 14:50:29 franzoni Exp $
+// $Id: SCwithTruthPUAnalysis.cc,v 1.1 2011/07/26 09:26:39 franzoni Exp $
 //
 //
 
@@ -103,14 +103,14 @@ private:
     
     TH1 *nVertices;
     
-    TH1* particleEta,   *particlePhi,   *particleEt, *particleNumBC, *particleFrac;
+    TH1* particleEta,   *particlePhi,   *particleEt, *particleNumBC, *scEtOverTrue;
     TH1* fractions[20];
     TH1* eOverTruth[20];
     TH1* eOverTruthOrig[20];
     
     float theXi;
     
-  } theSingleHists;
+  } theSingleHistsEB, theSingleHistsEE;
   
 
 
@@ -158,73 +158,70 @@ SCwithTruthPUAnalysis::~SCwithTruthPUAnalysis()
 {
 }
 
-void SCwithTruthPUAnalysis::HistSingleSet::book(edm::Service<TFileService> &td, const std::string& post, float xi) {
+void SCwithTruthPUAnalysis::HistSingleSet::book(edm::Service<TFileService> &fs, const std::string& post, float xi) {
   std::string title;
 
-  title=std::string("num vertices ")+post+std::string("; num vertices");
-  nVertices=td->make<TH1D>("num vertices","num vertices; num vertices",41,-0.5,40.5);
+  TFileDirectory td=fs->mkdir(post.c_str()); 
 
-  title=std::string("eta_{SC} ")+post+std::string(";#eta_{SC}");
-  particleEta=td->make<TH1D>("eta_{elLead}",title.c_str(),60,-3,3);
-  title=std::string("phi_{elLead} ")+post+std::string(";#phi_{elLead}");
-  particlePhi=td->make<TH1D>("phi_{elLead}",title.c_str(),60,-1*TMath::Pi(),TMath::Pi());
-  title=std::string("et_{elLead} ")+post+std::string(";Et_{elLead} [GeV]");
-  particleEt=td->make<TH1D>("et_{elLead}",title.c_str(),120,0,120);
-  title=std::string("frac_{elLead} ")+post+std::string(";frac_{elLead}");
-  particleFrac=td->make<TH1D>("frac_{elLead}",title.c_str(),11000,0,1.1);
+  title=std::string("num vertices ")+post+std::string("; num vertices");
+  nVertices=td.make<TH1D>("num vertices","num vertices; num vertices",41,-0.5,40.5);
+
+  title=std::string("#eta_{SC} ")+post+std::string(";#eta_{SC}");
+  particleEta=td.make<TH1D>("#eta",title.c_str(),60,-3,3);
+  title=std::string("#phi ")+post+std::string(";#phi");
+  particlePhi=td.make<TH1D>("#phi",title.c_str(),60,-1*TMath::Pi(),TMath::Pi());
+  title=std::string("E_{t} ")+post+std::string(";E_t [GeV]");
+  particleEt=td.make<TH1D>("E_t ",title.c_str(),120,0,120);
+  title=std::string("num BC in SC")+post+std::string(";num BC ");
+  particleNumBC=td.make<TH1D>("num BC",title.c_str(),30,0,30);
+  title=std::string("E_{T,SC} / E_{T,true}")+post+std::string(";E_{T,SC} / E_{T,true} ");
+  scEtOverTrue=td.make<TH1D>("E_{t,SC} / E_{true}",title.c_str(),30,0,30);
 
 
   for(uint vertex=1; vertex<=20; vertex++){
     title=std::string("E_{SC} / E_{true} num vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))+post+std::string("; E_{SC} / E_{true}");
-    eOverTruth[vertex-1]=td->make<TH1D>( (std::string("E_{SC} / E_{true} num. vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),90,0.75,1.2);
+    eOverTruth[vertex-1]=td.make<TH1D>( (std::string("E_{SC} / E_{true} num. vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),90,0.75,1.2);
     title=std::string("E_{SC} / E_{true} (orig.) num vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))+post+std::string("; orig: E_{SC} / E_{true}");
-    eOverTruthOrig[vertex-1]=td->make<TH1D>( (std::string("E_{SC} / E_{true} num. vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),90,0.75,1.2);
-    fractions[vertex-1]=td->make<TH1D>( (std::string("lead E_{dyn}/E_{SC} num vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),11000,0,1.1);
+    eOverTruthOrig[vertex-1]=td.make<TH1D>( (std::string("E_{SC} / E_{true} (orig.) num. vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),90,0.75,1.2);
+    fractions[vertex-1]=td.make<TH1D>( (std::string(" E_{dyn}/E_{SC} num vertices: ")+convertInt(2*(vertex-1))+std::string("-")+convertInt(2*(vertex))).c_str() ,title.c_str(),11000,0,1.1);
   } // loop over PU bins
   
   // the proportionality parameter for dynamic superclustering 
   theXi = xi;
+  
+  std::cout << "xi set to: " << theXi << std::endl;
 }
 
 
 void SCwithTruthPUAnalysis::HistSingleSet::fill(const HepMC::GenEvent::particle_const_iterator truthParticle, 
 						const reco::SuperClusterCollection::const_iterator scIt,
 						const reco::VertexCollection * theRecVtxs  )
-//void SCwithTruthPUAnalysis::HistSet::fill(const pat::ElectronCollection::const_iterator leadEle, const pat::ElectronCollection::const_iterator subEle,
-//				 const reco::VertexCollection * theRecVtxs)
 {
-  // float fraction = removePU(leadEle,theXi);
-  // why is this commented out? Ah, needs  be imported... what about  Utils.h  ?
-
+ 
+  nVertices   -> Fill(theRecVtxs->size());
   particleEta -> Fill(scIt->eta());
   particlePhi -> Fill(scIt->phi());
   particleEt  -> Fill(scIt->energy()  / cosh( scIt->eta()) );
   particleNumBC->Fill( scIt->clustersSize() ); 
   
-  float particleFrac = 1.;
-  //particleFrac-> Fill(fraction);
-
-  if( 0 ) std::cout  <<  " number of vertices: " << theRecVtxs->size() << std::endl;
-
-  float theEOverTruth = (scIt->energy()  / cosh( scIt->eta() ) )  / (*truthParticle)->momentum().e() ;
+  float particleFrac =  removePU(scIt,theXi);
+  //float theEOverTruth = (scIt->energy()  / cosh( scIt->eta() ) )  / (*truthParticle)->momentum().e() ;
+  float theEOverTruth = (scIt->energy() ) / (*truthParticle)->momentum().e() ;
  
-  bool doLogFractions_=false;
   if( theRecVtxs->size()>0 && theRecVtxs->size()<=40) {
     fractions[( (theRecVtxs->size()-1) /2 )]      -> Fill( particleFrac );
     if(   particleFrac <1  ){
-      eOverTruth[( (theRecVtxs->size()-1) /2 )]       -> Fill( theEOverTruth * particleFrac);
+      eOverTruth    [ ( (theRecVtxs->size()-1) /2 ) ] -> Fill( theEOverTruth * particleFrac);
       eOverTruthOrig[ ( (theRecVtxs->size()-1) /2 ) ] -> Fill( theEOverTruth );
     }
   }
   else {
     fractions[ 19 ] -> Fill( particleFrac );
-    //massPlots[ 19 ] -> Fill(Z.M());
     if( particleFrac <1  ){
       eOverTruth[ 19 ]      -> Fill( theEOverTruth * particleFrac);
       eOverTruthOrig[ 19 ]  -> Fill( theEOverTruth );
     }
   }
-  //  massVsVertex->Fill( theRecVtxs->size(), Z.M() );
 
 }// end of fill()
 
@@ -252,18 +249,13 @@ SCwithTruthPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   ev.getByLabel("correctedMulti5x5SuperClustersWithPreshower","",endcapSCHandle);
   const SuperClusterCollection * endcapSCCollection = endcapSCHandle.product();
 
-  // do i still need this? remove!!
-  Handle<PhotonCollection> photonHandle;
-  ev.getByLabel("photons","", photonHandle);
-  const PhotonCollection * photonCollection = photonHandle.product();
-
   Handle<VertexCollection> vertexHandle;
   ev.getByLabel("offlinePrimaryVerticesWithBS", vertexHandle);
   const VertexCollection * vertexCollection = vertexHandle.product();
   math::XYZPoint recoVtx(0.,0.,0.);
   if (vertexCollection->size()>0) recoVtx = vertexCollection->begin()->position();
   
-  //  std::cout << "++ SCwithTruthPUAnalysis " << std::endl;  // GF: check heart beat
+  std::cout << "++ SCwithTruthPUAnalysis " << std::endl;  // GF: check heart beat
 
   // this histogram can be used as a counter of events 
   h_nVtx->Fill(vertexCollection->size());
@@ -272,9 +264,6 @@ SCwithTruthPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   ev.getByLabel("generator",hepProd) ;
   const HepMC::GenEvent * myGenEvent = hepProd->GetEvent();
 
-  //  vector<Photon> higgsPhotons,higgsPhotons_trueVtx;
-  int isEB=0; 
-  int hasOneClus(0);   int hasTwoClus(0);   int hasThreeClus(0);   int hasMoreClus(0); 
   bool trueVtxFound=false;
   math::XYZPoint trueVtx(0.,0.,0.);
 
@@ -303,7 +292,7 @@ SCwithTruthPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
       float phi_true=(*p)->momentum().phi();
       float eta_true=(*p)->momentum().eta();
       float etaEcal_true = etaTransformation(eta_true, (*p)->production_vertex()->position().z()/10. );
-      float et_true = (*p)->momentum().e()/cosh((*p)->momentum().eta());
+      //float et_true = (*p)->momentum().e()/cosh((*p)->momentum().eta());
 
       // Barrel SuperClusters (inside loop over MC particles)
       for(SuperClusterCollection::const_iterator scIt = barrelSCCollection->begin(); scIt != barrelSCCollection->end(); scIt++) {
@@ -312,23 +301,16 @@ SCwithTruthPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
 	  // perform SC-MCparticle matching
 	  float deltaPhi = scIt->phi()-phi_true;
 	  float deltaEta = scIt->eta()-etaEcal_true;
-	  float phiWidth = scIt->phiWidth();          // covariance of cluster in phi
-	                                              // we want to look at the absolute extension too... phi_MAX-phi_min 
-	  // float energySC = scIt->energy();
-	  float energySC       = scIt->rawEnergy();
-	  float energySCtoCheck=0;
 
-	  float phiSize = getPhiSize(scIt,true);
 	  if ( deltaPhi > pi ) deltaPhi -= twopi;
 	  if ( deltaPhi < -pi) deltaPhi += twopi;
 	  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);
+
 	  if ( delta<0.1) { // match if dr<0.1
-
-
-	    // do things here
+	    
+	    theSingleHistsEB.fill(p, scIt, vertexCollection);
 	    
 	  }// if SC matches photons
-	  //COPY1//
 	}// if EB and Et>20
       }// loop over superclusters
 
@@ -337,69 +319,21 @@ SCwithTruthPUAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
 	if (fabs(scIt->eta())>1.566 && fabs(scIt->eta())<2.5 && scIt->energy()/cosh(scIt->eta())>20.) {
 	  float deltaPhi = scIt->phi()-phi_true;
 	  float deltaEta = scIt->eta()-etaEcal_true;
-	  float phiWidth = scIt->phiWidth();
-	  float energySC = scIt->rawEnergy();
-	  float energySCtoCheck=0;
-
-	  float phiSize = getPhiSize(scIt,false);
 
 	  if ( deltaPhi > pi ) deltaPhi -= twopi;
 	  if ( deltaPhi < -pi) deltaPhi += twopi;
 	  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);
 	  if ( delta<0.1) { // match if dr<0.1
-
-
-	    // do things here
 	    
-
+	    theSingleHistsEE.fill(p, scIt, vertexCollection);
+	    
 	  }// if SC matches one MC particle 
 	}// if in EE and Et>20 GeV 
       }// loop over EE Sc's
+    
       
-      
-
-
-      /*
-      ///////////////////////////////////////////////// keep for now /////////////////////////////////////////////////
-      //////////////////////////////////////////////
-      // follows the photon part of the histograms
-      // still within loop over MC particles
-      // special treatment if current MCparticle is a photon
-      // match also to photon object
-      if ((*p)->pdg_id()==22) {
-	for(PhotonCollection::const_iterator phoIt = photonCollection->begin(); phoIt != photonCollection->end(); phoIt++) {
-	  float deltaPhi = phoIt->caloPosition().phi()-phi_true;
-	  float deltaEta = phoIt->caloPosition().eta()-etaEcal_true;
-	  if ( deltaPhi > pi ) deltaPhi -= twopi;
-	  if ( deltaPhi < -pi) deltaPhi += twopi;
-	  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);
-	  if ( delta<0.1 && phoIt->energy()/cosh(phoIt->caloPosition().eta())>20.) {
-	    
-	    if (mother2!=0 && mother2->pdg_id()==25) { // specifically look out for HIGGses
-	      if (phoIt->isEB() || phoIt->isEE()) {
-		// use this variable to classify SC's associated to photons
-		int numOfBC = phoIt->superCluster()->clustersSize();
-		if      (numOfBC==1) hasOneClus++;
-		else if (numOfBC==2) hasTwoClus++;
-		else if (numOfBC==3) hasThreeClus++;
-		else                 hasMoreClus++;
-		//		higgsPhotons.push_back(*phoIt);
-		//		Photon localPho = Photon(*phoIt);
-		//		if (!trueVtxFound) cout << "Error: true vertex not found!" << endl;
-		//		localPho.setVertex(trueVtx);
-		//		higgsPhotons_trueVtx.push_back(localPho);
-		//cout << phoIt->et() << " " << localPho.et() << " " << trueVtx << " " << recoVtx << endl;
-	      }
-	    } // if mother
-	  }// if matching between SC and photon and ET_{pho} > 20
-	}// loop over photons
-      }// if gamma
-      ///////////////////////////////////////////////// keep for now /////////////////////////////////////////////////
-      */
-
-
     }// if it's MC-truth photon
-  }// loop over all MC-truth particles
+  }// loop over all MC-truth particles  - keep only electrons or photons 
 }
 
 // ------------ method called once each job just before starting event loop  ------------
@@ -411,7 +345,12 @@ SCwithTruthPUAnalysis::beginJob()
   
   TFileDirectory subDir=fs->mkdir("allCase");  
   h_nVtx = fs->make<TH1F>("h_nVtx","no. of primary vertices; num vertices reco",30,0.,30.);  // usig h_nVtx  histogram can be used as a counter of events 
-  h_dzVtx = fs->make<TH1F>("h_dzVtx","delta_z for reconstructed PV w.r.t. true PV",200,-5.,5.);
+  h_dzVtx = fs->make<TH1F>("h_dzVtx","delta_z for reconstructed PV w.r.t. true PV",1000,-5.,5.);
+
+  // objects holding histograms
+  theSingleHistsEB.book(fs, std::string(" theSingleHistsEB "),0.01);
+  theSingleHistsEE.book(fs, std::string(" theSingleHistsEE "),0.01);
+
 
   // add histos to the class, instead!
 }
@@ -456,3 +395,45 @@ float SCwithTruthPUAnalysis::etaTransformation(  float EtaParticle , float Zvert
 
 #include "FWCore/Framework/interface/MakerMacros.h"  
 DEFINE_FWK_MODULE( SCwithTruthPUAnalysis );
+
+
+
+
+      /*
+      ///////////////////////////////////////////////// keep for now /////////////////////////////////////////////////
+      //////////////////////////////////////////////
+      // follows the photon part of the histograms
+      // still within loop over MC particles
+      // special treatment if current MCparticle is a photon
+      // match also to photon object
+      if ((*p)->pdg_id()==22) {
+	for(PhotonCollection::const_iterator phoIt = photonCollection->begin(); phoIt != photonCollection->end(); phoIt++) {
+	  float deltaPhi = phoIt->caloPosition().phi()-phi_true;
+	  float deltaEta = phoIt->caloPosition().eta()-etaEcal_true;
+	  if ( deltaPhi > pi ) deltaPhi -= twopi;
+	  if ( deltaPhi < -pi) deltaPhi += twopi;
+	  float delta = sqrt( deltaPhi*deltaPhi+deltaEta*deltaEta);
+	  if ( delta<0.1 && phoIt->energy()/cosh(phoIt->caloPosition().eta())>20.) {
+	    
+	    if (mother2!=0 && mother2->pdg_id()==25) { // specifically look out for HIGGses
+	      if (phoIt->isEB() || phoIt->isEE()) {
+		// use this variable to classify SC's associated to photons
+		int numOfBC = phoIt->superCluster()->clustersSize();
+		if      (numOfBC==1) hasOneClus++;
+		else if (numOfBC==2) hasTwoClus++;
+		else if (numOfBC==3) hasThreeClus++;
+		else                 hasMoreClus++;
+		//		higgsPhotons.push_back(*phoIt);
+		//		Photon localPho = Photon(*phoIt);
+		//		if (!trueVtxFound) cout << "Error: true vertex not found!" << endl;
+		//		localPho.setVertex(trueVtx);
+		//		higgsPhotons_trueVtx.push_back(localPho);
+		//cout << phoIt->et() << " " << localPho.et() << " " << trueVtx << " " << recoVtx << endl;
+	      }
+	    } // if mother
+	  }// if matching between SC and photon and ET_{pho} > 20
+	}// loop over photons
+      }// if gamma
+      ///////////////////////////////////////////////// keep for now /////////////////////////////////////////////////
+      */
+
