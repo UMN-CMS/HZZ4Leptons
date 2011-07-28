@@ -32,7 +32,7 @@ process.load('FastSimulation.Configuration.HLT_GRun_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 # number of pile up events
-process.famosPileUp.PileUpSimulator.averageNumber = 0
+process.famosPileUp.PileUpSimulator.averageNumber = 20
 
 # import of standard&useful configurations
 process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
@@ -40,7 +40,7 @@ process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 10
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(4000)
+    input = cms.untracked.int32(40)
 )
 
 # Input source
@@ -52,7 +52,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.303.2.3 $'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
     annotation = cms.untracked.string('ZEE_7TeV_cfi.py nevts:10'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -282,10 +282,14 @@ process.baseSeq  = cms.Sequence(  process.base_0 * process.base
 process.scwithpuanalyzer = cms.EDAnalyzer('SCwithPUAnalysis')
 process.scwithpuanalyzer.useRawEnergy = cms.bool(False)
 
+process.scwithpuTruthanalyzer = cms.EDAnalyzer('SCwithTruthPUAnalysis')
+process.scwithpuTruthanalyzer.useRawEnergy = cms.bool(False)
+
 process.analysisPath = cms.Sequence(
 	#process.base  *
 	process.baseSeq *
-	process.scwithpuanalyzer
+	process.scwithpuanalyzer *
+	process.scwithpuTruthanalyzer
 	)
 
 # process.dumpEvContent = cms.EDAnalyzer("EventContentAnalyzer")
