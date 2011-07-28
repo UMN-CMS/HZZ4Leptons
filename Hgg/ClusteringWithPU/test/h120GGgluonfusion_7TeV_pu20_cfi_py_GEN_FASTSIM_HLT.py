@@ -28,7 +28,7 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 process.load('FastSimulation.Configuration.EventContent_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10)
+    input = cms.untracked.int32(30)
 )
 
 #https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEDMRandomNumberGeneratorService
@@ -43,7 +43,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.3 $'),
+    version = cms.untracked.string('$Revision: 1.4 $'),
     annotation = cms.untracked.string('H120GGgluonfusion_7TeV_cfi.py nevts:10'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -65,7 +65,6 @@ process.configurationMetadata = cms.untracked.PSet(
 
 process.TFileService = cms.Service("TFileService",
     fileName = cms.string('PU_scluster.root')
-    #fileName = cms.string('gf2_SCwithPUAnalysis_Hgg_PU20_testCoffee.root')
 )
 
 # Additional output definition
@@ -153,9 +152,13 @@ process.reconstruction = cms.Path(process.reconstructionWithFamos)
 process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
 #process.RECOSIMoutput_step = cms.EndPath(process.RECOSIMoutput)
 
+
 process.scwithpuanalyzer = cms.EDAnalyzer('SCwithPUAnalysis')
 process.scwithpuanalyzer.useRawEnergy = cms.bool(False)
-process.analysisPath = cms.Path(process.scwithpuanalyzer)
+
+process.scwithpuTruthanalyzer = cms.EDAnalyzer('SCwithTruthPUAnalysis')
+process.scwithpuTruthanalyzer.useRawEnergy = cms.bool(False)
+process.analysisPath = cms.Path(process.scwithpuTruthanalyzer*process.scwithpuanalyzer)
 
 # Schedule definition
 process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step)
