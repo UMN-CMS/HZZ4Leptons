@@ -13,7 +13,7 @@
 //
 // Original Author:  Giovanni Franzoni,27 2-013,+41227678347,
 //         Created:  Mon Jun 20 15:07:58 CEST 2011
-// $Id: SCwithPUData.cc,v 1.3 2011/07/12 08:47:18 franzoni Exp $
+// $Id: SCwithPUData.cc,v 1.4 2011/07/18 10:06:23 franzoni Exp $
 //
 //
 
@@ -67,10 +67,8 @@ std::string convertInt(int number)
   return ss.str();//return a string with the contents of the stream
 }
 
-
-// gives ratio of PU-cleaned energy over initial energy 
-float removePU(const pat::ElectronCollection::const_iterator oneEle, const float xi){
-  reco::SuperClusterRef scr=oneEle->superCluster();
+// gives ratio of PU-cleaned energy over initial energy for a supercluster
+float removePUSc(const reco::SuperClusterRef scr, const float xi){
 
   if (scr.isNull()) {        std::cout  << "removePU: reference to superlcuster is NULL: we have a problem" << std::endl; assert(0); }
   
@@ -104,6 +102,12 @@ float removePU(const pat::ElectronCollection::const_iterator oneEle, const float
   if(0) std::cout  << "cumulateRawEnergy / scr->rawEnergy() " << cumulateRawEnergy / scr->rawEnergy() << " xi being: " << xi << " num_BC:  " << scr->clustersSize() << " seed/rawEnergy: " << (scr->seed())->energy() << "/" << scr->rawEnergy() << std::endl;
   //return (cumulateRawEnergy / scr->rawEnergy() );
   return (cumulateRawEnergy /  totalRawEnergy);
+}
+
+// does the pu-clearing starting from an electron
+float removePU(const pat::ElectronCollection::const_iterator oneEle, const float xi){                                                                                             
+  const reco::SuperClusterRef scr=oneEle->superCluster();
+  return removePUSc( scr,  xi);
 }
 
 
