@@ -256,7 +256,7 @@ ZFullSim2Event::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	double qf1=reco::deltaR(*i,(*pZeeEle3)[0]);
 	double qf2=reco::deltaR(*i,(*pZeeEle3)[1]);
     
-	std::cout << i->pt() << " " << i->eta() << " " <<  i->phi() << " : " << qf1 << " " << qf2 << std::endl;	
+	//	std::cout << i->pt() << " " << i->eta() << " " <<  i->phi() << " : " << qf1 << " " << qf2 << std::endl;	
      
       } 
     } else {
@@ -329,6 +329,25 @@ ZFullSim2Event::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
 
          
+  } else {
+    std::cout << "We have " << pZeeEle3->size() << std::endl;
+  }
+
+  if (pZeeParticles->empty()) {
+    LorentzVector p4(1.0,0.0,1.1e4,sqrt(1.0+1.1e4*1.1e4));
+    
+    pZeeParticles->push_back(GenParticle(1,
+					p4,
+					Point(0,0,0),
+					11,
+					110,
+					true));
+    pZeeParticles->push_back(GenParticle(-1,
+					p4,
+					Point(0,0,0),
+					11,
+					110,
+					true));
   }
 
 

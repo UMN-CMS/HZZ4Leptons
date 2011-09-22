@@ -154,8 +154,14 @@ void ZEfficiencyCalculator::analyze(const edm::Event& iEvent, const edm::EventSe
 
   fillEvent(ZeeParticles, ZeeTreeLevelParticles); 
 
-  if (evt_.n_elec!=2) return; // need 2 and only 2
-  if (evt_.n_TLelec!=2) return; // need 2 and only 2 
+  if (evt_.n_elec!=2) {
+    //    std::cerr << "Have just " << evt_.n_elec << std::endl;
+    return; // need 2 and only 2
+  }
+  if (evt_.n_TLelec!=2) {
+    //    std::cerr << "Have just TL " << evt_.n_TLelec << std::endl;
+    return; // need 2 and only 2 
+  }
 
   ////This just stores the event information
   //evt_.initEvent(iEvent,iSetup); //ONLY WORK ON FULL MC 
