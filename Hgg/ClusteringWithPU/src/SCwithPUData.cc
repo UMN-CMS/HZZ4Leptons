@@ -13,7 +13,7 @@
 //
 // Original Author:  Giovanni Franzoni,27 2-013,+41227678347,
 //         Created:  Mon Jun 20 15:07:58 CEST 2011
-// $Id: SCwithPUData.cc,v 1.4 2011/07/18 10:06:23 franzoni Exp $
+// $Id: SCwithPUData.cc,v 1.5 2011/09/09 15:39:44 franzoni Exp $
 //
 //
 
@@ -67,8 +67,11 @@ std::string convertInt(int number)
   return ss.str();//return a string with the contents of the stream
 }
 
-// gives ratio of PU-cleaned energy over initial energy for a supercluster
-float removePUSc(const reco::SuperClusterRef scr, const float xi){
+
+// returns a pair:
+//                   .first is ratio of   'PU-cleaned energy'    over   'initial energy'    for a supercluster
+//                   .second is the number of basic clusters which which have been removed by the cleaning 
+std::pair  <float,int>  removePUSc(const reco::SuperClusterRef scr, const float xi){
 
   if (scr.isNull()) {        std::cout  << "removePU: reference to superlcuster is NULL: we have a problem" << std::endl; assert(0); }
   
@@ -76,16 +79,20 @@ float removePUSc(const reco::SuperClusterRef scr, const float xi){
   float eSeed             = 0.35;                    // standard eSeed in EB 
   float cumulateRawEnergy = 0;
   float totalRawEnergy    = 0;
-  
+  int   numBcRemoved      = 0;  
+
   // looping on basic clusters within the Supercluster
   for(reco::CaloCluster_iterator bcIt = scr->clustersBegin(); bcIt!=scr->clustersEnd(); bcIt++)
     {
-      totalRawEnergy += (*bcIt)->energy();  // the plain sum of the BC's I get
+      totalRawEnergy += (*bcIt)->energy();                                                    // the plain sum of the BC's I get
       if( (*bcIt)->energy() > sqrt( eSeed*eSeed + xi*xi*seedBCEnergy*seedBCEnergy/cosh((*bcIt)->eta())/cosh((*bcIt)->eta())  ) ) 
       	{	
 	  cumulateRawEnergy+=(*bcIt)->energy();
-	}// the sum only of the BC's that pass the Esee selection 
-      
+	}// the sum only of the BC's that pass the Esee selection
+      else{
+	numBcRemoved++;
+      }// count how many basic cluster get removed by the cleaning
+
       // print out recHits fractions, to see of there's some rechits with weight less than one
       bool  debugremovePU_=false;
       if(debugremovePU_ )  std::cout << "fractions: ";
@@ -96,18 +103,31 @@ float removePUSc(const reco::SuperClusterRef scr, const float xi){
       	if(debugremovePU_ && (*diIt).second!=1)  std::cout << (*diIt).second << "   ";
       }
       if(debugremovePU_)  std::cout <<  " ---  " << std::endl;
+
       
     }// loop on basic clusters
   
   if(0) std::cout  << "cumulateRawEnergy / scr->rawEnergy() " << cumulateRawEnergy / scr->rawEnergy() << " xi being: " << xi << " num_BC:  " << scr->clustersSize() << " seed/rawEnergy: " << (scr->seed())->energy() << "/" << scr->rawEnergy() << std::endl;
-  //return (cumulateRawEnergy / scr->rawEnergy() );
-  return (cumulateRawEnergy /  totalRawEnergy);
+
+  //return (cumulateRawEnergy /  scr->rawEnergy() );
+  //return (cumulateRawEnergy /  totalRawEnergy);
+  return std::pair <float,int> ( cumulateRawEnergy /  totalRawEnergy , numBcRemoved);
+
+}//removePUSc
+
+
+// returns ratio of   'PU-cleaned energy'    over   'initial energy'    for a supercluster
+float removePUScSimple(const reco::SuperClusterRef scr, const float xi){
+  return (  removePUSc( scr, xi)  ).first;
 }
+
+
 
 // does the pu-clearing starting from an electron
 float removePU(const pat::ElectronCollection::const_iterator oneEle, const float xi){                                                                                             
   const reco::SuperClusterRef scr=oneEle->superCluster();
-  return removePUSc( scr,  xi);
+  return removePUScSimple( scr,  xi);
+  //  return removePUSc( scr,  xi);
 }
 
 
