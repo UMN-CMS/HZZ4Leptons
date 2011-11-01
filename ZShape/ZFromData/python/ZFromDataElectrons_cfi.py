@@ -19,7 +19,7 @@ from RecoEgamma.EgammaIsolationAlgos.eleIsoDepositTk_cff import *
 from RecoEgamma.EgammaIsolationAlgos.eleIsoDepositEcalFromHits_cff import *
 from RecoEgamma.EgammaIsolationAlgos.eleIsoDepositHcalFromTowers_cff import *
 
-hfEMClusters.correctionType = cms.int32(2)
+hfEMClusters.correctionType = cms.int32(1)
 hfRecoEcalCandidate.Correct = True
 #hfRecoEcalCandidate.e9e25Cut = 0
 hfRecoEcalCandidate.intercept2DCut = 0.32
@@ -366,6 +366,12 @@ theId = ElectronID95.clone()
 theHLT = cms.EDProducer("trgMatchedGsfElectronProducer",                     
     InputProducer = cms.InputTag("theId"),                          
     hltTag = cms.untracked.VInputTag(
+ cms.InputTag("HLT_Ele17_CaloIdL_CaloIsoVL_Ele15_HFL_v2","","HLT"),
+ cms.InputTag("HLT_Ele17_CaloIdL_CaloIsoVL_Ele8_CaloIdL_CaloIsoVL_v2","","HLT"),cms.InputTag("HLT_Ele17_CaloIdL_CaloIsoVL_Ele15_HFL_v3","","HLT"),
+ cms.InputTag("HLT_Ele17_CaloIdL_CaloIsoVL_Ele8_CaloIdL_CaloIsoVL_v3","","HLT"),
+   cms.InputTag("HLT_Ele17_CaloIdL_CaloIsoVL_Ele15_HFL_v1","","HLT"),
+ cms.InputTag("HLT_Ele17_CaloIdL_CaloIsoVL_Ele8_CaloIdL_CaloIsoVL_v1","","HLT"),
+  
                 cms.InputTag("HLT_Photon15_Cleaned_L1R","","HLT"),
                 cms.InputTag("HLT_Ele15_SW_L1R","","HLT"),
                 cms.InputTag("HLT_Ele15_SW_CaloEleId_L1R","","HLT"),
@@ -393,7 +399,13 @@ theHLT = cms.EDProducer("trgMatchedGsfElectronProducer",
 
 theHLTGsf = cms.EDProducer("trgMatchedGsfElectronProducer",                     
     InputProducer = cms.InputTag("PassingGsf"),                          
-    hltTag = cms.untracked.VInputTag(
+   # hltTag = cms.untracked.VInputTag(
+     hltTags = cms.VInputTag(                      
+    cms.InputTag("HLT_Ele17_CaloIdL_CaloIsoVL_Ele15_HFL_v2","","HLT"),
+ cms.InputTag("HLT_Ele17_CaloIdL_CaloIsoVL_Ele8_CaloIdL_CaloIsoVL_v2","","HLT"),
+   cms.InputTag("HLT_Ele17_CaloIdL_CaloIsoVL_Ele15_HFL_v1","","HLT"),
+ cms.InputTag("HLT_Ele17_CaloIdL_CaloIsoVL_Ele8_CaloIdL_CaloIsoVL_v1","","HLT"),cms.InputTag("HLT_Ele17_CaloIdL_CaloIsoVL_Ele15_HFL_v3","","HLT"),
+ cms.InputTag("HLT_Ele17_CaloIdL_CaloIsoVL_Ele8_CaloIdL_CaloIsoVL_v3","","HLT"),
                 cms.InputTag("HLT_Photon15_Cleaned_L1R","","HLT"),
                 cms.InputTag("HLT_Ele15_SW_L1R","","HLT"),
                 cms.InputTag("HLT_Ele15_SW_CaloEleId_L1R","","HLT"),
