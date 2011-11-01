@@ -71,6 +71,29 @@ polarizationZ_= tdf.make<TH1F>("Z0_Pol","Z0_Polarization", 100, 0,3.2 );
 
   hfeta_ = tdf.make<TH1F>("hf_eta","hf_eta;|#eta|",13*7,3.0,5.0);
  
+
+  //at/al/phistar
+
+
+ atZ_ = tdf.make<TH1F>("wZ0_at","Z0_at;a_{T,Z0}", 200, 0, 150.);
+  alZ_ = tdf.make<TH1F>("wZ0_al","Z0_al;a_{l,Z0}", 200, 0, 150.);
+  ptZ_ = tdf.make<TH1F>("wZ0_pt","Z0_Pt;p_{T,Z0}", 200, 0, maxPt);
+  phiStar_ = tdf.make<TH1F>("wZ0_phiStar","Z0_phiStar;phiStar_{T,Z0}", 500, 0, 1.);
+
+  
+  MCatZ_ = tdf.make<TH1F>("Z0_at_MC","Z0_at_MC;a_{T,Z0}", 200, 0, 150.);
+  MCalZ_ = tdf.make<TH1F>("Z0_al_MC","Z0_al_MC;a_{l,Z0}", 200, 0, 150.);
+  MCphiStar_ = tdf.make<TH1F>("wZ0_phiStar_MC","Z0_phiStar_MC;phiStar_{T,Z0}", 500, 0, 1.);
+
+ 
+
+  atTL_at_= tdf.make<TH2F>("atTL_vs_at","atTL_vs_at;Y_{Z};Y_{ZtreeLevel}" ,200, 0, 150., 200, 0, 150.); 
+
+  phiStarTL_phiStar_= tdf.make<TH2F>("phiStarTL_vs_at","phiStarTL_vs_at;phiStar_{Z};phiStar_{ZtreeLevel}" ,500, 0, 1., 500, 0, 1.);
+  atTL_at_matrix_= tdf.make<TH2F>("atTL_vs_at_matrix","atTL_vs_at_matrix;Y_{Z};Y_{ZtreeLevel}" ,200, 0, 150., 200, 0, 150.); 
+
+  phiStarTL_phiStar_matrix_= tdf.make<TH2F>("phiStarTL_vs_at_matrix","phiStarTL_vs_at_matrix;phiStar_{Z};phiStar_{ZtreeLevel}" ,500, 0, 1., 500, 0, 1.);
+
   //Now make the 2-D histograms
 
   mZ_Y_ = tdf.make<TH2F>("Z0_Y_v_mass","Z0_Y_v_mass;Y_{Z0};m_{Z0}", zshape::y_bins, -zshape::y_max, zshape::y_max, 3*binsZmass, minZmass-10, maxZmass);
@@ -147,6 +170,9 @@ void EffHistos::Fill(const  ZShapeElectron& e1, const  ZShapeElectron& e2,
   cosPolarizationZ_->Fill(cospolriz);
   
 
+
+
+
   //  debug
   //  std::cout << "this is e1:"  << p1 << std::endl;
   //  std::cout << "this is e2:"  << p2 << std::endl;
@@ -172,7 +198,70 @@ void EffHistos::Fill(const  ZShapeElectron& e1, const  ZShapeElectron& e2,
   float zTLY    = pTLZ.Rapidity();
   float zTLPt   = pTLZ.Pt();
   
+  float em1eta = eTL1.Eta();
+  float em1phi = pTL1.Phi();
+ 
+  
+  float em2eta = eTL2.Eta();
+  float em2phi = pTL2.Phi();
+ 
 
+
+  //calculate at, al, t
+
+  
+  math::XYZVector pt1(p1.Vect().X(),p1.Vect().Y(),0);
+  math::XYZVector pt2(p2.Vect().X(),p2.Vect().Y(),0);
+  math::XYZVector Pt=pt1+pt2;
+  math::XYZVector t=(pt1-pt2);
+  t*=1.0/(t.r());
+  double at=(Pt.Cross(t)).r();
+  double al=Pt.Dot(t);
+
+//calculate phi*
+
+
+
+  double thetaStar;
+  if (e1.charge_ < 0){
+    thetaStar=acos(tanh(.5*(e1eta-e2eta)));
+  }else{
+    thetaStar=acos(tanh(.5*(e2eta-e1eta)));
+  }
+
+  double delPhi=e1phi-e2phi;
+  double phiStar=tan((3.141596-delPhi)/2)*sin(thetaStar);
+
+
+  //calculate at, al, t for MC, (i.e. atm, alm, tm)
+ 
+  math::XYZVector ptm1(pTL1.Vect().X(),pTL1.Vect().Y(),0);
+  math::XYZVector ptm2(pTL2.Vect().X(),pTL2.Vect().Y(),0);
+  math::XYZVector Ptm=ptm1+ptm2;
+  math::XYZVector tm=(ptm1-ptm2);
+  tm*=1.0/(tm.r());
+
+  double atm=(Ptm.Cross(tm)).r();
+  double alm=Ptm.Dot(tm);
+
+ 
+//calculate mc  phi*
+
+double mthetaStar;
+  if (e1.charge_ < 0){
+    mthetaStar=acos(tanh(.5*(em1eta-em2eta)));
+  }else{
+    mthetaStar=acos(tanh(.5*(em2eta-em1eta)));
+  }
+
+  double mdelPhi=em1phi-em2phi;
+  double mphiStar=tan((3.141596-mdelPhi)/2)*sin(mthetaStar);
+
+
+  
+  atZ_->Fill(at,wgt); 
+  alZ_->Fill(al,wgt);
+  phiStar_->Fill(phiStar,wgt);
   mZ_  -> Fill(zMass,wgt);
   YZ_  -> Fill(zY,wgt);
   ptZ_ -> Fill(zPt,wgt);
@@ -186,6 +275,9 @@ void EffHistos::Fill(const  ZShapeElectron& e1, const  ZShapeElectron& e2,
       YZTL_YZ_ -> Fill(zY,zTLY,wgt); 
       ptZTL_ptZ_  -> Fill(zPt,zTLPt,wgt); 
       ptZTL_ptZ_zoom_  -> Fill(zPt,zTLPt,wgt); 
+      phiStarTL_phiStar_-> Fill(phiStar,mphiStar,wgt);
+      atTL_at_-> Fill(at,atm,wgt);
+
     }
   }
 
@@ -197,7 +289,10 @@ void EffHistos::Fill(const  ZShapeElectron& e1, const  ZShapeElectron& e2,
       YZTL_  -> Fill(zTLY,wgt);
       ptZTL_-> Fill(zTLPt,wgt);
       ptZTLmon_ -> Fill(zTLPt,wgt);
-
+      MCatZ_->Fill(atm,wgt); 
+      MCalZ_->Fill(alm,wgt);
+      MCphiStar_->Fill(mphiStar,wgt);
+      
       if (zTLMass >= massWindowLow_ && zTLMass <=massWindowHigh_) {
 	YZTLmasscut_  -> Fill(zTLY,wgt);
 	ptZTLmasscut_ -> Fill(zTLPt,wgt);    
