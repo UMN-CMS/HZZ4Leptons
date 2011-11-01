@@ -41,14 +41,8 @@ void EffExtraHistos::Book(TFileDirectory& tdf) {
   De1pt_  = tdf.make<TH1F>("e1_P_t_Delta","e1_P_t_Delta;p_{T,e1}", 200, -50., 50.);  
   De2pt_  = tdf.make<TH1F>("e2_P_t_Delta","e2_P_t_Delta;p_{T,e2}", 200, -50., 50.);
 
-  atZ_ = tdf.make<TH1F>("wZ0_at","Z0_at;a_{T,Z0}", 200, 0, 150.);
-  alZ_ = tdf.make<TH1F>("wZ0_al","Z0_al;a_{T,Z0}", 200, 0, 150.);
-  ptZ_ = tdf.make<TH1F>("wZ0_pt","Z0_Pt;p_{T,Z0}", 200, 0, maxPt);
 
-  
-  MCatZ_ = tdf.make<TH1F>("Z0_at_MC","Z0_at_MC;a_{T,Z0}", 200, 0, 150.);
-  MCalZ_ = tdf.make<TH1F>("Z0_al_MC","Z0_al_MC;a_{T,Z0}", 200, 0, 150.);
-
+   ptZ_ = tdf.make<TH1F>("wZ0_pt","Z0_Pt;p_{T,Z0}", 200, 0, maxPt);
 
   MCmZ_  = tdf.make<TH1F>("Z0_mass_MC","Z0_mass_MC;m_{Z0} (GeV/c^{2})", 60, 35., 150.);  
   MCYZ_  = tdf.make<TH1F>("Z0_Y_MC","Z0_Y_MC;Y_{Z0}", int((zshape::y_max*2)*4), -zshape::y_max, zshape::y_max);  
@@ -93,37 +87,13 @@ void EffExtraHistos::Fill(const ZShapeElectron& e1, const ZShapeElectron& e2, co
 //  float rapidity = 0.5 * log( ( pZ.E()+pZ.Pz() ) / ( pZ.E()-pZ.Pz() ) );  
 //  std::cout << "rapidity calculated: " << rapidity  << " while from method: " << pZ.Rapidity() << std::endl;
   
+
   float zMass = sqrt ( pZ.Dot(pZ) );
   float zY    = pZ.Rapidity();
   float zPt   = pZ.Pt();
   
   //double mzY    = pmZ.Rapidity();
   //double mzPt   = pmZ.Pt();
-
- 
-  //calculate at, al, t
-
-  
-  math::XYZVector pt1(p1.Vect().X(),p1.Vect().Y(),0);
-  math::XYZVector pt2(p2.Vect().X(),p2.Vect().Y(),0);
-  math::XYZVector Pt=pt1+pt2;
-  math::XYZVector t=(pt1-pt2);
-  t*=1.0/(t.r());
-  double at=(Pt.Cross(t)).r();
-  double al=Pt.Dot(t);
-
-  //calculate at, al, t for MC, (i.e. atm, alm, tm)
- 
-  math::XYZVector ptm1(pm1.Vect().X(),pm1.Vect().Y(),0);
-  math::XYZVector ptm2(pm2.Vect().X(),pm2.Vect().Y(),0);
-  math::XYZVector Ptm=ptm1+ptm2;
-  math::XYZVector tm=(ptm1-ptm2);
-  tm*=1.0/(tm.r());
-
-  double atm=(Ptm.Cross(tm)).r();
-  double alm=Ptm.Dot(tm);
-
- 
 
   float e1eta = e1.detEta_;
   float e1phi = p1.Phi();
@@ -133,10 +103,8 @@ void EffExtraHistos::Fill(const ZShapeElectron& e1, const ZShapeElectron& e2, co
   float e2phi = p2.Phi();
   float e2Pt  = p2.Pt();
 
-  float zmMass = sqrt ( pmZ.Dot(pmZ) );
-  float zmY    = pmZ.Rapidity();
-  float zmPt   = pmZ.Pt();
-
+ 
+ 
   float em1eta = em1.detEta_;
   float em1phi = pm1.Phi();
   float em1Pt  = pm1.Pt();
@@ -145,6 +113,13 @@ void EffExtraHistos::Fill(const ZShapeElectron& e1, const ZShapeElectron& e2, co
   float em2phi = pm2.Phi();
   float em2Pt  = pm2.Pt();
 
+ 
+
+  float zmMass = sqrt ( pmZ.Dot(pmZ) );
+  float zmY    = pmZ.Rapidity();
+  float zmPt   = pmZ.Pt();
+
+ 
 
   sc_mZ_ -> Fill(scZ.M(),wgt);
   sc_Y_ -> Fill(scZ.Rapidity(),wgt);
@@ -183,12 +158,10 @@ void EffExtraHistos::Fill(const ZShapeElectron& e1, const ZShapeElectron& e2, co
       MCephi_ -> Fill(em1phi,wgt);
       MCephi_ -> Fill(em2phi,wgt);
  
-      MCatZ_->Fill(atm,wgt); 
-      MCalZ_->Fill(alm,wgt);
-    }
-  atZ_->Fill(at,wgt); 
-  alZ_->Fill(al,wgt);
+
+   }
+
   ptZ_->Fill(zPt,wgt);
  
-
+  
 }
