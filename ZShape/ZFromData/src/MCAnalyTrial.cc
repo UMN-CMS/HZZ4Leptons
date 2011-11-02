@@ -7,11 +7,11 @@
 #include "DataFormats/Common/interface/AssociationMap.h"
 #include "DataFormats/RecoCandidate/interface/RecoCandidate.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
-#include "ZShape/Base/interface/CandidateAssociation.h"
+#include "PhysicsTools/TagAndProbe/interface/CandidateAssociation.h"
 #include "DataFormats/EgammaReco/interface/SuperCluster.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "CommonTools/UtilAlgos/interface/TFileService.h"
+#include "PhysicsTools/UtilAlgos/interface/TFileService.h"
 #include "DataFormats/RecoCandidate/interface/RecoEcalCandidate.h"
 #include "DataFormats/EgammaCandidates/interface/Electron.h"
 
@@ -89,7 +89,6 @@ void MCAnalyTrial::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       unsigned int index = f - mctags->begin();
       CandidateBaseRef mctagRef = mctags->refAt(index);
       if( mctagRef.isNull() ) continue;
-      std::cout << " The probe pt is " << mctagRef->pt() << " et: " << mctagRef->et() << " eta: " << mctagRef->eta() << std::endl;
       bool good = false;
       good = (bool) ProbePassProbeOverlap(mctagRef,sctags,false);
       int myindex = effBinsFromTxt_->GetBandIndex(mctagRef->pt(), mctagRef->eta());
@@ -105,7 +104,7 @@ void MCAnalyTrial::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
 // ------------ method called once each job just before starting event loop  ------------
 void 
-MCAnalyTrial::beginJob()
+MCAnalyTrial::beginJob(const edm::EventSetup&)
 {
   // smearing the target efficiency according to statistics 
   ///if (statsBox_.trials>0) createAlternateEfficiencies();
