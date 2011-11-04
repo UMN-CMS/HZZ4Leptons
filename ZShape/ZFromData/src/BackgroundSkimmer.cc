@@ -7,11 +7,11 @@
 #include "DataFormats/Common/interface/AssociationMap.h"
 #include "DataFormats/RecoCandidate/interface/RecoCandidate.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
-#include "ZShape/Base/interface/CandidateAssociation.h"
+#include "PhysicsTools/TagAndProbe/interface/CandidateAssociation.h"
 #include "DataFormats/EgammaReco/interface/SuperCluster.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "CommonTools/UtilAlgos/interface/TFileService.h"
+#include "PhysicsTools/UtilAlgos/interface/TFileService.h"
 #include "DataFormats/RecoCandidate/interface/RecoEcalCandidate.h"
 #include "DataFormats/EgammaCandidates/interface/Electron.h"
 
@@ -66,7 +66,7 @@ bool BackgroundSkimmer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
  
   //if (fromfile_) return;
   
-  edm::Handle<reco::CandidateView> tagprobes;
+  edm::Handle<reco::CandViewCandViewAssociation> tagprobes;
       if ( !iEvent.getByLabel(allProbeCandTags_[0],tagprobes) ) {
          //std::cout << " DIDN't get the darn tag " << allProbeCandTags_[i] << std::endl;
       }
@@ -85,7 +85,7 @@ bool BackgroundSkimmer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
 
 // ------------ method called once each job just before starting event loop  ------------
 void 
-BackgroundSkimmer::beginJob()
+BackgroundSkimmer::beginJob(const edm::EventSetup&)
 {
 
 

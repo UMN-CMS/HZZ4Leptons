@@ -23,7 +23,7 @@ Implementation:
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
-#include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
+#include "SimDataFormats/HepMCProduct/interface/HepMCProduct.h"
 #include "DataFormats/Common/interface/Handle.h"
 
 #include <CLHEP/Vector/LorentzVector.h>
@@ -53,7 +53,7 @@ public:
 
 
 private:
-  virtual void beginJob() ;
+  virtual void beginJob(const edm::EventSetup&) ;
   virtual bool filter(edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 

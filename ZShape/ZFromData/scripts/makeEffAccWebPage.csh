@@ -42,13 +42,7 @@ echo '<h3><A name="EB"><FONT color="Blue">Combined Data Z Rapidity</FONT></A><BR
 echo '<A HREF=ZEffRapTotal_Z0_Y.png> <img height="300" src="ZEffRapTotal_Z0_Y.png"> </A>' >> ${PlotDir}/index.html
 echo '<A HREF=ZRapTotalStacked_Z0_Y.png> <img height="300" src="ZRapTotalStacked_Z0_Y.png"> </A>' >> ${PlotDir}/index.html
 echo '<A HREF=ZRapTotalEach_Z0_Y.png> <img height="300" src="ZRapTotalEach_Z0_Y.png"> </A>' >> ${PlotDir}/index.html
-echo '<A HREF=ZEffMCRapTotal_Z0_Y.png> <img height="300" src="ZEffMCRapTotal_Z0_Y.png"> </A>' >> ${PlotDir}/index.html
-echo '<A HREF=ZRapMCTotalStacked_Z0_Y.png> <img height="300" src="ZRapMCTotalStacked_Z0_Y.png"> </A>' >> ${PlotDir}/index.html
-echo '<A HREF=ZRapCOOL_Z0_Y.png> <img height="300" src="ZRapCOOL_Z0_Y.png"> </A>' >> ${PlotDir}/index.html
-echo '<A HREF=ZRapFOLD_Z0_Y.png> <img height="300" src="ZRapFOLD_Z0_Y.png"> </A>' >> ${PlotDir}/index.html
-echo '<A HREF=ZRapFOLDSTAT_Z0_Y.png> <img height="300" src="ZRapFOLDSTAT_Z0_Y.png"> </A>' >> ${PlotDir}/index.html
-
-echo '<p>These are the combined reconstructed Z Rapidity distributions. This is shown in a combined form, a stacked form, and individual Z definition form. Also a comparison for the MC is included</p>' >> ${PlotDir}/index.html
+echo '<p>These are the combined reconstructed Z Rapidity distributions. This is shown in a combined form, a stacked form, and individual Z definition form.</p>' >> ${PlotDir}/index.html
 
 echo '<h3><A name="EB"><FONT color="Blue">Efficiency X Acceptance For Single Z Definitions</FONT></A><BR></h3>' >> ${PlotDir}/index.html
 
@@ -88,13 +82,13 @@ They are also listed in the reverse order of the cuts. </p>
 
 <p>The different ZDefs available are... </p>
 EOF
-foreach Ztype ( Tight-ECAL-Loose-ECAL Tight-ECAL-HF ECAL95-ECAL95 ECAL90-ECAL90 ECAL85-ECAL85 ECAL80-ECAL80 ECAL80-ECAL95 ECAL70-ECAL70 ECAL60-ECAL60 ECAL95EB-ECAL95EB ECAL95EE-ECAL95EE ECAL95EB-ECAL95EE ECAL80EB-ECAL80EB ECAL80EE-ECAL80EE ECAL80EB-ECAL80EE ECAL80EB-ECAL95EB ECAL80EE-ECAL95EE ECAL80-NTTight ECAL95-HF ECAL90-HF ECAL85-HF ECAL80-HF ECAL70-HF ECAL60-HF ECAL95-HFTight ECAL90-HFTight ECAL85-HFTight ECAL80-HFTight ECAL70-HFTight ECAL60-HFTight )
+foreach Ztype ( Tight-ECAL-Loose-ECAL Tight-ECAL-HF )
    if (`/bin/ls ${PlotDir} |grep "png" |grep -c $Ztype`) then
       echo '<A href="#'${Ztype}'"><FONT color="Black">Comparisons for Z Def '${Ztype}'</FONT></A><BR>' >> ${PlotDir}/index.html
    endif
 end
 
-foreach Ztype ( Tight-ECAL-Loose-ECAL Tight-ECAL-HF ECAL95-ECAL95 ECAL90-ECAL90 ECAL85-ECAL85 ECAL80-ECAL80 ECAL80-ECAL95  ECAL70-ECAL70 ECAL60-ECAL60 ECAL95EB-ECAL95EB ECAL95EE-ECAL95EE ECAL95EB-ECAL95EE ECAL80EB-ECAL80EB ECAL80EE-ECAL80EE ECAL80EB-ECAL80EE ECAL80EB-ECAL95EB ECAL80EE-ECAL95E ECAL80-NTTight ECAL95-HF ECAL90-HF ECAL85-HF ECAL80-HF ECAL70-HF ECAL60-HF ECAL95-HFTight ECAL90-HFTight ECAL85-HFTight ECAL80-HFTight ECAL70-HFTight ECAL60-HFTight )
+foreach Ztype ( Tight-ECAL-Loose-ECAL Tight-ECAL-HF )
    if (`/bin/ls ${PlotDir} |grep "png" |grep -c $Ztype`) then 
       echo '<h2 id="'${Ztype}'"><A name="EB"><FONT color="Black">Comparisons for type '${Ztype}'</FONT></A><BR></h2>' >> ${PlotDir}/index.html
       foreach physplot ( Z0_Y Z0_Pt Z0_mass e1_P_t e1_eta e1_phi e2_P_t e2_eta e2_phi )
@@ -105,9 +99,7 @@ foreach Ztype ( Tight-ECAL-Loose-ECAL Tight-ECAL-HF ECAL95-ECAL95 ECAL90-ECAL90 
          echo '<h4 id="'${physplot}${Ztype}'"><A name="EB"><FONT color="Blue">Comparisons for Variable '${physplot}'</FONT></A><BR></h4>' >> ${PlotDir}/index.html
          foreach cuts ( C09 C08 C07 C06 C05 C04 C03 )
             foreach FromData (`/bin/ls ${PlotDir} |grep "png" |grep $Ztype |grep $physplot | grep $cuts`)
-	     if (!(`echo $Ztype | grep -c "Tight"` == 0 && `echo $FromData | grep -c "Tight"` > 0 )) then
-		echo '<A HREF='${FromData}'> <img height="300" src="'${FromData}'"> </A>' >> ${PlotDir}/index.html
-	     endif	
+            echo '<A HREF='${FromData}'> <img height="300" src="'${FromData}'"> </A>' >> ${PlotDir}/index.html
             end
          end
       end
@@ -149,12 +141,10 @@ cat > ${PlotDir}/index.html <<EOF
 
 EOF
 
-foreach Ztype ( Tight-ECAL-Loose-ECAL Tight-ECAL-HF ECAL95-ECAL95 ECAL90-ECAL90 ECAL85-ECAL85 ECAL80-ECAL95 ECAL80-ECAL80 ECAL70-ECAL70 ECAL60-ECAL60 ECAL95EB-ECAL95EB ECAL95EE-ECAL95EE ECAL95EB-ECAL95EE  ECAL80EB-ECAL80EB ECAL80EE-ECAL80EE ECAL80EB-ECAL80EE ECAL80EB-ECAL95EB ECAL80EE-ECAL95E ECAL80-NTTight ECAL95-HF ECAL90-HF ECAL85-HF ECAL80-HF ECAL70-HF ECAL60-HF ECAL95-HFTight ECAL90-HFTight ECAL85-HFTight ECAL80-HFTight ECAL70-HFTight ECAL60-HFTight)
+foreach Ztype ( Tight-ECAL-Loose-ECAL Tight-ECAL-HF )
    echo '<h2 id="'${Ztype}'"><A name="EB"><FONT color="Black">Comparisons for type '${Ztype}'</FONT></A><BR></h2>' >> ${PlotDir}/index.html
    foreach FromData (`/bin/ls ${PlotDir} |grep ".png" | grep "Z_CompareFINAL" | grep $Ztype` )
-      if (!(`echo $Ztype | grep -c "Tight"` == 0 && `echo $FromData | grep -c "Tight"` > 0 )) then
-	echo '<A HREF='${FromData}'> <img height="400" src="'${FromData}'"> </A>' >> ${PlotDir}/index.html
-      endif
+      echo '<A HREF='${FromData}'> <img height="400" src="'${FromData}'"> </A>' >> ${PlotDir}/index.html
    end
 end
 

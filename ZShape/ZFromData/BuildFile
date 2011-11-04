@@ -1,0 +1,25 @@
+<flags EDM_PLUGIN=1>
+
+<use name=FWCore/Framework>
+<use name=FWCore/PluginManager>
+<use name=FWCore/ParameterSet>
+
+<use name=SimDataFormats/HepMCProduct>
+<use name=FastSimulation/Particle>
+<use name=ZShape/Base>
+<use name=ZShape/EffAcc>
+
+<use name=DataFormats/RecoCandidate>
+
+<export>
+
+   <use name=FWCore/Framework>
+   <use name=FWCore/PluginManager>
+   <use name=FWCore/ParameterSet>
+#  <use name=Zshape/EffAcc>
+#  <use name=ZShape/Base>
+  <use name=SimDataFormats/HepMCProduct>
+  <use name=FastSimulation/Particle>
+
+   <lib name=ZShapeZFromData>
+</export>
