@@ -26,19 +26,21 @@ process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring( )                      
 )
 
-#process.load("ZShape.ZFromData.GoodLumis_cfi")
+process.load("ZShape.ZFromData.GoodDataLumis_160431_163869_cfi")
 
 ## from ZShape.ZFromData.GoodLumis_cfi import *
 ## #from ZShape.ZFromData.GoodLumis_July16ReReco_cfi import *
 ## #from ZShape.ZFromData.GoodLumis_June14thReReco_cfi import *
 
-## process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange(
-##    GoodLumis1+GoodLumis2+
+process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange(
+    GoodLumis1
+##    +GoodLumis2+
 ##    GoodLumis3+
 ##    GoodLumis4+
 ##    GoodLumis5+
 ##    GoodLumis6
-## )
+##
+    )
 
 #print(process.source.lumisToProcess)
 
