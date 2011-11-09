@@ -19,6 +19,7 @@ bool ZShapeElectron::passed(const std::string& cutName) const { // false if not 
 
 void ZShapeElectron::cutResult(const std::string& cutName, bool didpass) {
   cutMap_[cutName]=didpass;
+  cutMap_["!"+cutName]=!didpass;
 }
 
 double ZShapeElectron::detectorEta(const math::XYZPoint& vtx) const {

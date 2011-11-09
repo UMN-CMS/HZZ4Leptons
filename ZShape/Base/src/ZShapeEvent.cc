@@ -9,6 +9,7 @@
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 
 
 #include <iostream>
@@ -24,6 +25,7 @@ reco::GenParticle* ZShapeEvent::allocateTreeLevelElectron() {
 void ZShapeEvent::dump() const {
   dump(std::cout);
 }
+
 void ZShapeEvent::dump(std::ostream& s) const {
   s << "Vertex: " << vtx_.x() << ", " << vtx_.y() << ", " << vtx_.z() << std::endl;
   for (int i=0; i<2; i++) {
@@ -59,6 +61,8 @@ void ZShapeEvent::clear() {
 }
 
 ZShapeEvent::ZShapeEvent() : e1_(0),e2_(0),eTL1_(0),eTL2_(0) {
+  npu_ = 0;
+  mNPV_ = 0;
 }
 
 ZShapeEvent::~ZShapeEvent() {
@@ -86,18 +90,28 @@ void ZShapeEvent::initEvent(const edm::Event& iEvent, const edm::EventSetup& iSe
   mPVz_ =  100.0;
 
   for(unsigned int ind=0;ind<recVtxs->size();ind++) {
-    if (!((*recVtxs)[ind].isFake()) && ((*recVtxs)[ind].ndof()>4) 
-	&& (fabs((*recVtxs)[ind].z())<=24.0) &&  
-	((*recVtxs)[ind].position().Rho()<=2.0) ) {
-      mNPV_++;
-      if(mNPV_==1) { // store the first good primary vertex
-	mPVx_ = (*recVtxs)[ind].x();
-	mPVy_ = (*recVtxs)[ind].y();
-	mPVz_ = (*recVtxs)[ind].z();
+      if (!((*recVtxs)[ind].isFake()) && ((*recVtxs)[ind].ndof()>4) 
+              && (fabs((*recVtxs)[ind].z())<=24.0) &&  
+              ((*recVtxs)[ind].position().Rho()<=2.0) ) {
+          mNPV_++;
+          if(mNPV_==1) { // store the first good primary vertex
+              mPVx_ = (*recVtxs)[ind].x();
+              mPVy_ = (*recVtxs)[ind].y();
+              mPVz_ = (*recVtxs)[ind].z();
+          }
       }
-    }
   }
 
+  // Pile up counting
+  if (!iEvent.isRealData()){
+      edm::Handle<std::vector<PileupSummaryInfo> > pPU;
+      iEvent.getByLabel("addPileupInfo", pPU);
+      if (pPU.isValid()){
+          npu_ = pPU->size();
+      } else {
+          npu_ = -1; 
+      }
+  }
 
   //////////// Beam spot //////////////
   edm::Handle<reco::BeamSpot> beamSpot;
@@ -148,7 +162,6 @@ void ZShapeEvent::initEvent(const edm::Event& iEvent, const edm::EventSetup& iSe
     mpfSumET_ = (*pfmet)[0].sumEt();
     mpfMETSign_ = (*pfmet)[0].significance();
   }
-
 
 }
 

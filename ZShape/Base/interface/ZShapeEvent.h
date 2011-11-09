@@ -14,8 +14,8 @@
 
 /** \class ZShapeEvent
   *  
-  * $Date: 2011/01/15 07:53:16 $
-  * $Revision: 1.7 $
+  * $Date: 2011/02/28 14:17:01 $
+  * $Revision: 1.8 $
   * \author J. Mans - Minnesota
   */
 class ZShapeEvent {
@@ -35,6 +35,8 @@ public:
   float EvtMET() const { return mMET_; }
   float EvtTCMET() const { return mtcMET_; }
   float EvtPFMET() const { return mpfMET_; }
+  uint32_t nvert() const { return mNPV_; }
+  int npu() const {return npu_;}
 
 
   ZShapeElectron& elec(int i) { return ((i==0)?(*e1_):(*e2_)); }
@@ -59,10 +61,11 @@ private:
   reco::GenParticle * eTL2_;
   double mass_, rap_, qT_;
   //These EXTRA Event Variables are mutable as they are filled via a const method. Sign=Significance
-  mutable uint32_t run_, lumi_, event_, mNPV_;
-  mutable float mPVx_,mPVy_,mPVz_,mBSx_,mBSy_,mBSz_; 
-  mutable float mMET_,mSumET_,mMETSign_,mtcMET_,mtcSumET_,
+  uint32_t run_, lumi_, event_, mNPV_;
+  float mPVx_,mPVy_,mPVz_,mBSx_,mBSy_,mBSz_; 
+  float mMET_,mSumET_,mMETSign_,mtcMET_,mtcSumET_,
 	        mtcMETSign_,mpfMET_,mpfSumET_,mpfMETSign_;
+  int npu_;
 
 };
 
