@@ -28,7 +28,7 @@ process.source = cms.Source("PoolSource",
 
 process.load("ZShape.ZFromData.GoodDataLumis_160431_163869_cfi")
 
-## from ZShape.ZFromData.GoodLumis_cfi import *
+from ZShape.ZFromData.GoodDataLumis_160431_163869_cfi import *
 ## #from ZShape.ZFromData.GoodLumis_July16ReReco_cfi import *
 ## #from ZShape.ZFromData.GoodLumis_June14thReReco_cfi import *
 
@@ -42,7 +42,7 @@ process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange(
 ##
     )
 
-#print(process.source.lumisToProcess)
+print(process.source.lumisToProcess)
 
 process.maxEvents = cms.untracked.PSet(
    input = cms.untracked.int32(-1)
@@ -138,10 +138,10 @@ process.ZFromData = cms.EDAnalyzer("ZFromData",
 
 
     cms.PSet( 
-            name = cms.untracked.string('EE-EE'),
-            e1 = cms.untracked.vstring("ACC(EE)","PT10","Supercluster-Eta","PT20",
+            name = cms.untracked.string('EB-EB'),
+            e1 = cms.untracked.vstring("ACC(EB)","PT10","Supercluster-Eta","PT20",
                                        "GsfTrack-EtaDet","PT20","WP80", "HLT-GSF"),
-            e2 = cms.untracked.vstring("ACC(EE)","PT10","Supercluster-Eta","PT20",
+            e2 = cms.untracked.vstring("ACC(EB)","PT10","Supercluster-Eta","PT20",
                                        "GsfTrack-EtaDet","PT20","WP80", "HLT-GSF"),		
             Z = cms.untracked.vstring('m(60,120)'),
             ptorder = cms.untracked.bool (False)
@@ -159,8 +159,8 @@ process.ZFromData = cms.EDAnalyzer("ZFromData",
 
 
     cms.PSet( 
-            name = cms.untracked.string('EB-HF'),
-            e1 = cms.untracked.vstring("ACC(EB)","PT10","Supercluster-Eta","PT20",
+            name = cms.untracked.string('EE-HF'),
+            e1 = cms.untracked.vstring("ACC(EE)","PT10","Supercluster-Eta","PT20",
                                        "GsfTrack-EtaDet","PT20","WP80", "HLT-GSF"),
             e2 = cms.untracked.vstring("ACC(HF)","PT10","HFSuperCluster-Et","PT20","HFElectronId-EtaDet"),		
             Z = cms.untracked.vstring('m(60,120)'),
