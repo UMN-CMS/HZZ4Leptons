@@ -13,6 +13,7 @@
 <use   name="DataFormats/Math"/>
 <use   name="DataFormats/Common"/>
 <use   name="DataFormats/HepMCCandidate"/>
+<use   name="lhapdf"/>
 <use   name="root"/>
 <use   name="roofit"/>
 <export>

@@ -6,7 +6,7 @@
 #include "Math/VectorUtil.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
-
+#include "LHAPDF/LHAPDF.h"
 
 //
 // constructors and destructor
@@ -15,11 +15,26 @@ ZEfficiencyCalculator::ZEfficiencyCalculator(const edm::ParameterSet& iConfig) :
   m_srcTag(iConfig.getUntrackedParameter<edm::InputTag>("src",edm::InputTag("source"))),
   zElectronsTag(iConfig.getUntrackedParameter<edm::InputTag>("zElectronsCollection",edm::InputTag("ZIntoElectronsEventProducer:ZEventParticles"))),
   zTreeLevelElectronsTag(iConfig.getUntrackedParameter<edm::InputTag>("zTreeLevelElectronsCollection",edm::InputTag("ZIntoElectronsEventProducer" "ZEventEle3"))),
+  partonIdTag(iConfig.getUntrackedParameter<edm::InputTag>("partonIdCollection",edm::InputTag("ZIntoElectronsEventProducer:PartonId"))),
+  partonMomFractionTag(iConfig.getUntrackedParameter<edm::InputTag>("partonMomFractionCollection",edm::InputTag("ZIntoElectronsEventProducer:PartonMomFraction"))),
+  scaleQTag(iConfig.getUntrackedParameter<edm::InputTag>("scaleQCollection",edm::InputTag("ZIntoElectronsEventProducer:ScaleQ"))),
+  doPDFreweight_(iConfig.getUntrackedParameter<bool>("doPDFReweight",false)),
   quiet_(iConfig.getUntrackedParameter<bool>("quiet",false)),
   zElectronsCone_(iConfig.getParameter<double>("zElectronsCone"))
 {
   //
   //now do what ever initialization is needed
+ if (doPDFreweight_) {
+   pdfReweightBaseName=iConfig.getUntrackedParameter<std::string>("pdfReweightBaseName");
+   pdfReweightTargetName=iConfig.getUntrackedParameter<std::string>("pdfReweightTargetName");
+   pdfReweightBaseId=iConfig.getUntrackedParameter<int>("pdfReweightBaseId",0);
+   pdfReweightTargetId=iConfig.getUntrackedParameter<int>("pdfReweightTargetId",0);
+   pdfReweightAddZmass_=iConfig.getUntrackedParameter<bool>("pdfReweightAddZMass",true); // fix POWHEG bug 
+   std::cout << "PDF Reweighting from " << pdfReweightBaseName << ":" << pdfReweightBaseId
+	     << " to " << pdfReweightTargetName << ":" << pdfReweightTargetId
+	     << " AddZMass = " << pdfReweightAddZmass_ << std::endl;
+  }
+
 
   std::vector<double> limits;
   limits=iConfig.getParameter<std::vector<double> >("acceptanceMassWindow");
@@ -136,11 +151,8 @@ void ZEfficiencyCalculator::analyze(const edm::Event& iEvent, const edm::EventSe
   using namespace cms;
   using namespace reco;
 
-  Handle< HepMCProduct > EvtHandle ;
-   
-  // find initial (unsmeared, unfiltered,...) HepMCProduct
-  iEvent.getByLabel(m_srcTag, EvtHandle ) ;
-
+  double weight=1.0;
+  
   //super-fast reconstructed electrons for efficiency propagation step (aka electrons 'cones') 
   Handle <GenParticleCollection> pZeeParticles;
   iEvent.getByLabel(zElectronsTag,pZeeParticles);
@@ -162,6 +174,10 @@ void ZEfficiencyCalculator::analyze(const edm::Event& iEvent, const edm::EventSe
     //    std::cerr << "Have just TL " << evt_.n_TLelec << std::endl;
     return; // need 2 and only 2 
   }
+
+  if (doPDFreweight_) weight*=getPDFWeight(iEvent);
+
+  accHistos_.weights->Fill(weight);
 
   ////This just stores the event information
   //evt_.initEvent(iEvent,iSetup); //ONLY WORK ON FULL MC 
@@ -186,23 +202,23 @@ void ZEfficiencyCalculator::analyze(const edm::Event& iEvent, const edm::EventSe
     if (pZ.M()>=massLow_ && pZ.M()<massHigh_) {
 
       // fill histograms for before any selection (except mass window for logic...)
-      allCase_.Fill(evt_.elec(0), evt_.elec(1), evt_.elecTreeLevel(0).polarP4(), evt_.elecTreeLevel(1).polarP4()); 
-      allCase_.FillEvt(evt_,true); // ONLY WORKON FULL MC if false
+      allCase_.Fill(evt_.elec(0), evt_.elec(1), evt_.elecTreeLevel(0).polarP4(), evt_.elecTreeLevel(1).polarP4(),weight); 
+      allCase_.FillEvt(evt_,weight,true); // ONLY WORKON FULL MC if false
 
       int necal=(evt_.elec(0).passed("ACC(ECAL+TRK)")?(1):(0))+(evt_.elec(1).passed("ACC(ECAL+TRK)")?(1):(0));
       int ntrk=(evt_.elec(0).passed("ACC(ECAL-TRK)")?(1):(0))+(evt_.elec(1).passed("ACC(ECAL-TRK)")?(1):(0));
       int nhf=(evt_.elec(0).passed("ACC(HF)")?(1):(0))+(evt_.elec(1).passed("ACC(HF)")?(1):(0));
       
-      if (necal==2) accHistos_.ecal_ecal->Fill(pZ.Rapidity());
-      else if (necal==1 && ntrk==1) accHistos_.ecal_ntrk->Fill(pZ.Rapidity());
-      else if (necal==1 && nhf==1) accHistos_.ecal_hf->Fill(pZ.Rapidity());
-      else if (necal==1) accHistos_.ecal_noacc->Fill(pZ.Rapidity());
-      else if (ntrk==2)  accHistos_.ntrk_ntrk->Fill(pZ.Rapidity());
-      else if (ntrk==1 && nhf==1)  accHistos_.ntrk_hf->Fill(pZ.Rapidity());
-      else if (ntrk==1)  accHistos_.ntrk_noacc->Fill(pZ.Rapidity());
-      else if (nhf==2)  accHistos_.hf_hf->Fill(pZ.Rapidity());
-      else if (nhf==1)  accHistos_.hf_noacc->Fill(pZ.Rapidity());
-      else accHistos_.noacc_noacc->Fill(pZ.Rapidity());
+      if (necal==2) accHistos_.ecal_ecal->Fill(pZ.Rapidity(),weight);
+      else if (necal==1 && ntrk==1) accHistos_.ecal_ntrk->Fill(pZ.Rapidity(),weight);
+      else if (necal==1 && nhf==1) accHistos_.ecal_hf->Fill(pZ.Rapidity(),weight);
+      else if (necal==1) accHistos_.ecal_noacc->Fill(pZ.Rapidity(),weight);
+      else if (ntrk==2)  accHistos_.ntrk_ntrk->Fill(pZ.Rapidity(),weight);
+      else if (ntrk==1 && nhf==1)  accHistos_.ntrk_hf->Fill(pZ.Rapidity(),weight);
+      else if (ntrk==1)  accHistos_.ntrk_noacc->Fill(pZ.Rapidity(),weight);
+      else if (nhf==2)  accHistos_.hf_hf->Fill(pZ.Rapidity(),weight);
+      else if (nhf==1)  accHistos_.hf_noacc->Fill(pZ.Rapidity(),weight);
+      else accHistos_.noacc_noacc->Fill(pZ.Rapidity(),weight);
     }
   }
     
@@ -251,31 +267,31 @@ void ZEfficiencyCalculator::analyze(const edm::Event& iEvent, const edm::EventSe
 	if (!q->second->pass(evt_,1,1,0,&pairing)) continue;
 	
 	// fill standard histograms after acceptance
-	if (!pairing) plots->acceptance_.Fill(evt_.elec(0), evt_.elec(1), evt_.elecTreeLevel(0).polarP4(), evt_.elecTreeLevel(1).polarP4()); 
-	else plots->acceptance_.Fill(evt_.elec(1), evt_.elec(0), evt_.elecTreeLevel(1).polarP4(), evt_.elecTreeLevel(0).polarP4());      
-	plots->acceptance_.FillEvt(evt_,true); //ONLY WORK ON FULL MC if false
+	if (!pairing) plots->acceptance_.Fill(evt_.elec(0), evt_.elec(1), evt_.elecTreeLevel(0).polarP4(), evt_.elecTreeLevel(1).polarP4(),weight); 
+	else plots->acceptance_.Fill(evt_.elec(1), evt_.elec(0), evt_.elecTreeLevel(1).polarP4(), evt_.elecTreeLevel(0).polarP4(),weight);      
+	plots->acceptance_.FillEvt(evt_,weight,true); //ONLY WORK ON FULL MC if false
 	
 	// next n-cuts
 	bool ok=true;
 	for (int j=1; ok && j<q->second->criteriaCount(ZShapeZDef::crit_E1); j++) {
 	  ok=q->second->pass(evt_,j+1,j+1,0,&pairing);
           if (ok) { 
-	    plots->postCut_[j-1].FillEvt(evt_,true); //ONLY WORKS ON FULL MC if false
+	    plots->postCut_[j-1].FillEvt(evt_,weight,true); //ONLY WORKS ON FULL MC if false
             if (!pairing)  
-              plots->postCut_[j-1].Fill(evt_.elec(0), evt_.elec(1), evt_.elecTreeLevel(0).polarP4(), evt_.elecTreeLevel(1).polarP4());
+              plots->postCut_[j-1].Fill(evt_.elec(0), evt_.elec(1), evt_.elecTreeLevel(0).polarP4(), evt_.elecTreeLevel(1).polarP4(),weight);
             else 
-              plots->postCut_[j-1].Fill(evt_.elec(1), evt_.elec(0), evt_.elecTreeLevel(1).polarP4(), evt_.elecTreeLevel(0).polarP4());
+              plots->postCut_[j-1].Fill(evt_.elec(1), evt_.elec(0), evt_.elecTreeLevel(1).polarP4(), evt_.elecTreeLevel(0).polarP4(),weight);
 	  }
 	} // now the Z cuts
 	for (int j=0; ok && j<q->second->criteriaCount(ZShapeZDef::crit_Z); j++) {
 	  ok=q->second->pass(evt_,1000,1000,j+1,&pairing);
 	  
           if (ok) {
-	    plots->zCut_[j].FillEvt(evt_,true); //ONLY WORKS ON FULL MC if false
+	    plots->zCut_[j].FillEvt(evt_,weight,true); //ONLY WORKS ON FULL MC if false
             if (!pairing)  
-              plots->zCut_[j].Fill(evt_.elec(0), evt_.elec(1), evt_.elecTreeLevel(0).polarP4(), evt_.elecTreeLevel(1).polarP4());
+              plots->zCut_[j].Fill(evt_.elec(0), evt_.elec(1), evt_.elecTreeLevel(0).polarP4(), evt_.elecTreeLevel(1).polarP4(),weight);
             else 
-              plots->zCut_[j].Fill(evt_.elec(1), evt_.elec(0), evt_.elecTreeLevel(1).polarP4(), evt_.elecTreeLevel(0).polarP4());	
+              plots->zCut_[j].Fill(evt_.elec(1), evt_.elec(0), evt_.elecTreeLevel(1).polarP4(), evt_.elecTreeLevel(0).polarP4(),weight);	
 	  }
         }// criteria  
        
@@ -288,11 +304,11 @@ void ZEfficiencyCalculator::analyze(const edm::Event& iEvent, const edm::EventSe
      
 	ZShapeZDef* zdef=q->second; 
 	if (zdef->pass(evt_,zdef->criteriaCount(ZShapeZDef::crit_E1),zdef->criteriaCount(ZShapeZDef::crit_E2),0,&pairing)) {
-	  statsBox_.hists[q->first][pass-1].FillEvt(evt_,true); //Decided these plots aren't needed... yet... for false
+	  statsBox_.hists[q->first][pass-1].FillEvt(evt_,weight,true); //Decided these plots aren't needed... yet... for false
 	  if (!pairing)  
-	    statsBox_.hists[q->first][pass-1].Fill(evt_.elec(0), evt_.elec(1), evt_.elecTreeLevel(0).polarP4(), evt_.elecTreeLevel(1).polarP4()); 
+	    statsBox_.hists[q->first][pass-1].Fill(evt_.elec(0), evt_.elec(1), evt_.elecTreeLevel(0).polarP4(), evt_.elecTreeLevel(1).polarP4(),weight); 
 	  else 
-	    statsBox_.hists[q->first][pass-1].Fill(evt_.elec(1), evt_.elec(0), evt_.elecTreeLevel(1).polarP4(), evt_.elecTreeLevel(0).polarP4()); 
+	    statsBox_.hists[q->first][pass-1].Fill(evt_.elec(1), evt_.elec(0), evt_.elecTreeLevel(1).polarP4(), evt_.elecTreeLevel(0).polarP4(),weight); 
 	}
       }
     }
@@ -452,6 +468,12 @@ void ZEfficiencyCalculator::fillEvent(const reco::GenParticleCollection* ZeePart
 void 
 ZEfficiencyCalculator::beginJob()
 {
+
+  if (doPDFreweight_) {
+    LHAPDF::initPDFSet(1,pdfReweightBaseName);
+    LHAPDF::initPDFSet(2,pdfReweightTargetName);
+  }
+
   // file to write out the histograms produced by the ZEfficiencyCalculator
   edm::Service<TFileService> fs;
 
@@ -476,7 +498,7 @@ ZEfficiencyCalculator::beginJob()
   accHistos_.hf_hf=subDir.make<TH1F>("HF-HF","HF-HF", yBinsTotal, -maxY, maxY);
   accHistos_.hf_noacc=subDir.make<TH1F>("HF-NOACC","HF-NOACC", yBinsTotal, -maxY, maxY);
   accHistos_.noacc_noacc=subDir.make<TH1F>("NOACC-NOACC","NOACC-NOACC", yBinsTotal, -maxY, maxY);  
-
+  accHistos_.weights=subDir.make<TH1F>("weights","weights",200,-1,4.0);
   //
   // one directory for plots for each Z definition
   for (std::map<std::string,ZShapeZDef*>::const_iterator q=zdefs_.begin(); q!=zdefs_.end(); ++q) {
@@ -730,6 +752,50 @@ void ZEfficiencyCalculator::createAlternateZDefs(const std::string& targetZDefSy
   
 }
 
+double ZEfficiencyCalculator::getPDFWeight(const edm::Event& iEvent) {
+  using namespace edm;
+  using namespace std;
+  using namespace cms;
+  using namespace reco;
+  using namespace LHAPDF;
+
+  Handle <vector<float> > Qs;
+  iEvent.getByLabel(scaleQTag,Qs);
+
+  Handle <vector<int> > partonIds;
+  iEvent.getByLabel(partonIdTag,partonIds);
+
+  Handle <vector<float> > partonXs;
+  iEvent.getByLabel(partonMomFractionTag,partonXs);
+
+  float Q = (*Qs)[0];
+
+  int id1 = (*partonIds)[0];
+  float x1 = (*partonXs)[0];
+  
+  int id2 = (*partonIds)[1];
+  float x2 = (*partonXs)[1];
+
+  if (pdfReweightAddZmass_) {
+    math::XYZTLorentzVector p1(evt_.elecTreeLevel(0).polarP4()); //evt_.elec(0).p4_);
+    math::XYZTLorentzVector p2(evt_.elecTreeLevel(1).polarP4()); //evt_.elec(1).p4_);
+    math::XYZTLorentzVector pZ = p1 + p2 ;
+
+    Q=sqrt(Q*Q+pZ.M2());
+  }
+
+  LHAPDF::usePDFMember(1,pdfReweightBaseId);
+  double pdf1 = LHAPDF::xfx(1, x1, Q, id1)/x1;
+  double pdf2 = LHAPDF::xfx(1, x2, Q, id2)/x2;
+
+  LHAPDF::usePDFMember(2,pdfReweightTargetId);
+  double newpdf1 = LHAPDF::xfx(2, x1, Q, id1)/x1;
+  double newpdf2 = LHAPDF::xfx(2, x2, Q, id2)/x2;
+
+  double w=(newpdf1/pdf1*newpdf2/pdf2);
+
+  return w;
+}
 
 
 

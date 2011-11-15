@@ -20,7 +20,7 @@ class EffHistos {
   void Book(TFileDirectory& tfd,bool massFinals=false);
   void Fill(const ZShapeElectron& e1, const  ZShapeElectron& e2, 
             const ::math::PtEtaPhiMLorentzVector& eTL1, const ::math::PtEtaPhiMLorentzVector& eTL2, double wgt=1.0, bool doMC=true); 
-  void FillEvt(const ZShapeEvent& zevtm, bool justPV=false);
+  void FillEvt(const ZShapeEvent& zevtm, double wgt=1.0, bool justPV=false);
   void WrapUp(void);
 
   void setupMassWindow(double low, double high) { massWindowLow_=low; massWindowHigh_=high; }

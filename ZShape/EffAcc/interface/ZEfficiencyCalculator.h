@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  Giovanni FRANZONI
 //         Created:  Thu Oct  4 11:30:13 CEST 2007
-// $Id: ZEfficiencyCalculator.h,v 1.19 2011/01/10 03:43:57 mansj Exp $
+// $Id: ZEfficiencyCalculator.h,v 1.20 2011/01/27 17:28:25 mansj Exp $
 //
 //
 
@@ -68,6 +68,8 @@ private:
   void createAlternateEfficiencies(int cycle, TFileDirectory& fd);
   void createAlternateZDefs(const std::string& targetZDefSys, const std::string& targetEffSys);
 
+  double getPDFWeight(const edm::Event&);
+  
   // ----------member data ---------------------------
   ZShapeEvent evt_;
 
@@ -76,6 +78,11 @@ private:
   edm::InputTag m_srcTag;
   edm::InputTag zElectronsTag;
   edm::InputTag zTreeLevelElectronsTag;
+  edm::InputTag partonIdTag,partonMomFractionTag,scaleQTag;
+  bool doPDFreweight_;
+  std::string pdfReweightBaseName, pdfReweightTargetName;
+  int pdfReweightBaseId, pdfReweightTargetId;
+  bool pdfReweightAddZmass_;
   bool quiet_;
   float zElectronsCone_;
 
@@ -117,6 +124,7 @@ private:
     TH1F* ecal_ecal, *ecal_ntrk, *ecal_hf, *ecal_noacc;
     TH1F* ntrk_ntrk, *ntrk_hf, *ntrk_noacc;
     TH1F* hf_hf, *hf_noacc, *noacc_noacc;
+    TH1F* weights;
   } accHistos_;
     
 

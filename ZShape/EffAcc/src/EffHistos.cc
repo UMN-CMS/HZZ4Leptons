@@ -391,23 +391,20 @@ void EffHistos::WrapUp(){
 
 } 
 
-void EffHistos::FillEvt(const  ZShapeEvent& zevt, bool justPV) { 
+void EffHistos::FillEvt(const  ZShapeEvent& zevt, double wgt, bool justPV) { 
 
-    if (!booked_) {
-        std::cerr << "Attempt to fill without booking!\n";
-        return;
-    }
-
-    if (justPV) {
-        evt_PVz_->Fill(zevt.vtx_.z()/10.);
-    } else {
-        evt_PVz_->Fill(zevt.EvtPVz()); 
-        evt_BSz_->Fill(zevt.EvtBSz()); 
-        evt_MET_->Fill(zevt.EvtMET()); 
-        evt_TCMET_->Fill(zevt.EvtTCMET());    
-        evt_PFMET_->Fill(zevt.EvtPFMET());  
-    }
-
-    evt_nvert_->Fill(zevt.nvert());
-    evt_npu_->Fill(zevt.npu());
+  if (!booked_) {
+    std::cerr << "Attempt to fill without booking!\n";
+    return;
+  }
+  if (justPV )evt_PVz_->Fill(zevt.vtx_.z()/10.,wgt);
+  else {
+    evt_PVz_->Fill(zevt.EvtPVz(),wgt); 
+    evt_BSz_->Fill(zevt.EvtBSz(),wgt); 
+    evt_MET_->Fill(zevt.EvtMET(),wgt); 
+    evt_TCMET_->Fill(zevt.EvtTCMET(),wgt);    
+    evt_PFMET_->Fill(zevt.EvtPFMET(),wgt);  
+  }
+  evt_nvert_->Fill(zevt.nvert(),wgt);
+  evt_npu_->Fill(zevt.npu(),wgt);
 }
