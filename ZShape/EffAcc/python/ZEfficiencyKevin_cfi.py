@@ -126,7 +126,7 @@ mcEff = cms.EDAnalyzer("ZEfficiencyCalculator",
 
     cms.PSet( 
             name = cms.untracked.string('EE-HF'),
-            e1 = cms.untracked.vstring("ACC(EB)","GPT20","Supercluster-Eta","PT20",
+            e1 = cms.untracked.vstring("ACC(EE)","GPT20","Supercluster-Eta","PT20",
                                        "GsfTrack-EtaDet","PT20","WP80", "HLT-GSF"),
             e2 = cms.untracked.vstring("ACC(HF)","GPT20","HFSuperCluster-Et","PT20","HFElectronId-EtaDet"),		
             Z = cms.untracked.vstring('m(60,120)'),
