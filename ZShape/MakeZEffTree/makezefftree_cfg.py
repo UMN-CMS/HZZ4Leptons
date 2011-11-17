@@ -27,7 +27,7 @@ process.maxEvents = cms.untracked.PSet(
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
-    fileNames = cms.untracked.vstring( 'file:/local/cms/phedex/store/mc/Summer11/DYToEE_M-20_CT10_TuneZ2_7TeV-powheg-pythia/GEN-SIM-RECO/PU_S4_START42_V11-v1/0000/8257D48E-88A8-E011-BE9A-001D0967E002.root')
+    fileNames = cms.untracked.vstring( 'file:/export/scratch/users/gude/ACB6E4F7-A8A8-E011-AB9C-00266CFAE684.root')
 )
 
 process.TFileService = cms.Service("TFileService",
