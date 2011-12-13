@@ -36,7 +36,7 @@ Implementation:
 #include "ZShape/EffAcc/interface/EfficiencyCut.h"
 #include "ZShape/ZFromData/interface/EffExtraHistos.h"
 
-#include "ZShape/Base/interface/EffTableLoader.h"
+#include "PhysicsTools/TagAndProbe/interface/EffTableLoader.h"
 
 ///#include "AnalysisDataFormats/ElectronEfficiency/interface/EmObjectFwd.h"
 ///#include "AnalysisDataFormats/ElectronEfficiency/interface/TagProbeAssociation.h"
@@ -62,7 +62,7 @@ public:
 
 
 private:
-  virtual void beginJob() ;
+  virtual void beginJob(const edm::EventSetup&) ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 

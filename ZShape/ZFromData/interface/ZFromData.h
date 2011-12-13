@@ -34,8 +34,6 @@ Implementation:
 #include "ZShape/EffAcc/interface/EffHistos.h"
 #include "ZShape/EffAcc/interface/EfficiencyStore.h"
 #include "ZShape/EffAcc/interface/EfficiencyCut.h"
-#include "ZShape/EffAcc/interface/WgtProducer.h"
-
 #include "ZShape/ZFromData/interface/EffExtraHistos.h"
 
 ///#include "AnalysisDataFormats/ElectronEfficiency/interface/EmObjectFwd.h"
@@ -62,7 +60,7 @@ public:
 
 
 private:
-  virtual void beginJob() ;
+  virtual void beginJob(const edm::EventSetup&) ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 
@@ -89,8 +87,8 @@ private:
   // ----------member data ---------------------------
   ZShapeEvent evt_;
   ZShapeEvent evtMC_;
-  std::string wfile_;
-  WgtProducer wclass;
+
+ 
 
   std::map<std::string, EffInfo*> effInfo_;
   edm::InputTag tnpProducer_;
@@ -104,7 +102,6 @@ private:
 
   edm::InputTag m_srcTag;
   bool quiet_;
-  bool doMC_;
   std::string outFileName_;
   bool        writeHistoConservatively_;
   TFile*      histoFile_;

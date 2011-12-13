@@ -7,11 +7,11 @@
 #include "DataFormats/Common/interface/AssociationMap.h"
 #include "DataFormats/RecoCandidate/interface/RecoCandidate.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
-#include "ZShape/Base/interface/CandidateAssociation.h"
+#include "PhysicsTools/TagAndProbe/interface/CandidateAssociation.h"
 #include "DataFormats/EgammaReco/interface/SuperCluster.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "CommonTools/UtilAlgos/interface/TFileService.h"
+#include "PhysicsTools/UtilAlgos/interface/TFileService.h"
 #include "DataFormats/RecoCandidate/interface/RecoEcalCandidate.h"
 #include "DataFormats/EgammaCandidates/interface/Electron.h"
 
@@ -96,7 +96,7 @@ void InclusiveCheck::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
       if (thecand.isValid())   thesize = thecand->size();
       if (tagprobes.isValid()) thesize = tagprobes->size();
 
-      if ( thesize > numMatch_[i] && goodevent ){ seqHist_->Fill(i); }//Maybe only do this by checking if previous ones existed
+      if ( thesize > numMatch_[i] & goodevent ){ seqHist_->Fill(i); }//Maybe only do this by checking if previous ones existed
       else goodevent = false;
   }
 
@@ -109,7 +109,7 @@ void InclusiveCheck::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 
 // ------------ method called once each job just before starting event loop  ------------
 void 
-InclusiveCheck::beginJob()
+InclusiveCheck::beginJob(const edm::EventSetup&)
 {
   // smearing the target efficiency according to statistics 
   ///if (statsBox_.trials>0) createAlternateEfficiencies();

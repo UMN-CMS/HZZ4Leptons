@@ -1,14 +1,3 @@
--------------------------------------------------------------------------------------------------------------
-To get the code to compile in CMSSW_3_6_1_patchX
-
-cvs co -r V00-01-08-03 ElectroWeakAnalysis/WENu 
-cvs co -r V00-01-08-03   ElectroWeakAnalysis/ZEE/python
-cvs co -r V00-05-03      RecoEgamma/EgammaTools                           
-cvs co -r V00-03-12      RecoEgamma/ElectronIdentification
-
-
-
-------------------------------------------------------------------------------------------------------------
 In order to get the ZFromData code to compile, one must first use the latest and greatest version of the Tag&Probe tools.
 
 To Work with the CMSSW_2_1_X
