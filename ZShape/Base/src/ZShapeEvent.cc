@@ -58,7 +58,7 @@ void ZShapeEvent::clear() {
   eTL2_->setPdgId(0);
   eTL2_->setStatus(0);
 
-  free = 0
+  free_i = 0;
 
 }
 
