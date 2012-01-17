@@ -14,8 +14,8 @@
 
 /** \class ZShapeEvent
   *  
-  * $Date: 2011/02/28 14:17:01 $
-  * $Revision: 1.8 $
+  * $Date: 2011/11/09 20:19:37 $
+  * $Revision: 1.9 $
   * \author J. Mans - Minnesota
   */
 class ZShapeEvent {
@@ -26,6 +26,8 @@ public:
   int n_elec;
   int n_TLelec;
   int n_gsf20;
+
+  int free; // Fill in whatever int you'd like
 
   double m() const { return mass_; }
   double Y() const { return rap_; }

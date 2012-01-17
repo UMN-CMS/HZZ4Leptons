@@ -58,6 +58,8 @@ void ZShapeEvent::clear() {
   eTL2_->setPdgId(0);
   eTL2_->setStatus(0);
 
+  free = 0
+
 }
 
 ZShapeEvent::ZShapeEvent() : e1_(0),e2_(0),eTL1_(0),eTL2_(0) {
