@@ -13,7 +13,7 @@
 //
 // Original Author:  Bryan Dahmes
 //         Created:  Wed Sep 22 04:49:56 CDT 2010
-// $Id: HiggsGenAnalysis.cc,v 1.1 2012/02/16 13:54:13 bdahmes Exp $
+// $Id: HiggsGenAnalysis.cc,v 1.2 2012/03/12 19:02:14 afinkel Exp $
 //
 // Edited by:   ALexey Finkel
 //
@@ -75,6 +75,8 @@ private:
   void Angular(zboson z1, zboson z2, reco::Particle::LorentzVector H);
   TLorentzVector TLV(reco::Particle::LorentzVector);
 
+  bool farElectronFilter_ ; 
+
   // ----------member data ---------------------------
   struct HistStruct {
       TH1D* h_higgsY, *h_higgsY_mm, *h_higgsY_ee, *h_higgsY_eFe, *mu1pt, *mu2pt, *mupt, *el1pt, *el2pt, *elpt, *Phi1, *Phi, *CosTheta1, *CosTheta2, *CosTheta0, *HiggsRestP2, *HiggsP2 ; 
@@ -96,11 +98,12 @@ private:
 HiggsGenAnalysis::HiggsGenAnalysis(const edm::ParameterSet& iConfig) { 
     edm::Service<TFileService> fs;
 
-    hists.h_higgsY     = fs->make<TH1D > ("h_higgsY","Higgs rapidity", 100,-5.,5.) ;
+    farElectronFilter_ = iConfig.getParameter<bool> ("filterFarElectronsOnly") ;
 
+    hists.h_higgsY     = fs->make<TH1D > ("h_higgsY","Higgs rapidity", 100,-5.,5.) ;
     hists.h_higgsY_mm  = fs->make<TH1D > ("h_higgsY_mm","Higgs rapidity", 100,-5.,5.) ; 
     hists.h_higgsY_ee  = fs->make<TH1D > ("h_higgsY_ee","Higgs rapidity", 100,-5.,5.) ; 
-    hists.h_higgsY_eFe = fs->make<TH1D > ("h_higgsY_eFe","Higgs rapidity", 100,-5.,5.) ;
+    hists.h_higgsY_eFe = fs->make<TH1D > ("h_higgsY_eFe","Higgs rapidity", 100,-5.,5.) ; 
      
     hists.mu1pt = fs->make<TH1D >("mu1pt","Mu1 pt",50,0.,100.);    
     hists.mu2pt = fs->make<TH1D >("mu2pt","Mu2 pt",50,0.,100.);
@@ -137,8 +140,9 @@ HiggsGenAnalysis::validZmumu(zboson theZ, bool offshell) {
         minLep1pt = 5. ; minLep2pt = 5. ; 
     }
         
-    double maxPt = std::max(theZ.l1pt,theZ.l2pt);//(( theZ.l1pt > theZ.l1pt ) ? theZ.l1pt : theZ.l2pt ) ; 
-    double minPt = std::min(theZ.l1pt,theZ.l2pt);//(( theZ.l1pt > theZ.l1pt ) ? theZ.l2pt : theZ.l1pt ) ;
+    double maxPt = std::max(theZ.l1pt,theZ.l2pt);
+    double minPt = std::min(theZ.l1pt,theZ.l2pt);
+
     if ( maxPt > minLep1pt && minPt > minLep2pt ) {
         if ( (fabs(theZ.l1eta) < 2.1 || fabs(theZ.l2eta) < 2.1) &&
              (fabs(theZ.l1eta) < 2.4 && fabs(theZ.l2eta) < 2.4) )
@@ -156,12 +160,11 @@ HiggsGenAnalysis::validZee(zboson theZ, bool offshell) {
         minLep1pt = 7. ; minLep2pt = 7. ; 
     }
         
-    double maxPt = std::max(theZ.l1pt,theZ.l2pt);//(( theZ.l1pt > theZ.l1pt ) ? theZ.l1pt : theZ.l2pt ) ; 
-    double minPt = std::min(theZ.l1pt,theZ.l2pt);//(( theZ.l1pt > theZ.l1pt ) ? theZ.l2pt : theZ.l1pt ) ;
+    double maxPt = std::max(theZ.l1pt,theZ.l2pt);
+    double minPt = std::min(theZ.l1pt,theZ.l2pt);
+
     if ( maxPt > minLep1pt && minPt > minLep2pt ) {
-        if ( (fabs(theZ.l1eta) < 2.1 || fabs(theZ.l2eta) < 2.1) &&
-             (fabs(theZ.l1eta) < 2.4 && fabs(theZ.l2eta) < 2.4) )
-            return true ;
+      if ( fabs(theZ.l1eta) < 2.5 && fabs(theZ.l2eta) < 2.5 ) return true ;
     }
     return false ;
 }
@@ -263,10 +266,12 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   using namespace edm;
 
   edm::Handle<reco::GenParticleCollection> genInfo;
+  int nZ = 0 ; bool passEvent = false ; 
+
+  std::cout << "-------------------------------------------------------" << std::endl ; 
   if (iEvent.getByLabel("genParticles",genInfo)) {
       reco::GenParticleCollection::const_iterator iparticle ;
       zboson z1, z2 ; 
-      int nZ = 0 ; 
       for (iparticle=genInfo->begin(); iparticle!=genInfo->end(); iparticle++) {
 
           if ( iparticle->pdgId() == 25 && iparticle->numberOfDaughters() > 0 ) { // Higgs
@@ -365,7 +370,7 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
                   {
                       if ( z1.mass > 50. && z1.mass < 120. && z2.mass > 12. ) 
                       {
-                          if ( validZee(z1) )
+                          if ( validZee(z1) ) // Requires both electrons in the tracker region
                           {
                               if ( z2.mode == 13 && validZmumu(z2,true) ) zCat = 3 ;
                               if ( z2.mode == 11 && validZee(z2,true) )   zCat = 4 ;
@@ -384,17 +389,25 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
               }
               
               if ( zCat >= 0 ) {
-                  if ( recZ(z1) && recZ(z2) )	hists.h_higgsY->Fill( iparticle->y() ) ;
-                  if ( zCat == 1 || zCat == 2 ) hists.h_higgsY_mm->Fill( iparticle->y() ) ;
-                  if ( zCat == 3 || zCat == 4 ) hists.h_higgsY_ee->Fill( iparticle->y() ) ;
-                  if ( zCat == 5 || zCat == 6 ) hists.h_higgsY_eFe->Fill( iparticle->y() ) ;
+		passEvent = true ; 
+
+		if ( recZ(z1) && recZ(z2) )	hists.h_higgsY->Fill( iparticle->y() ) ;
+		if ( zCat == 1 || zCat == 2 ) hists.h_higgsY_mm->Fill( iparticle->y() ) ;
+		if ( zCat == 3 || zCat == 4 ) hists.h_higgsY_ee->Fill( iparticle->y() ) ;
+		if ( zCat == 5 || zCat == 6 ) hists.h_higgsY_eFe->Fill( iparticle->y() ) ;
+		if ( farElectronFilter_ ) { 
+		  if ( z1.mode != 11 || z1.mass < 50. || z1.mass > 120. ) return false ; 
+		  if ( fabs(z1.l1eta) < 2.5 && fabs(z1.l2eta) < 2.5 ) return false ; 
+		  std::cout << "*** This event has an HF/NT electron candidate ***" << std::endl ; 
+		}
               }
           }
       }
       
   }
+  std::cout << "-------------------------------------------------------" << std::endl ; 
 
-  return false ; 
+  return passEvent ; 
 }
 
 // ------------ method called once each job just before starting event loop  ------------
