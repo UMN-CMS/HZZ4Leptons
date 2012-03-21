@@ -31,10 +31,11 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
   const double mZpdg = 91.1876 ; 
   double mZdiff = mZpdg ; 
   double deltaM = 0;
+  reco::Particle::LorentzVector zCand;
   
   //std::cout << "Looking for the primary Z" << std::endl ; 
 
-  if ( muCands.size() ) { 
+  if ( muCands.size() ) { //Muon channel
     for (unsigned int i=0; i<muCands.size()-1; i++) { 
       if (muCands.at(i).pt() < minMuPt1) break ; // List is pT ordered
       //std::cout << "Examining primary muon candidate with pT = " << muCands.at(i).pt() 
@@ -43,8 +44,10 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
 		if (muCands.at(j).pt() < minMuPt2) break ; // List is pT ordered
 		//std::cout << "Examining secondary muon candidate with pT = " << muCands.at(j).pt() 
 			  //<< " GeV and charge " << muCands.at(j).charge() << std::endl ; 
-		if ((muCands.at(i).charge()*muCands.at(j).charge()) > 0) continue ; 
-		reco::Particle::LorentzVector zCand = muCands.at(i).p4() + muCands.at(j).p4() ; 
+		if ((muCands.at(i).charge()*muCands.at(j).charge()) > 0) continue ;
+		 
+		zCand = muCands.at(i).p4() + muCands.at(j).p4() ; 
+		
 		//std::cout << "Z candidate mass is " << zCand.M() << " GeV" << std::endl ; 
 		if (zCand.M() < minMass) continue ; 
 		deltaM = fabs(zCand.M() - mZpdg) ; 
@@ -59,7 +62,7 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
     }
   }
 
-  for (unsigned int i=0; i<gsfCands.size(); i++) { 
+  for (unsigned int i=0; i<gsfCands.size(); i++) { //tracked Electron channel
     if (gsfCands.at(i).pt() < minElePt1) break ; // List is pT ordered
     //std::cout << "Examining primary GSF candidate with pT = " << gsfCands.at(i).pt() 
 	      //<< " GeV and charge " << gsfCands.at(i).charge() << std::endl ; 
@@ -69,8 +72,10 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
       if (gsfCands.at(j).pt() < minElePt2) break ; // List is pT ordered
       //std::cout << "Examining secondary GSF candidate with pT = " << gsfCands.at(j).pt() 
 		//<< " GeV and charge " << gsfCands.at(j).charge() << std::endl ; 
-      if ((gsfCands.at(i).charge()*gsfCands.at(j).charge()) > 0) continue ; 
-      reco::Particle::LorentzVector zCand = gsfCands.at(i).p4() + gsfCands.at(j).p4() ; 
+      if ((gsfCands.at(i).charge()*gsfCands.at(j).charge()) > 0) continue ;
+       
+      zCand = gsfCands.at(i).p4() + gsfCands.at(j).p4() ; 
+      
       //std::cout << "Z candidate mass is " << zCand.M() << " GeV" << std::endl ; 
       if (zCand.M() < minMass) continue ; 
       deltaM = fabs(zCand.M() - mZpdg) ; 
@@ -88,7 +93,7 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
       if (ntCands.at(j).pt() < minElePt2) break ; // List is pT ordered
       //std::cout << "Examining secondary NT candidate with pT = " << ntCands.at(j).pt() << std::endl ;
        
-      reco::Particle::LorentzVector zCand = gsfCands.at(i).p4() + ntCands.at(j).p4() ; 
+      zCand = gsfCands.at(i).p4() + ntCands.at(j).p4() ; 
       
       //std::cout << "Z candidate mass is " << zCand.M() << " GeV" << std::endl ; 
       if (zCand.M() < minMass) continue ; 
@@ -106,7 +111,9 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
     for (unsigned int j=0; j<hfCands.size(); j++) { 
       if (hfCands.at(j).pt() < minElePt2) break ; // List is pT ordered
       //std::cout << "Examining secondary HF candidate with pT = " << hfCands.at(j).pt() << std::endl ; 
-      reco::Particle::LorentzVector zCand = gsfCands.at(i).p4() + hfCands.at(j).p4() ; 
+      
+      zCand = gsfCands.at(i).p4() + hfCands.at(j).p4() ; 
+      
       //std::cout << "Z candidate mass is " << zCand.M() << " GeV" << std::endl ; 
       if (zCand.M() < minMass) continue ; 
       double deltaM = fabs(zCand.M() - mZpdg) ; 
@@ -127,7 +134,10 @@ int HiggsEvent::getZ2(double minElePt, double minMuPt, double minMass, double mi
 
   //std::cout << "Looking for the Z*" << std::endl ; 
 
-  double minSumPt = 0. ; 
+  double minSumPt = 0. ;
+  double sumPt;
+  reco::Particle::LorentzVector zCand, l4Cand;
+  
   if ( muCands.size() ) { 
     for (unsigned int i=0; i<muCands.size()-1; i++) { 
       if ( Z1flavor == 1 && 
@@ -142,13 +152,16 @@ int HiggsEvent::getZ2(double minElePt, double minMuPt, double minMass, double mi
 	//std::cout << "(2) Examining secondary muon candidate with pT = " << muCands.at(j).pt() 
 		  //<< " GeV and charge " << muCands.at(j).charge() << std::endl ; 
 	if ((muCands.at(i).charge()*muCands.at(j).charge()) > 0) continue ; 
-	reco::Particle::LorentzVector zCand = muCands.at(i).p4() + muCands.at(j).p4() ; 
+	
+	zCand = muCands.at(i).p4() + muCands.at(j).p4() ; 
+	
 	//std::cout << "(2) Z candidate mass is " << zCand.M() << " GeV" << std::endl ; 
 	if (zCand.M() < minMass) continue ; 
-	reco::Particle::LorentzVector l4Cand = zCand + vZ1 ; 
+	l4Cand = zCand + vZ1 ; 
+	
 	//std::cout << "4 lepton candidate mass is " << l4Cand.M() << " GeV" << std::endl ; 
 	if (l4Cand.M() < minM4) continue ; 
-	double sumPt = muCands.at(i).pt() + muCands.at(j).pt() ; 
+	sumPt = muCands.at(i).pt() + muCands.at(j).pt() ; 
 	if (sumPt > minSumPt) { // New "best" Z candidate
 	  minSumPt = sumPt ; 
 	  vZ2 = zCand ; 
@@ -156,14 +169,13 @@ int HiggsEvent::getZ2(double minElePt, double minMuPt, double minMass, double mi
 	  Z2flavor = 1 ; 
 	  Z2idx.first = i ; Z2idx.second = j ; 
 	  //std::cout << "(2) New best Z candidate: " << i << "," << j << std::endl ; 
-	}
+		}
       }
     }
   }
 
   for (unsigned int i=0; i<gsfCands.size(); i++) { 
-    if ( Z1flavor == 2 && 
-	 ( (i == Z1idx.first) || (i == Z1idx.second) ) ) continue ; 
+    if ( Z1flavor == 2 && ( (i == Z1idx.first) || (i == Z1idx.second) ) ) continue ; 
     if ( ((Z1flavor == 3) || (Z1flavor == 4)) && (i == Z1idx.first) ) continue ; 
     if (gsfCands.at(i).pt() < minElePt) break ; // List is pT ordered
     //std::cout << "(2) Examining primary GSF candidate with pT = " << gsfCands.at(i).pt() 
@@ -176,15 +188,17 @@ int HiggsEvent::getZ2(double minElePt, double minMuPt, double minMass, double mi
 		//<< " GeV and charge " << gsfCands.at(j).charge() << std::endl ; 
       if ((gsfCands.at(i).charge()*gsfCands.at(j).charge()) > 0) continue ;
        
-      reco::Particle::LorentzVector zCand = gsfCands.at(i).p4() + gsfCands.at(j).p4() ;
+      zCand = gsfCands.at(i).p4() + gsfCands.at(j).p4() ;
        
       //std::cout << "(2) Z candidate mass is " << zCand.M() << " GeV" << std::endl ; 
       if (zCand.M() < minMass) continue ; 
       if (zCand.M() > vZ1.M()) continue ; // Z1 should be mostly "on shell"
-      reco::Particle::LorentzVector l4Cand = zCand + vZ1 ; 
+      
+      l4Cand = zCand + vZ1 ; 
+      
       //std::cout << "4 lepton candidate mass is " << l4Cand.M() << " GeV" << std::endl ; 
       if (l4Cand.M() < minM4) continue ; 
-      double sumPt = gsfCands.at(i).pt() + gsfCands.at(j).pt() ; 
+      sumPt = gsfCands.at(i).pt() + gsfCands.at(j).pt() ; 
       if (sumPt > minSumPt) { // New "best" Z candidate
 	minSumPt = sumPt ; 
 	vZ2 = zCand ; 
