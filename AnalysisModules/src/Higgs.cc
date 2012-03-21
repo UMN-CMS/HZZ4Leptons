@@ -13,7 +13,7 @@
 //
 // Original Author:  Jeremy M Mans
 //         Created:  Mon May 31 07:00:26 CDT 2010
-// $Id: Higgs.cc,v 1.1 2012/03/14 16:39:23 bdahmes Exp $
+// $Id: Higgs.cc,v 1.2 2012/03/19 04:08:30 afinkel Exp $
 //
 //
 
@@ -192,7 +192,7 @@ private:
     {
 
         TFileDirectory *rundir;
-        TH1 *cutlevel, *HallMass, *HcandMass, *H4muMass, *H4GSFeMass, *H2muGSFeMass, *H2muNTeMass, *H2muHFeMass, *H2GSFe2muMass, *H2GSFeNTeMass, *H2GSFeHFeMass ;
+        TH1 *cutlevel, *HcandMass, *H4muMass, *H4GSFeMass, *H2mu2GSFMass, *HGSF_FEE_2muMass, *HGSF_HF_2muMass, *H2GSFe2muMass, *HGSF_HF_2GSFMass, *HGSF_FEE_2GSFMass ;
 
         HistPerDef noCuts;
 
@@ -336,14 +336,13 @@ Higgs::Higgs(const edm::ParameterSet& iConfig)
     
     hists.H4muMass = fs->make<TH1D > ("H4muMass", "H to 4 mu ", 50, 100, 150);
     hists.H4GSFeMass = fs->make<TH1D > ("H4GSFeMass", "H to 4 GSF el ", 50, 100, 150);
-    hists.H2muGSFeMass = fs->make<TH1D > ("H2muGSFeMass", "H to 2 mu with GSF el", 50, 100, 150);
-    hists.H2muNTeMass = fs->make<TH1D > ("H2muNTeMass", "H to 2 mu with FarEE el", 50, 100, 150);
-    hists.H2muHFeMass = fs->make<TH1D > ("H2muHFeMass", "H to 2 mu with HF el", 50, 100, 150);
-    hists.HallMass = fs->make<TH1D > ("HallMass", "All Gen Higgs Masses", 50, 100, 150);
+    hists.H2mu2GSFMass = fs->make<TH1D > ("H2mu2GSFMass", "H to 2 mu with 2 GSF el", 50, 100, 150);
+    hists.HGSF_FEE_2muMass = fs->make<TH1D > ("HGSF_FEE_2muMass", "H to GSF+FEE and 2mu", 50, 100, 150);
+    hists.HGSF_HF_2muMass = fs->make<TH1D > ("HGSF_HF_2muMass", "H to GSF+HF and 2 mu", 50, 100, 150);
     hists.HcandMass = fs->make<TH1D > ("HcandMass", "Potentially Reconstructable H Masses", 50, 100, 150);
     hists.H2GSFe2muMass = fs->make<TH1D > ("H2GSFe2muMass", "H to 2GSF el and Z*->mumu ", 50, 100, 150);
-    hists.H2GSFeNTeMass = fs->make<TH1D > ("H2GSFeNTeMass", "H to 2GSF el and NT el ", 50, 100, 150);
-    hists.H2GSFeHFeMass = fs->make<TH1D > ("H2GSFeHFeMass", "H to 2GSF el and HF el ", 50, 100, 150);
+    hists.HGSF_HF_2GSFMass = fs->make<TH1D > ("HGSF_HF_2GSFMass", "H to GSF+HF and 2GSF", 50, 100, 150);
+    hists.HGSF_FEE_2GSFMass = fs->make<TH1D > ("HGSF_FEE_2GSFMass", "H to 2GSF el and HF el ", 50, 100, 150);
 
     init_ = false;
 
@@ -537,7 +536,6 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 			   cuts.minimum_z2_mass,cuts.minimum_zz_mass) ) return false ;
 			   
 	higgsEvent.calculate();
-	hists.HallMass->Fill(higgsEvent.mH) ;
     // Basic selection requirements: Require at least two muons, two jets
 
 	
@@ -551,7 +549,58 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     else return false;    
     
 	//Determine what type of event we got
-	if ( higgsEvent.getZ1(cuts.minimum_e1_z1_pt,cuts.minimum_e2_z1_pt,
+	
+	if( higgsEvent.getZ2(cuts.minimum_e2_z2_pt,cuts.minimum_mu2_z2_pt,
+			   cuts.minimum_z2_mass,cuts.minimum_zz_mass)==1 )
+	{
+		switch( higgsEvent.getZ1(cuts.minimum_e1_z1_pt,cuts.minimum_e2_z1_pt,
+			   cuts.minimum_mu1_z1_pt,cuts.minimum_mu2_z1_pt,cuts.minimum_z1_mass) )
+		{
+			case 1:
+				std::cout<<"Case 1 evoked: 4mu"<<std::endl;
+				hists.H4muMass->Fill(higgsEvent.mH);
+				break;
+			case 2:
+				std::cout<<"Case 2 evoked: 2gsfEl and 2mu"<<std::endl;
+				hists.H2GSFe2muMass->Fill(higgsEvent.mH);
+				break;
+			case 3:
+				std::cout<<"Case 3 evoked: GSF + FarEE and 2mu"<<std::endl;
+				hists.HGSF_FEE_2muMass->Fill(higgsEvent.mH);
+				break;
+			case 4:
+				std::cout<<"Case 4 evoked: GSF + HF and 2mu"<<std::endl;
+				hists.HGSF_HF_2muMass->Fill(higgsEvent.mH);
+				break;
+		}
+	}	
+	
+	if( higgsEvent.getZ2(cuts.minimum_e2_z2_pt,cuts.minimum_mu2_z2_pt,
+			   cuts.minimum_z2_mass,cuts.minimum_zz_mass)==2 )
+	{
+		switch( higgsEvent.getZ1(cuts.minimum_e1_z1_pt,cuts.minimum_e2_z1_pt,
+			   cuts.minimum_mu1_z1_pt,cuts.minimum_mu2_z1_pt,cuts.minimum_z1_mass) )
+		{
+			case 1:
+				std::cout<<"Case 5 evoked: 2mu + 2GSF"<<std::endl;
+				hists.H2mu2GSFMass->Fill(higgsEvent.mH);
+				break;
+			case 2:
+				std::cout<<"Case 6 evoked: 4GSF el"<<std::endl;
+				hists.H4GSFeMass->Fill(higgsEvent.mH);
+				break;
+			case 3:
+				std::cout<<"Case 7 evoked: GSF + FarEE and 2GSF"<<std::endl;
+				hists.HGSF_FEE_2GSFMass->Fill(higgsEvent.mH);
+				break;
+			case 4:
+				std::cout<<"Case 8 evoked: GSF + HF and 2GSF"<<std::endl;
+				hists.HGSF_HF_2GSFMass->Fill(higgsEvent.mH);
+				break;
+		}
+	}		
+	
+	/*if ( higgsEvent.getZ1(cuts.minimum_e1_z1_pt,cuts.minimum_e2_z1_pt,
 			   cuts.minimum_mu1_z1_pt,cuts.minimum_mu2_z1_pt,cuts.minimum_z1_mass) == 1 )
 	{
 		switch(higgsEvent.getZ2(cuts.minimum_e2_z2_pt,cuts.minimum_mu2_z2_pt,
@@ -563,15 +612,15 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 					break;
 				case 2:
 					std::cout<<"Case 2 evoked: 2mu + gsfEl"<<std::endl;
-					hists.H2muGSFeMass->Fill(higgsEvent.mH);
+					hists.H2mu2GSFMass->Fill(higgsEvent.mH);
 					break;
 				case 3:
 					std::cout<<"Case 3 evoked: 2mu + FarEEel"<<std::endl;
-					hists.H2muNTeMass->Fill(higgsEvent.mH);
+					hists.HGSF_FEE_2muMass->Fill(higgsEvent.mH);
 					break;
 				case 4:
 					std::cout<<"Case 4 evoked: 2mu + HFel"<<std::endl;
-					hists.H2muHFeMass->Fill(higgsEvent.mH);
+					hists.HGSF_HF_2muMass->Fill(higgsEvent.mH);
 					break;
 				default:
 					break;
@@ -592,16 +641,16 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 				break;
 			case 3:
 				std::cout<<"Case 7 evoked: 2gsfEl + NTel"<<std::endl;
-				hists.H2GSFeNTeMass->Fill(higgsEvent.mH);
+				hists.HGSF_HF_2GSFMass->Fill(higgsEvent.mH);
 				break;
 			case 4:
 				std::cout<<"Case 8 evoked: 2gsfEl + HFel"<<std::endl;
-				hists.H2GSFeHFeMass->Fill(higgsEvent.mH);
+				hists.HGSF_FEE_2GSFMass->Fill(higgsEvent.mH);
 				break;
 			default:
 				break;
 		}
-	}
+	}*/
 
     return true;
 }
