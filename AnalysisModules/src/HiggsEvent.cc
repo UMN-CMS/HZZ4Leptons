@@ -214,7 +214,9 @@ int HiggsEvent::getZ2(double minElePt, double minMuPt, double minMass, double mi
 }
 
 void HiggsEvent::calculate() {
-
+	
+	mZ1 = vZ1.M();
+	mZ2 = vZ2.M();
   vH = vZ1 + vZ2 ; 
   mH = vH.M() ;
   
