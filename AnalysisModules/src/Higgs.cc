@@ -126,10 +126,10 @@ private:
     edm::InputTag jetTag_;
     edm::InputTag metTag_;
     edm::InputTag elecTag_;
-  edm::InputTag elecMap_; 
+  	edm::InputTag elecMap_; 
     edm::InputTag photTag_;
     edm::InputTag hfTag_;
-  edm::InputTag rhoTag_ ; 
+  	edm::InputTag rhoTag_ ; 
 
 
     int evtCounter;
@@ -161,11 +161,12 @@ private:
 
     struct HistPerDef
     {
+    	public:
         //book histogram set w/ common suffix inside the provided TFileDirectory
-        void book(TFileDirectory *, const std::string&) ; 
-      // void bookTagProbe(TFileDirectory *, const std::string&);
+        void Book(TFileDirectory *, const std::string&) ; 
+    	// void bookTagProbe(TFileDirectory *, const std::string&);
         // fill all histos of the set with the two electron candidates
-      void fill(// pat::MuonCollection muons,
+    	void Fill(// pat::MuonCollection muons,
                   // pat::JetCollection jets,
                   // pat::METCollection metc,
                   bool isMC,
@@ -174,29 +175,37 @@ private:
 		  int nPU,
 		  int nPV);
         // fill all histos of the set with the two electron candidates
-      void fill(const HiggsEvent& he) ; 
+      void Fill(const HiggsEvent& he) ; 
         // Special fill for muon efficiency studies
         // void fill(const pat::Muon& theTag, const pat::Muon& theProbe, const double probeTrkIso, const double wgt) ; 
         // void fill(const pat::Muon& theTag, const pat::GenericParticle& theProbe, const double trkIso, const double wgt) ; 
         
-
-        TFileDirectory *mydir;
-
-    };
+      //private:
+      //TFileDirectory *mydir;
+        
+      TH1  *HMass, *Z1mass, *Z2mass ;
+      //*H4muMass, *H4GSFeMass, *H2mu2GSFMass, *HGSF_FEE_2muMass, *HGSF_HF_2muMass, *H2GSFe2muMass, *HGSF_HF_2GSFMass, *HGSF_FEE_2GSFMass,
+      
+    } ;
 
     bool init_;
-
+    
+    TFileDirectory *rundir;
+    
+        
+    HistPerDef  H4muMass, H4GSFeMass, H2mu2GSFMass, HGSF_FEE_2muMass, HGSF_HF_2muMass, H2GSFe2muMass, HGSF_HF_2GSFMass, HGSF_FEE_2GSFMass;
+    
     // gf set of histo for all Z definitions in a stack
 
-    struct HistStruct
+    /*struct HistStruct
     {
 
         TFileDirectory *rundir;
-        TH1 *cutlevel, *HcandMass, *H4muMass, *H4GSFeMass, *H2mu2GSFMass, *HGSF_FEE_2muMass, *HGSF_HF_2muMass, *H2GSFe2muMass, *HGSF_HF_2GSFMass, *HGSF_FEE_2GSFMass, *PassingZ1mass, *PassingZ2mass ;
 
-        HistPerDef noCuts;
 
-    } hists;
+        HistPerDef noCuts;if ( (recoMuons->size() + totalEMcands) > 3 )
+
+    } hists;*/
 
     struct CutsStruct
     {
@@ -227,32 +236,61 @@ private:
 
 };
 
-void Higgs::HistPerDef::book(TFileDirectory *td, const std::string& post) 
+void Higgs::HistPerDef::Book(TFileDirectory *mydir, const std::string& post) 
 {
-    std::string t; // histogram title string;
-
+    std::string t, T; // histogram title string;
     TH1::SetDefaultSumw2();
+    //edm::Service<TFileService> fs;
+    //TFileDirectory *mydir = new TFileDirectory(fs->mkdir(post.c_str()));
+    std::cout<<"Made a directory."<<std::endl;
+    
+    t = post + "_HMass";
+    T = post + " Reco H mass";
+    std::cout<<"Created titles: "<<t<<", "<<T<<std::endl;
+        
+    HMass = mydir->make<TH1D> (t.c_str(), T.c_str(), 50, 100, 150 );
+    std::cout<<"Made first hist."<<std::endl;
+    
+    t = post + "_Z1Mass";
+    T = post + " Reco Z1 mass";
+    Z1mass = mydir->make<TH1D>(t.c_str(), T.c_str(), 70, 50, 120 );
+    std::cout<<"Made first hist."<<std::endl;
+  
+    t = post + "_Z2Mass";
+    T = post + " Reco Z2 mass";
+    Z2mass = mydir->make<TH1D>(t.c_str(), T.c_str(), 90, 0, 90 );
+    std::cout<<"Made first hist."<<std::endl;
+  
+    
 
-    mydir = td;
-
-    std::cout << "book doing nothing at the moment" << std::endl ; 
+    //std::cout << "book doing nothing at the moment" << std::endl ; 
 
 }// end of book()
 
-void Higgs::HistPerDef::fill(// pat::MuonCollection muons,
+void Higgs::HistPerDef::Fill(// pat::MuonCollection muons,
 			     // pat::JetCollection jets,
 			     // pat::METCollection metc,
-                               bool isMC,
-                               double wgt,
-                               bool pfJets,
-			       int nPU, int nPV)
+                 bool isMC,
+                 double wgt,
+                 bool pfJets,
+			     int nPU, int nPV)
 {
-  std::cout << "Basic fill not doing anything yet" << std::endl ; 
+  //std::cout << "Basic fill not doing anything yet" << std::endl ; 
 }
 
-void Higgs::HistPerDef::fill(const HiggsEvent& he) 
+void Higgs::HistPerDef::Fill(const HiggsEvent& he) 
 {
-  std::cout << "fill not doing anything yet" << std::endl ;
+	
+
+        HMass->Fill(he.mH);
+        Z1mass->Fill(he.mZ1);
+		Z2mass->Fill(he.mZ2);
+   
+	//Determine what type of event we got
+	
+
+
+  //std::cout << "fill not doing anything yet" << std::endl ;
 
 
 }// end of fill()
@@ -320,32 +358,23 @@ Higgs::Higgs(const edm::ParameterSet& iConfig)
 
     // ==================== Book the histos ====================
     //
-    edm::Service<TFileService> fs;
-
-    hists.cutlevel = fs->make<TH1D > ("cutlevel", "Cut Level", 11, -1.5, 9.5);
-    hists.cutlevel->GetXaxis()->SetBinLabel(1, "Raw");
-    hists.cutlevel->GetXaxis()->SetBinLabel(2, "No cuts");
-    hists.cutlevel->GetXaxis()->SetBinLabel(3, "Dummy");
-    hists.cutlevel->GetXaxis()->SetBinLabel(4, "Dummy");
-    hists.cutlevel->GetXaxis()->SetBinLabel(5, "Dummy");
-    hists.cutlevel->GetXaxis()->SetBinLabel(6, "Dummy");
-    hists.cutlevel->GetXaxis()->SetBinLabel(7, "Dummy");
-    hists.cutlevel->GetXaxis()->SetBinLabel(8, "Dummy");
-    hists.cutlevel->GetXaxis()->SetBinLabel(9, "Dummy");
-    hists.rundir = new TFileDirectory(fs->mkdir("RunDir"));
     
-    hists.H4muMass = fs->make<TH1D > ("H4muMass", "H to 4 mu ", 50, 100, 150);
-    hists.H4GSFeMass = fs->make<TH1D > ("H4GSFeMass", "H to 4 GSF el ", 50, 100, 150);
-    hists.H2mu2GSFMass = fs->make<TH1D > ("H2mu2GSFMass", "H to 2 mu with 2 GSF el", 50, 100, 150);
-    hists.HGSF_FEE_2muMass = fs->make<TH1D > ("HGSF_FEE_2muMass", "H to GSF+FEE and 2mu", 50, 100, 150);
-    hists.HGSF_HF_2muMass = fs->make<TH1D > ("HGSF_HF_2muMass", "H to GSF+HF and 2 mu", 50, 100, 150);
-    hists.HcandMass = fs->make<TH1D > ("HcandMass", "Potentially Reconstructable H Masses", 50, 100, 150);
-    hists.H2GSFe2muMass = fs->make<TH1D > ("H2GSFe2muMass", "H to 2GSF el and Z*->mumu ", 50, 100, 150);
-    hists.HGSF_HF_2GSFMass = fs->make<TH1D > ("HGSF_HF_2GSFMass", "H to GSF+HF and 2GSF", 50, 100, 150);
-    hists.HGSF_FEE_2GSFMass = fs->make<TH1D > ("HGSF_FEE_2GSFMass", "H to 2GSF el and HF el ", 50, 100, 150);
-    hists.PassingZ1mass = fs->make<TH1D> ("PassingZ1mass", "Passing Z masses", 60, 0., 120);
-    hists.PassingZ2mass = fs->make<TH1D> ("PassingZ2mass", "Passing Z* masses", 60, 0., 120);
 
+	edm::Service<TFileService> fs;
+    
+    TH1D *cutlevel;
+    cutlevel = fs->make<TH1D > ("cutlevel", "Cut Level", 11, -1.5, 9.5);
+    cutlevel->GetXaxis()->SetBinLabel(1, "Raw");
+    cutlevel->GetXaxis()->SetBinLabel(2, "No cuts");
+    cutlevel->GetXaxis()->SetBinLabel(3, "Dummy");
+    cutlevel->GetXaxis()->SetBinLabel(4, "Dummy");
+    cutlevel->GetXaxis()->SetBinLabel(5, "Dummy");
+    cutlevel->GetXaxis()->SetBinLabel(6, "Dummy");
+    cutlevel->GetXaxis()->SetBinLabel(7, "Dummy");
+    cutlevel->GetXaxis()->SetBinLabel(8, "Dummy");
+    cutlevel->GetXaxis()->SetBinLabel(9, "Dummy");
+    rundir = new TFileDirectory(fs->mkdir("RunDir"));
+    
     init_ = false;
 
     MCweightByVertex_ = edm::LumiReWeighting(higgs::generate_flat10_mc(pileupEra_),
@@ -376,6 +405,16 @@ Higgs::Higgs(const edm::ParameterSet& iConfig)
     std::cout << "min4objMass       = " << cuts.minimum_zz_mass << " GeV" << std::endl;
 
     std::cout << "PU era (shift)    = " << pileupEra_ << " (" << puShift_ << ")" << std::endl;
+    
+    
+    H4muMass.Book(new TFileDirectory(fs->mkdir("4mu")),"4Mu");
+    H4GSFeMass.Book(new TFileDirectory(fs->mkdir("4GSF")),"4GSF");
+    H2mu2GSFMass.Book(new TFileDirectory(fs->mkdir("2Mu_2GSF")),"2Mu_2GSF");
+    HGSF_FEE_2muMass.Book(new TFileDirectory(fs->mkdir("GSF_FarEE_2Mu")),"GSF_FarEE_2Mu");
+    HGSF_FEE_2GSFMass.Book(new TFileDirectory(fs->mkdir("GSF_FarEE_2GSF")),"GSF_FarEE_2GSF");
+    HGSF_HF_2muMass.Book(new TFileDirectory(fs->mkdir("GSF_HF_2Mu")),"GSF_HF_2Mu");
+    HGSF_HF_2GSFMass.Book(new TFileDirectory(fs->mkdir("GSF_HF_2GSF")),"GSF_HF_2GSF");
+    H2GSFe2muMass.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu")),"2GSF_2Mu"); 
 
 
 }
@@ -395,10 +434,11 @@ Higgs::~Higgs()
 //
 
 
+
 TH1 * Higgs::bookRunHisto(uint32_t runNumber)
 {
     std::string runstr = int2str<uint32_t > (runNumber);
-    return hists.rundir->make <TH1I > (runstr.c_str(), runstr.c_str(), 1, 1, 2);
+    return rundir->make <TH1I > (runstr.c_str(), runstr.c_str(), 1, 1, 2);
 }
 
 
@@ -498,14 +538,10 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     if(firstEvent_)
     {
-        //std::cout << "===============================================" << std::endl;
+        std::cout << "===============================================" << std::endl;
         firstEvent_ = false;
     }
 
-    hists.cutlevel->Fill(-1.0, higgsEvent.eventWgt);
-
-
-    
     // Look for valid muons
     std::vector<reco::Muon> muCands =
       higgs::getMuonList(recoMuons, cuts.minimum_mu2_z2_pt, cuts.maximum_mu_abseta, false) ; 
@@ -541,19 +577,14 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     // Basic selection requirements: Require at least two muons, two jets
 
 	int totalEMcands = recoElectrons->size() + recoGammas->size() + recoHFElectrons->size() ; 
-    if ( (recoMuons->size() + totalEMcands) > 3 ) 
+    /*if ( (recoMuons->size() + totalEMcands) > 3 ) 
     {
-        hists.cutlevel->Fill(0.0, higgsEvent.eventWgt);
-        hists.HcandMass->Fill(higgsEvent.mH);
-        hists.PassingZ1mass->Fill(higgsEvent.mZ1);
-		hists.PassingZ2mass->Fill(higgsEvent.mZ2);
-    }
-
-    else return false;    
+        cutlevel->Fill(0.0, higgsEvent.eventWgt);
+        //hists->Fill(higgsEvent);
+    }*/
+   
     
-	//Determine what type of event we got
-	
-	if( higgsEvent.getZ2(cuts.minimum_e2_z2_pt,cuts.minimum_mu2_z2_pt,
+    if( higgsEvent.getZ2(cuts.minimum_e2_z2_pt,cuts.minimum_mu2_z2_pt,
 			   cuts.minimum_z2_mass,cuts.minimum_zz_mass)==1 )
 	{
 		switch( higgsEvent.getZ1(cuts.minimum_e1_z1_pt,cuts.minimum_e2_z1_pt,
@@ -561,19 +592,19 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 		{
 			case 1:
 				std::cout<<"Case 1 evoked: 4mu"<<std::endl;
-				hists.H4muMass->Fill(higgsEvent.mH);
+				H4muMass.Fill(higgsEvent);
 				break;
 			case 2:
 				std::cout<<"Case 2 evoked: 2GSFel and 2mu"<<std::endl;
-				hists.H2GSFe2muMass->Fill(higgsEvent.mH);
+				H2GSFe2muMass.Fill(higgsEvent);
 				break;
 			case 3:
 				std::cout<<"Case 3 evoked: GSF + FarEE and 2mu"<<std::endl;
-				hists.HGSF_FEE_2muMass->Fill(higgsEvent.mH);
+				HGSF_FEE_2muMass.Fill(higgsEvent);
 				break;
 			case 4:
 				std::cout<<"Case 4 evoked: GSF + HF and 2mu"<<std::endl;
-				hists.HGSF_HF_2muMass->Fill(higgsEvent.mH);
+				HGSF_HF_2muMass.Fill(higgsEvent);
 				break;
 		}
 	}	
@@ -586,22 +617,25 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 		{
 			case 1:
 				std::cout<<"Case 5 evoked: 2mu + 2GSF"<<std::endl;
-				hists.H2mu2GSFMass->Fill(higgsEvent.mH);
+				H2mu2GSFMass.Fill(higgsEvent);
 				break;
 			case 2:
 				std::cout<<"Case 6 evoked: 4GSF el"<<std::endl;
-				hists.H4GSFeMass->Fill(higgsEvent.mH);
+				H4GSFeMass.Fill(higgsEvent);
 				break;
 			case 3:
 				std::cout<<"Case 7 evoked: GSF + FarEE and 2GSF"<<std::endl;
-				hists.HGSF_FEE_2GSFMass->Fill(higgsEvent.mH);
+				HGSF_FEE_2GSFMass.Fill(higgsEvent);
 				break;
 			case 4:
 				std::cout<<"Case 8 evoked: GSF + HF and 2GSF"<<std::endl;
-				hists.HGSF_HF_2GSFMass->Fill(higgsEvent.mH);
+				HGSF_HF_2GSFMass.Fill(higgsEvent);
 				break;
 		}
-	}		
+	}
+
+
+    else return false;    		
 
     return true;
 }
