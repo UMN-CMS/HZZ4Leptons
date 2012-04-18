@@ -501,13 +501,13 @@ namespace higgs {
     }
     
     std::sort(muonList.begin(),muonList.end(),pTcompare()) ; 
-    if ( muonList.size() ) { 
+    /*if ( muonList.size() ) { 
       std::cout << "Sorted muon list: " << std::endl ; 
       for (unsigned int i=0; i<muonList.size(); i++) { 
 	std::cout << "Muon " << i+1 << " of " << muonList.size() 
 		  << " with pT " << muonList.at(i).pt() << " GeV" << std::endl ; 
       }
-    }
+    }*/
     return muonList ; 
   }
 
@@ -523,13 +523,13 @@ namespace higgs {
         edm::Ref<reco::GsfElectronCollection> eRef(recoElecs,iElectron);
         if ( eRef->pt() < minEt ) continue ;
         if ( fabs(eRef->eta()) > maxAbsEta ) continue ;
-	std::cout << "Found an electron with pT: " << eRef->pt() << " and eta " << eRef->eta() << std::endl ; 
+	//std::cout << "Found an electron with pT: " << eRef->pt() << " and eta " << eRef->eta() << std::endl ; 
 	double scTheta = (2*atan(exp(-eRef->superCluster()->eta()))) ;
 	double e25Max = eRef->e2x5Max() ; 
 	double e15 = eRef->e1x5() ; 
 	double e55 = eRef->e5x5() ; 
 	double ecalIso = eRef->dr04EcalRecHitSumEt() ; 
-	std::cout << "Additional values        : " 
+	/*std::cout << "Additional values        : " 
 		  << "  scTheta = " << scTheta
 		  << ";  scEt = " << eRef->superCluster()->energy()*sin(scTheta)
 		  << ";  eta = " << eRef->p4().Eta()
@@ -554,18 +554,18 @@ namespace higgs {
 		  << ";  dist = " << fabs(eRef->convDist())
 		  << ";  dcot = " << fabs(eRef->convDcot())
 		  << std::endl ; 
-	std::cout << "Value map returns        : " << eIDmap[eRef] << std::endl ; 
-	if ( (int(eIDmap[eRef]) & cutlevel) != cutlevel ) continue ; // electron fails ID/iso/IP/conv
+	std::cout << "Value map returns        : " << eIDmap[eRef] << std::endl ; */
+	//if ( (int(eIDmap[eRef]) & cutlevel) != cutlevel ) continue ; // electron fails ID/iso/IP/conv
         electronList.push_back( *eRef ) ;        
     }
     std::sort(electronList.begin(),electronList.end(),pTcompare()) ; 
-    if ( electronList.size() ) { 
+    /*if ( electronList.size() ) { 
       std::cout << "Sorted GSF electron list: " << std::endl ; 
       for (unsigned int i=0; i<electronList.size(); i++) { 
 	std::cout << "Electron " << i+1 << " of " << electronList.size() 
 		  << " with pT " << electronList.at(i).pt() << " GeV" << std::endl ; 
       }
-    }
+    }*/
     return electronList ; 
   }
 
@@ -582,14 +582,14 @@ namespace higgs {
     double eCOREe9    = hfshape.eCOREe9();
     double eSeL       = hfshape.eSeL();
 
-    std::cout << "HF electron candidate with " 
+    /*std::cout << "HF electron candidate with " 
 	      << " pt = " << electron.pt() 
 	      << "; eta = " << electron.eta()
 	      << "; e9e25 = " << e9e25 
 	      << "; var2d = " << var2d 
 	      << "; eCOREe9 = " << eCOREe9 
 	      << "; eSeL = " << eSeL
-	      << std::endl ;
+	      << std::endl ; */
 
     // Parameters: e9e25_loose, e9e25_tight,  var2d_loose, var2d_tight,  eCOREe9_loose, eCOREe9_tight,  eSeL_loose, eSeL_tight;
     // hFselParams =  cms.vdouble(0.90, 0.94,      0.2, 0.40,    -9999, -9999,     9999, 9999),
@@ -597,7 +597,7 @@ namespace higgs {
     if ( e9e25 <= 0.94 ) return false ; 
     if ( var2d <= 0.40 ) return false ; 
     
-    std::cout << "HF candidate passes selection" << std::endl ; 
+    //std::cout << "HF candidate passes selection" << std::endl ; 
 
     return true ; 
   }
@@ -614,13 +614,13 @@ namespace higgs {
 	if ( passesHFElectronID(*eRef,clusterAssociation) ) electronList.push_back( *eRef ) ;        
     }
     std::sort(electronList.begin(),electronList.end(),pTcompare()) ; 
-    if ( electronList.size() ) { 
+    /*if ( electronList.size() ) { 
       std::cout << "Sorted HF electron list: " << std::endl ; 
       for (unsigned int i=0; i<electronList.size(); i++) { 
 	std::cout << "Electron " << i+1 << " of " << electronList.size() 
 		  << " with pT " << electronList.at(i).pt() << " GeV" << std::endl ; 
       }
-    }
+    }*/
     return electronList ; 
   }
 
@@ -628,14 +628,14 @@ namespace higgs {
   // Starting point: https://twiki.cern.ch/twiki/bin/view/CMS/Vgamma2011PhotonID
   bool passesNoTrackID( const reco::Photon& electron, const double rho ) {
 
-    std::cout << "Looking at NT electron candidate with " 
+    /*std::cout << "Looking at NT electron candidate with " 
 	      << " pt = " << electron.pt()
 	      << "; eta = " << electron.eta()
 	      << "; H/E = " << electron.hadronicOverEm()
 	      << "; sigIeIe = " << electron.sigmaIetaIeta()
 	      << "; ecalIso = " << electron.ecalRecHitSumEtConeDR04()
 	      << "; hcalIso = " << electron.hcalTowerSumEtConeDR04()
-	      << std::endl ; 
+	      << std::endl ; */
 
     if ( electron.hadronicOverEm() >= 0.05 ) return false ; 
     if ( electron.sigmaIetaIeta() >= 0.03 ) return false ; 
@@ -648,7 +648,7 @@ namespace higgs {
     if ( electron.ecalRecHitSumEtConeDR04() >= ecalIsoThreshold ) return false ; 
     if ( electron.hcalTowerSumEtConeDR04() >= hcalIsoThreshold ) return false ; 
     
-    std::cout << "NT passes selection" << std::endl ; 
+    //std::cout << "NT passes selection" << std::endl ; 
 
     return true ; 
   }
@@ -657,7 +657,7 @@ namespace higgs {
 					      const double rho, double minEt, 
 					      double minAbsEta, double maxAbsEta) {
       
-    if ( recoElecs->size() ) std::cout << "*** Pileup rho is: " << rho << std::endl ; 
+    //if ( recoElecs->size() ) std::cout << "*** Pileup rho is: " << rho << std::endl ; 
     std::vector< reco::Photon > electronList ; 
     for (unsigned int iElectron=0; iElectron < recoElecs->size(); iElectron++) {
         edm::Ref<reco::PhotonCollection> eRef(recoElecs,iElectron);
@@ -667,13 +667,13 @@ namespace higgs {
         if ( passesNoTrackID( *eRef,rho ) ) electronList.push_back( *eRef ) ;        
     }
     std::sort(electronList.begin(),electronList.end(),pTcompare()) ; 
-    if ( electronList.size() ) { 
+    /*if ( electronList.size() ) { 
       std::cout << "Sorted NT electron list: " << std::endl ; 
       for (unsigned int i=0; i<electronList.size(); i++) { 
 	std::cout << "Electron " << i+1 << " of " << electronList.size() 
 		  << " with pT " << electronList.at(i).pt() << " GeV" << std::endl ; 
       }
-    }
+    }*/
     return electronList ; 
   }
     

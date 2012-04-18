@@ -13,7 +13,7 @@
 //
 // Original Author:  Jeremy M Mans
 //         Created:  Mon May 31 07:00:26 CDT 2010
-// $Id: Higgs.cc,v 1.3 2012/03/21 16:09:25 afinkel Exp $
+// $Id: Higgs.cc,v 1.5 2012/04/13 03:15:29 afinkel Exp $
 //
 //
 
@@ -242,24 +242,24 @@ void Higgs::HistPerDef::Book(TFileDirectory *mydir, const std::string& post)
     TH1::SetDefaultSumw2();
     //edm::Service<TFileService> fs;
     //TFileDirectory *mydir = new TFileDirectory(fs->mkdir(post.c_str()));
-    std::cout<<"Made a directory."<<std::endl;
+    //std::cout<<"Made a directory."<<std::endl;
     
     t = post + "_HMass";
     T = post + " Reco H mass";
     std::cout<<"Created titles: "<<t<<", "<<T<<std::endl;
         
     HMass = mydir->make<TH1D> (t.c_str(), T.c_str(), 50, 100, 150 );
-    std::cout<<"Made first hist."<<std::endl;
+    //std::cout<<"Made second hist."<<std::endl;
     
     t = post + "_Z1Mass";
     T = post + " Reco Z1 mass";
     Z1mass = mydir->make<TH1D>(t.c_str(), T.c_str(), 70, 50, 120 );
-    std::cout<<"Made first hist."<<std::endl;
+    //std::cout<<"Made first hist."<<std::endl;
   
     t = post + "_Z2Mass";
     T = post + " Reco Z2 mass";
     Z2mass = mydir->make<TH1D>(t.c_str(), T.c_str(), 90, 0, 90 );
-    std::cout<<"Made first hist."<<std::endl;
+    //std::cout<<"Made third hist."<<std::endl;
   
     
 
