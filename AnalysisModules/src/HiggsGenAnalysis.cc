@@ -13,7 +13,7 @@
 //
 // Original Author:  Bryan Dahmes
 //         Created:  Wed Sep 22 04:49:56 CDT 2010
-// $Id: HiggsGenAnalysis.cc,v 1.2 2012/03/12 19:02:14 afinkel Exp $
+// $Id: HiggsGenAnalysis.cc,v 1.3 2012/03/14 16:39:24 bdahmes Exp $
 //
 // Edited by:   ALexey Finkel
 //
@@ -61,6 +61,7 @@ public:
       double mass;
       double l1pt, l2pt ; 
       double l1eta, l2eta ; 
+      double E1, E2;
       reco::Particle::LorentzVector PZ, Pl1, Pl2;
   } ;
 
@@ -79,7 +80,7 @@ private:
 
   // ----------member data ---------------------------
   struct HistStruct {
-      TH1D* h_higgsY, *h_higgsY_mm, *h_higgsY_ee, *h_higgsY_eFe, *mu1pt, *mu2pt, *mupt, *el1pt, *el2pt, *elpt, *Phi1, *Phi, *CosTheta1, *CosTheta2, *CosTheta0, *HiggsRestP2, *HiggsP2 ; 
+      TH1D* h_higgsY, *h_higgsY_mm, *h_higgsY_ee, *h_higgsY_eFe, *mu1pt, *mu2pt, *mupt, *el1pt, *el2pt, *elpt, *Phi1, *Phi, *CosTheta1, *CosTheta2, *CosTheta0, *HiggsRestP2, *HiggsP2, *FarEEelEnergy, *HFelEnergy, *FarEEelPt, *HFelPt, *Ztypes, *Z2e1Pt, *Z2e2Pt, *Z2elPt ; 
   } hists ; 
     
 };
@@ -119,6 +120,22 @@ HiggsGenAnalysis::HiggsGenAnalysis(const edm::ParameterSet& iConfig) {
     hists.CosTheta2 = fs->make<TH1D>("CostTheta2","Cos(#theta_{2})",20,-1.,1.);
     hists.HiggsRestP2 = fs->make<TH1D>("HiggsRestP2","H rest frame p^2",100,0.,150);
     hists.HiggsP2 = fs->make<TH1D>("HiggsP2","H lab frame p^2",100,0.,1000);
+    hists.FarEEelEnergy = fs->make<TH1D>("FarEEelEnergy","(On-shell Z) FarEE electron energy", 100, 0., 1000);
+    hists.HFelEnergy = fs->make<TH1D>("HFelEnergy","(On-shell Z) HF electron energy", 100, 0., 1000);    
+    hists.FarEEelPt = fs->make<TH1D>("FarEEelPt","(On-shell Z) FarEE electron Pt", 100, 0., 100);
+    hists.HFelPt = fs->make<TH1D>("HFelPt","(On-shell Z) HF electron Pt", 100, 0., 100);
+    hists.Z2e1Pt = fs->make<TH1D>("Z2e1Pt","Off-Shell Z GSFel1 Pt", 50, 0, 50);
+    hists.Z2e2Pt = fs->make<TH1D>("Z2e2Pt","Off-Shell Z GSFel2 Pt", 50, 0, 50);
+    hists.Z2elPt = fs->make<TH1D>("Z2elPt","Off-Shell Z GSFel-all Pt", 50, 0, 50);
+    
+    hists.Ztypes = fs->make<TH1D>("Ztypes", "Decay Channels of Z, Z*", 7, -0.5, 6.5 );
+    hists.Ztypes->GetXaxis()->SetBinLabel(1, "Other");
+    hists.Ztypes->GetXaxis()->SetBinLabel(2, "MuMu");
+    hists.Ztypes->GetXaxis()->SetBinLabel(3, "MuE");
+    hists.Ztypes->GetXaxis()->SetBinLabel(4, "EMu");
+    hists.Ztypes->GetXaxis()->SetBinLabel(5, "EE");
+    hists.Ztypes->GetXaxis()->SetBinLabel(6, "FarEMu");
+    hists.Ztypes->GetXaxis()->SetBinLabel(7, "FarEE");
 }
 
 
@@ -144,6 +161,7 @@ HiggsGenAnalysis::validZmumu(zboson theZ, bool offshell) {
     double minPt = std::min(theZ.l1pt,theZ.l2pt);
 
     if ( maxPt > minLep1pt && minPt > minLep2pt ) {
+    //return true;
         if ( (fabs(theZ.l1eta) < 2.1 || fabs(theZ.l2eta) < 2.1) &&
              (fabs(theZ.l1eta) < 2.4 && fabs(theZ.l2eta) < 2.4) )
             return true ;
@@ -268,38 +286,41 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<reco::GenParticleCollection> genInfo;
   int nZ = 0 ; bool passEvent = false ; 
 
-  std::cout << "-------------------------------------------------------" << std::endl ; 
+  //std::cout << "-------------------------------------------------------" << std::endl ; 
   if (iEvent.getByLabel("genParticles",genInfo)) {
       reco::GenParticleCollection::const_iterator iparticle ;
       zboson z1, z2 ; 
       for (iparticle=genInfo->begin(); iparticle!=genInfo->end(); iparticle++) {
 
           if ( iparticle->pdgId() == 25 && iparticle->numberOfDaughters() > 0 ) { // Higgs
-              std::cout << "Higgs with mass " << iparticle->mass()
-                        << " and rapidity " << iparticle->y()
-                        << " decays to " << std::endl ;
+              //std::cout << "Higgs with mass " << iparticle->mass()
+                        //<< " and rapidity " << iparticle->y()
+                        //<< " decays to " << std::endl ;
               zboson newZ ;
               for (unsigned int idg=0; idg<iparticle->numberOfDaughters(); idg++) {
-                  std::cout << "    " << iparticle->daughter(idg)->pdgId()
-                            << " with mass " << iparticle->daughter(idg)->mass()
-                            << " rapidity " << iparticle->daughter(idg)->y() 
-                            << " and " << iparticle->daughter(idg)->numberOfDaughters()
-                            << " daughters" << std::endl ;
+                  //std::cout << "    " << iparticle->daughter(idg)->pdgId()
+                            //<< " with mass " << iparticle->daughter(idg)->mass()
+                            //<< " rapidity " << iparticle->daughter(idg)->y() 
+                            //<< " and " << iparticle->daughter(idg)->numberOfDaughters()
+                            //<< " daughters" << std::endl ;
                   if ( iparticle->daughter(idg)->pdgId() == 23 ) { // Z boson
                       int nele = 0 ; int nmu  = 0 ;
                       newZ.PZ = iparticle->daughter(idg)->p4();
                       for (unsigned int idg2=0; idg2<iparticle->daughter(idg)->numberOfDaughters(); idg2++) {
-                          std::cout << iparticle->daughter(idg)->daughter(idg2)->pdgId() << " " ; 
+                          //std::cout << iparticle->daughter(idg)->daughter(idg2)->pdgId() << " " ; 
                           if ( abs(iparticle->daughter(idg)->daughter(idg2)->pdgId()) == 11 ) {
                               nele++ ;
                               if ( nele == 1 ) {
                                   newZ.l1pt  = iparticle->daughter(idg)->daughter(idg2)->pt() ;
                                   newZ.l1eta = iparticle->daughter(idg)->daughter(idg2)->eta() ;
                                   newZ.Pl1	 = iparticle->daughter(idg)->daughter(idg2)->p4();
+								  newZ.E1 = iparticle->daughter(idg)->daughter(idg2)->energy();
+
                               } else {
                                   newZ.l2pt  = iparticle->daughter(idg)->daughter(idg2)->pt() ;
                                   newZ.l2eta = iparticle->daughter(idg)->daughter(idg2)->eta() ;
                                   newZ.Pl2	 = iparticle->daughter(idg)->daughter(idg2)->p4();
+                                  newZ.E2 = iparticle->daughter(idg)->daughter(idg2)->energy();
                                   hists.el1pt->Fill( std::max(newZ.l1pt,newZ.l2pt) );
 								  hists.el2pt->Fill( std::min(newZ.l1pt,newZ.l2pt) );
                               }
@@ -310,16 +331,18 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
                               if ( nmu == 1 ) {
                                   newZ.l1pt  = iparticle->daughter(idg)->daughter(idg2)->pt() ;
                                   newZ.l1eta = iparticle->daughter(idg)->daughter(idg2)->eta() ;
+                                  newZ.E1 = iparticle->daughter(idg)->daughter(idg2)->energy();
                               } else {
                                   newZ.l2pt  = iparticle->daughter(idg)->daughter(idg2)->pt() ;
                                   newZ.l2eta = iparticle->daughter(idg)->daughter(idg2)->eta() ;
                                   hists.mu1pt->Fill( std::max(newZ.l1pt,newZ.l2pt) );
                               	  hists.mu2pt->Fill( std::min(newZ.l1pt,newZ.l2pt) );
+                              	  newZ.E2 = iparticle->daughter(idg)->daughter(idg2)->energy();
                               }
                               hists.mupt->Fill( iparticle->daughter(idg)->daughter(idg2)->pt() );
                           }
                       }
-                      std::cout << std::endl ; 
+                      //std::cout << std::endl ; 
                       if ( nele == 2 || nmu == 2 ) {
                           nZ++ ; 
                           newZ.mass = iparticle->daughter(idg)->mass() ;
@@ -337,12 +360,12 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
                               z1 = newZ ;
                           }
                       }
-                      Angular(z1,z2, iparticle->p4());
+                      Angular(z1,z2, iparticle->p4()); 
                   }
               }
 
-              std::cout << "Event information: " << std::endl ;
-              if ( nZ != 2 ) std::cout << "Not a valid decay: " << nZ << std::endl ;
+              //std::cout << "Event information: " << std::endl ;
+              /*if ( nZ != 2 ) std::cout << "Not a valid decay: " << nZ << std::endl ;
               else {
                   std::cout << "Found a Higgs -> ZZ -> 4 lepton decay" << std::endl ;
                   std::cout << "Z1: " << z1.mass << " GeV decays to 2 " << ( z1.mode == 11 ? "electrons" : "muons" ) << std::endl ; 
@@ -351,7 +374,7 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
                   std::cout << "Z2: " << z2.mass << " GeV decays to 2 " << ( z2.mode == 11 ? "electrons" : "muons" ) << std::endl ; 
                   std::cout << "primary:   pt = " << z2.l1pt << " GeV and eta = " << z2.l1eta << std::endl ; 
                   std::cout << "secondary: pt = " << z2.l2pt << " GeV and eta = " << z2.l2eta << std::endl ;
-              }
+              }*/
               
               // Determine a category
               int zCat = -1 ;
@@ -387,25 +410,58 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
                       }
                   }
               }
-              
+             
               if ( zCat >= 0 ) {
 		passEvent = true ; 
+		
+		hists.Ztypes->Fill(zCat);
 
 		if ( recZ(z1) && recZ(z2) )	hists.h_higgsY->Fill( iparticle->y() ) ;
 		if ( zCat == 1 || zCat == 2 ) hists.h_higgsY_mm->Fill( iparticle->y() ) ;
 		if ( zCat == 3 || zCat == 4 ) hists.h_higgsY_ee->Fill( iparticle->y() ) ;
-		if ( zCat == 5 || zCat == 6 ) hists.h_higgsY_eFe->Fill( iparticle->y() ) ;
+		if ( zCat == 5 || zCat == 6 )
+		{
+			hists.h_higgsY_eFe->Fill( iparticle->y() ) ;
+			if(fabs(z1.l1eta) > 2.5 && fabs(z1.l1eta) < 3) 
+			{
+				hists.FarEEelEnergy->Fill(z1.E1);
+				hists.FarEEelPt->Fill(z1.l1pt);
+			}
+			if(fabs(z1.l2eta) > 2.5 && fabs(z1.l2eta) < 3) 
+			{
+				hists.FarEEelEnergy->Fill(z1.E2);
+				hists.FarEEelPt->Fill(z1.l2pt);
+			}
+			if(fabs(z1.l1eta) > 3 && fabs(z1.l1eta) < 5) 
+			{
+				hists.HFelEnergy->Fill(z1.E1);
+				hists.HFelPt->Fill(z1.l1pt);
+			}
+			if(fabs(z1.l2eta) > 3 && fabs(z1.l2eta) < 5) 
+			{
+				hists.HFelEnergy->Fill(z1.E2);
+				hists.HFelPt->Fill(z1.l2pt);
+			}
+		}
+		if(zCat==2||zCat==4||zCat==6)
+		{
+			hists.Z2e1Pt->Fill(z2.l1pt);
+			hists.Z2e2Pt->Fill(z2.l2pt);
+			hists.Z2elPt->Fill(z2.l1pt);
+			hists.Z2elPt->Fill(z2.l2pt);
+		}
+		
 		if ( farElectronFilter_ ) { 
 		  if ( z1.mode != 11 || z1.mass < 50. || z1.mass > 120. ) return false ; 
 		  if ( fabs(z1.l1eta) < 2.5 && fabs(z1.l2eta) < 2.5 ) return false ; 
-		  std::cout << "*** This event has an HF/NT electron candidate ***" << std::endl ; 
+		  //std::cout << "*** This event has an HF/NT electron candidate ***" << std::endl ; 
 		}
               }
           }
       }
       
   }
-  std::cout << "-------------------------------------------------------" << std::endl ; 
+  //std::cout << "-------------------------------------------------------" << std::endl ; 
 
   return passEvent ; 
 }
