@@ -8,7 +8,12 @@ HiggsEvent::HiggsEvent() {
   nElectrons = 0 ;
 
   Z1flavor = 0 ; 
-  Z2flavor = 0 ; 
+  Z2flavor = 0 ;
+  
+  ecalIsoByGSF_1 = 0;
+  ecalIsoByGSF_2 = 0;
+  ecalIso_3 = 0;
+  ecalIso_4 = 0;
 
   // Protection: scale factors set to 1 by default
   MuScale = 1.0 ;
@@ -31,7 +36,7 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
   const double mZpdg = 91.1876 ; 
   double mZdiff = mZpdg ; 
   double deltaM = 0;
-  reco::Particle::LorentzVector zCand;
+  reco::Particle::LorentzVector zCand, l1Cand, l2Cand;
   
   //std::cout << "Looking for the primary Z" << std::endl ; 
 
@@ -46,8 +51,8 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
 			  //<< " GeV and charge " << muCands.at(j).charge() << std::endl ; 
 		if ((muCands.at(i).charge()*muCands.at(j).charge()) > 0) continue ;
 		 
-		zCand = muCands.at(i).p4() + muCands.at(j).p4() ; 
-		
+		zCand = muCands.at(i).p4() + muCands.at(j).p4() ;
+				
 		//std::cout << "Z candidate mass is " << zCand.M() << " GeV" << std::endl ; 
 		if (zCand.M() < minMass) continue ; 
 		deltaM = fabs(zCand.M() - mZpdg) ; 
@@ -55,7 +60,9 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
 		  mZdiff = deltaM ; 
 		  vZ1 = zCand ; 
 		  Z1flavor = 1 ; 
-		  Z1idx.first = i ; Z1idx.second = j ; 
+		  Z1idx.first = i ; Z1idx.second = j ;
+		  l1Cand = muCands.at(i).p4();
+		  l2Cand = muCands.at(j).p4(); 
 		  //std::cout << "New best Z candidate: " << i << "," << j << std::endl ; 
 		}
       }
@@ -84,6 +91,16 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
 		vZ1 = zCand ; 
 		Z1flavor = 2 ; 
 		Z1idx.first = i ; Z1idx.second = j ; 
+		l1Cand =  gsfCands.at(i).p4();
+		ecalIsoByGSF_1 = gsfCands.at(i).dr04EcalRecHitSumEt()/l1Cand.Et();
+		e25Max_1 = gsfCands.at(i).e2x5Max()/gsfCands.at(i).superCluster()->energy();
+		e15_1 = gsfCands.at(i).e1x5()/gsfCands.at(i).superCluster()->energy();
+		e55_1 = gsfCands.at(i).e5x5()/gsfCands.at(i).superCluster()->energy();
+		l2Cand = gsfCands.at(j).p4();
+		ecalIsoByGSF_2 = gsfCands.at(i).dr04EcalRecHitSumEt()/l2Cand.Et();
+		e25Max_2 = gsfCands.at(j).e2x5Max()/gsfCands.at(j).superCluster()->energy();
+		e15_2 = gsfCands.at(j).e1x5()/gsfCands.at(j).superCluster()->energy();
+		e55_2 = gsfCands.at(j).e5x5()/gsfCands.at(j).superCluster()->energy();
 		//std::cout << "New best Z candidate: " << i << "," << j << std::endl ; 
       }
     }
@@ -99,11 +116,21 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
       if (zCand.M() < minMass) continue ; 
       double deltaM = fabs(zCand.M() - mZpdg) ; 
       if (deltaM < mZdiff) { // New "best" Z candidate
-	mZdiff = deltaM ; 
-	vZ1 = zCand ; 
-	Z1flavor = 3 ; 
-	Z1idx.first = i ; Z1idx.second = j ; 
-	//std::cout << "New best Z candidate: " << i << "," << j << std::endl ; 
+		mZdiff = deltaM ; 
+		vZ1 = zCand ; 
+		Z1flavor = 3 ; 
+		Z1idx.first = i ; Z1idx.second = j ;
+		l1Cand =  gsfCands.at(i).p4();
+		ecalIso_1 = gsfCands.at(i).dr04EcalRecHitSumEt();
+		e25Max_1 = gsfCands.at(i).e2x5Max();
+		e15_1 = gsfCands.at(i).e1x5();
+		e55_1 = gsfCands.at(i).e5x5();
+		l2Cand = ntCands.at(j).p4();
+		ecalIso_2 = -1;
+		e25Max_2 = -1;
+		e15_2 = -1;
+		e55_2 = -1;
+		//std::cout << "New best Z candidate: " << i << "," << j << std::endl ; 
       }
     }
 
@@ -122,11 +149,23 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
 	vZ1 = zCand ; 
 	Z1flavor = 4 ; 
 	Z1idx.first = i ; Z1idx.second = j ; 
+	l1Cand =  gsfCands.at(i).p4();
+	ecalIso_1 = gsfCands.at(i).dr04EcalRecHitSumEt();
+	e25Max_1 = gsfCands.at(i).e2x5Max();
+	e15_1 = gsfCands.at(i).e1x5();
+	e55_1 = gsfCands.at(i).e5x5();
+	l2Cand = hfCands.at(j).p4();
+	ecalIso_2 = -1;
+	e25Max_2 = -1;
+	e15_2 = -1;
+	e55_2 = -1;
 	//std::cout << "New best Z candidate: " << i << "," << j << std::endl ; 
       }
     }
   }
 
+  vl1 = l1Cand;
+  vl2 = l2Cand;
   return Z1flavor; 
 }
 
@@ -136,7 +175,7 @@ int HiggsEvent::getZ2(double minElePt, double minMuPt, double minMass, double mi
 
   double minSumPt = 0. ;
   double sumPt;
-  reco::Particle::LorentzVector zCand, l4Cand;
+  reco::Particle::LorentzVector zCand, l3Cand, l4Cand;
   
   if ( muCands.size() ) { 
     for (unsigned int i=0; i<muCands.size()-1; i++) { 
@@ -153,7 +192,8 @@ int HiggsEvent::getZ2(double minElePt, double minMuPt, double minMass, double mi
 		  //<< " GeV and charge " << muCands.at(j).charge() << std::endl ; 
 	if ((muCands.at(i).charge()*muCands.at(j).charge()) > 0) continue ; 
 	
-	zCand = muCands.at(i).p4() + muCands.at(j).p4() ; 
+	zCand = muCands.at(i).p4() + muCands.at(j).p4() ;
+	
 	
 	//std::cout << "(2) Z candidate mass is " << zCand.M() << " GeV" << std::endl ; 
 	if (zCand.M() < minMass) continue ; 
@@ -168,6 +208,8 @@ int HiggsEvent::getZ2(double minElePt, double minMuPt, double minMass, double mi
 	  vH = l4Cand ; 
 	  Z2flavor = 1 ; 
 	  Z2idx.first = i ; Z2idx.second = j ; 
+	  l3Cand =  muCands.at(i).p4();
+	  l4Cand = muCands.at(j).p4();
 	  //std::cout << "(2) New best Z candidate: " << i << "," << j << std::endl ; 
 		}
       }
@@ -205,11 +247,23 @@ int HiggsEvent::getZ2(double minElePt, double minMuPt, double minMass, double mi
 	vH = l4Cand ; 
 	Z2flavor = 2 ; 
 	Z2idx.first = i ; Z2idx.second = j ; 
+	l3Cand = gsfCands.at(i).p4();
+	ecalIso_3 = gsfCands.at(i).dr04EcalRecHitSumEt();
+	e25Max_3 = gsfCands.at(i).e2x5Max();
+	e15_3 = gsfCands.at(i).e1x5();
+	e55_3 = gsfCands.at(i).e5x5();
+	l4Cand = gsfCands.at(j).p4();
+	ecalIso_4 = gsfCands.at(j).dr04EcalRecHitSumEt();
+	e25Max_4 = gsfCands.at(j).e2x5Max();
+	e15_4 = gsfCands.at(j).e1x5();
+	e55_4 = gsfCands.at(j).e5x5();
 	//std::cout << "(2) New best Z candidate: " << i << "," << j << std::endl ; 
       }
     }
   }
 
+  vl3 = l3Cand;
+  vl4 = l4Cand;
   return Z2flavor; 
 }
 
@@ -217,9 +271,21 @@ void HiggsEvent::calculate() {
 	
 	mZ1 = vZ1.M();
 	mZ2 = vZ2.M();
-  vH = vZ1 + vZ2 ; 
-  mH = vH.M() ;
-  
+	vH = vZ1 + vZ2 ; 
+	mH = vH.M() ;
+	l1pt = vl1.Pt();
+	l1eta = vl1.Eta();
+	l2pt = vl2.Pt();
+	l2eta = vl2.Eta();
+	l3pt = vl3.Pt();
+	l3eta = vl3.Eta();
+	l4pt = vl4.Pt();
+	l4eta = vl4.Eta();	
+	//std::cout<<"Iso 1 = "<< ecalIso_1<<std::endl;
+	
+	//std::cout<<"mZ1="<<mZ1<<", mZ2="<<mZ2<<", mH="<<mH<<", l1pt="<<l1pt<<", l1eta="<<l1eta<<", l2pt="<<l2pt<<", l2eta="<<l2eta
+	//		<<", l3pt="<<l3pt<<", l3eta="<<l3eta<<", l4pt="<<l4pt<<", l4eta="<<l4eta<<std::endl;
+	
   /*
   reco::Particle::LorentzVector j1p4 = j1.p4();
   reco::Particle::LorentzVector j2p4 = j2.p4();
