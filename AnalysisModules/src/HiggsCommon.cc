@@ -555,7 +555,7 @@ namespace higgs {
 		  << ";  dcot = " << fabs(eRef->convDcot())
 		  << std::endl ; 
 	std::cout << "Value map returns        : " << eIDmap[eRef] << std::endl ; */
-	//if ( (int(eIDmap[eRef]) & cutlevel) != cutlevel ) continue ; // electron fails ID/iso/IP/conv
+	if ( (int(eIDmap[eRef]) & cutlevel) != cutlevel ) continue ; // electron fails ID/iso/IP/conv
         electronList.push_back( *eRef ) ;        
     }
     std::sort(electronList.begin(),electronList.end(),pTcompare()) ; 
