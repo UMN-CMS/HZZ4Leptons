@@ -101,7 +101,7 @@ namespace higgs {
     std::vector<reco::GsfElectron>       getElectronList(edm::Handle<reco::GsfElectronCollection>& recoElecs,
 							 edm::Handle< edm::ValueMap<float> >& valueMap,
 							 double minEt, double maxAbsEta, 
-							 int cutlevel) ; 
+							 int cutlevel, std::vector< std::pair<double,unsigned int> >&) ; 
     std::vector<reco::RecoEcalCandidate> getElectronList(edm::Handle<reco::RecoEcalCandidateCollection>& recoElecs,
 							 edm::Handle<reco::HFEMClusterShapeAssociationCollection>& clusterAssociation, 
 							 double minEt, double maxAbsEta) ; 

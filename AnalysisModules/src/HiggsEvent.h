@@ -55,7 +55,11 @@ public:
   std::vector<reco::GsfElectron>       gsfCands ; 
   std::vector<reco::Photon>            ntCands ; 
   std::vector<reco::RecoEcalCandidate> hfCands ; 
-
+  void SetMuonList(std::vector<reco::Muon> MuCandList){muCands = MuCandList;};
+  void SetGsfElectronList(std::vector<reco::GsfElectron> GsfCandList){gsfCands=GsfCandList;};
+  void SetPhotonList(std::vector<reco::Photon> PhotonCandList){ntCands = PhotonCandList;};
+  void SetHFList(std::vector<reco::RecoEcalCandidate> HFCandList){hfCands = HFCandList;};
+  
   reco::Muon              mu1, mu2, mu3, mu4, mu[4] ; 
   reco::GsfElectron       e1, e2, e3, e4, e[4] ; 
   reco::Photon            nt1, nt[1] ; 
@@ -84,7 +88,7 @@ public:
   reco::Particle::LorentzVector lv_evt;
   reco::Particle::LorentzVector vH;
 
-  double mH, mZ1, mZ2, l1pt, l1eta, l2pt, l2eta, l3pt, l3eta, l4pt, l4eta ; 
+  double HY, mH, mZ1, mZ2, l1pt, l1eta, l2pt, l2eta, l3pt, l3eta, l4pt, l4eta ; 
   double ecalIsoByGSF_1, ecalIsoByGSF_2, ecalIso_1, ecalIso_2, ecalIso_3, ecalIso_4;
   double scTheta_1, scTheta_2, scTheta_3, scTheta_4;
   double e25Max_1, e25Max_2, e25Max_3, e25Max_4;

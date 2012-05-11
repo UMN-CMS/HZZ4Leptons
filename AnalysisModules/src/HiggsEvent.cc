@@ -37,7 +37,7 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
   double mZdiff = mZpdg ; 
   double deltaM = 0;
   reco::Particle::LorentzVector zCand, l1Cand, l2Cand;
-  
+ 
   //std::cout << "Looking for the primary Z" << std::endl ; 
 
   if ( muCands.size() ) { //Muon channel
@@ -273,6 +273,7 @@ void HiggsEvent::calculate() {
 	mZ2 = vZ2.M();
 	vH = vZ1 + vZ2 ; 
 	mH = vH.M() ;
+	HY = vH.Rapidity();
 	l1pt = vl1.Pt();
 	l1eta = vl1.Eta();
 	l2pt = vl2.Pt();

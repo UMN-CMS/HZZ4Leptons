@@ -133,6 +133,9 @@ private:
 
 
     int evtCounter;
+    
+    int Z1type, Z2type;
+    int e1Cut, e2Cut ;
 
     double ZwinMinGeV_, ZwinMaxGeV_; // for trigger efficiency studies
 
@@ -183,7 +186,7 @@ private:
       //private:
       //TFileDirectory *mydir;
         
-      TH1  *HMass, *Z1mass, *Z2mass, *l1Pt, *l1Eta, *l2Pt, *l2Eta, *l3Pt, *l3Eta, *l4Pt, *l4Eta,
+      TH1  *HMass, *HY, *Z1mass, *Z2mass, *l1Pt, *l1Eta, *l2Pt, *l2Eta, *l3Pt, *l3Eta, *l4Pt, *l4Eta,
       	   *EcalIsoByGSF_1, *EcalIsoByGSF_2,
       	   *E25Max_1, *E25Max_2, //*E25Max_3, *E25Max_4,
       	   *E15_1, *E15_2, //*E15_3, *E15_4,
@@ -197,7 +200,9 @@ private:
     TFileDirectory *rundir;
     
         
-    HistPerDef  H4mu, H4GSFe, H2mu2GSF, HGSF_FEE_2mu, HGSF_HF_2mu, H2GSFe2mu, HGSF_HF_2GSF, HGSF_FEE_2GSF;
+    HistPerDef  H4mu, H4GSFe, H2mu2GSF, HGSF_FEE_2mu, HGSF_HF_2mu, HGSF_HF_2GSF, HGSF_FEE_2GSF,
+    			H2GSFe2mu_Cut0, H2GSFe2mu_e1Cut1, H2GSFe2mu_e1Cut2, H2GSFe2mu_e1Cut3,
+    			H2GSFe2mu_e2Cut0, H2GSFe2mu_e2Cut1, H2GSFe2mu_e2Cut2, H2GSFe2mu_e2Cut3;
     
     // gf set of histo for all Z definitions in a stack
 
@@ -244,10 +249,13 @@ void Higgs::HistPerDef::Book(TFileDirectory *mydir, const std::string& post, int
 {
     std::string t, T; // histogram title string;
     TH1::SetDefaultSumw2();
+    t = post + "_HY";
+    T = post + " Reco H Rapidity";
+    HY = mydir->make<TH1D> (t.c_str(), T.c_str(), 20, -5, 5 );
     t = post + "_HMass";
     T = post + " Reco H mass";
     std::cout<<"Created titles: "<<t<<", "<<T<<std::endl;        
-    HMass = mydir->make<TH1D> (t.c_str(), T.c_str(), 50, 100, 150 );  
+    HMass = mydir->make<TH1D> (t.c_str(), T.c_str(), 50, 100, 200 );  
     t = post + "_Z1Mass";
     T = post + " Reco Z1 mass";
     Z1mass = mydir->make<TH1D>(t.c_str(), T.c_str(), 70, 50, 120 );  
@@ -348,6 +356,7 @@ void Higgs::HistPerDef::Fill(// pat::MuonCollection muons,
 
 void Higgs::HistPerDef::Fill(const HiggsEvent& he,int type) 
 {
+    HY->Fill(he.HY);
     HMass->Fill(he.mH);
     Z1mass->Fill(he.mZ1);
 	Z2mass->Fill(he.mZ2);
@@ -446,6 +455,10 @@ Higgs::Higgs(const edm::ParameterSet& iConfig)
 
     // ==================== Init other members ====================
     //
+    Z1type = 0;
+    Z2type = 0;
+    e1Cut = -1;
+    e2Cut = -1;
 
     // ==================== Book the histos ====================
     //
@@ -505,8 +518,13 @@ Higgs::Higgs(const edm::ParameterSet& iConfig)
     HGSF_FEE_2GSF.Book(new TFileDirectory(fs->mkdir("GSF_FarEE_2GSF")),"GSF_FarEE_2GSF");
     HGSF_HF_2mu.Book(new TFileDirectory(fs->mkdir("GSF_HF_2Mu")),"GSF_HF_2Mu");
     HGSF_HF_2GSF.Book(new TFileDirectory(fs->mkdir("GSF_HF_2GSF")),"GSF_HF_2GSF");
-    H2GSFe2mu.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu")),"2GSF_2Mu",3); 
-
+    H2GSFe2mu_Cut0.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_Cut0")),"2GSF_2Mu",3); 
+	H2GSFe2mu_e1Cut1.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_e1Cut1")),"2GSF_2Mu",3); 
+	H2GSFe2mu_e1Cut2.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_e1Cut2")),"2GSF_2Mu",3); 
+	H2GSFe2mu_e1Cut3.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_e1Cut3")),"2GSF_2Mu",3); 
+	H2GSFe2mu_e2Cut1.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_e2Cut1")),"2GSF_2Mu",3); 
+	H2GSFe2mu_e2Cut2.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_e2Cut2")),"2GSF_2Mu",3); 
+	H2GSFe2mu_e2Cut3.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_e2Cut3")),"2GSF_2Mu",3);
 
 }
 
@@ -632,13 +650,15 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
         std::cout << "===============================================" << std::endl;
         firstEvent_ = false;
     }
+    
+    std::vector< std::pair<double,unsigned int> > eleCutsByPt;
 
     // Look for valid muons
     std::vector<reco::Muon> muCands =
       higgs::getMuonList(recoMuons, cuts.minimum_mu2_z2_pt, cuts.maximum_mu_abseta, false) ; 
       
     std::vector<reco::GsfElectron> eleCands =
-      higgs::getElectronList(recoElectrons, eIDValueMap, cuts.minimum_e2_z2_pt, cuts.maximum_e_abseta, elecCut_) ; 
+      higgs::getElectronList(recoElectrons, eIDValueMap, cuts.minimum_e2_z2_pt, cuts.maximum_e_abseta, elecCut_, eleCutsByPt) ; 
 
     std::vector<reco::RecoEcalCandidate> hfEleCands =
       higgs::getElectronList(recoHFElectrons, clusterAssociation, cuts.minimum_e2_z1_pt, cuts.maximum_eHF_abseta) ;
@@ -654,15 +674,18 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	      << eleCands.size() + ntEleCands.size() + hfEleCands.size() 
 	      << " electrons" << std::endl ; */
 
-    higgsEvent.muCands  = muCands ; 
-    higgsEvent.gsfCands = eleCands ; 
-    higgsEvent.ntCands  = ntEleCands ; 
-    higgsEvent.hfCands  = hfEleCands ; 
+    higgsEvent.SetMuonList(muCands) ; 
+    higgsEvent.SetGsfElectronList(eleCands) ; 
+    higgsEvent.SetPhotonList(ntEleCands) ; 
+    higgsEvent.SetHFList(hfEleCands) ; 
+    
+    Z1type = higgsEvent.getZ1(cuts.minimum_e1_z1_pt,cuts.minimum_e2_z1_pt, cuts.minimum_mu1_z1_pt,
+    							cuts.minimum_mu2_z1_pt,cuts.minimum_z1_mass);
+	Z2type = higgsEvent.getZ2(cuts.minimum_e2_z2_pt,cuts.minimum_mu2_z2_pt,
+			   cuts.minimum_z2_mass,cuts.minimum_zz_mass); 
 
-    if( !higgsEvent.getZ1(cuts.minimum_e1_z1_pt,cuts.minimum_e2_z1_pt,
-			   cuts.minimum_mu1_z1_pt,cuts.minimum_mu2_z1_pt,cuts.minimum_z1_mass) ) return false ; 
-    if ( !higgsEvent.getZ2(cuts.minimum_e2_z2_pt,cuts.minimum_mu2_z2_pt,
-			   cuts.minimum_z2_mass,cuts.minimum_zz_mass) ) return false ;
+    if( !Z1type ) return false ; 
+    if ( !Z2type ) return false ;
 			   
 	higgsEvent.calculate();
     // Basic selection requirements: Require at least two muons, two jets
@@ -674,12 +697,21 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
         //hists->Fill(higgsEvent);
     }*/
    
+    for(std::vector< std::pair<double,unsigned int> >::const_iterator i = eleCutsByPt.begin(); i != eleCutsByPt.end(); i++)
+    {
+    	if( (fabs(higgsEvent.l1pt - i->first) < 1e-9))
+    	{
+    		e1Cut = i->second;
+    	}
+    	if( (fabs(higgsEvent.l2pt - i->first) < 1e-9))
+    	{
+    		e2Cut = i->second;
+    	}    	
+    }
     
-    if( higgsEvent.getZ2(cuts.minimum_e2_z2_pt,cuts.minimum_mu2_z2_pt,
-			   cuts.minimum_z2_mass,cuts.minimum_zz_mass)==1 )
+    if( Z2type==1 )
 	{
-		switch( higgsEvent.getZ1(cuts.minimum_e1_z1_pt,cuts.minimum_e2_z1_pt,
-			   cuts.minimum_mu1_z1_pt,cuts.minimum_mu2_z1_pt,cuts.minimum_z1_mass) )
+		switch( Z1type )
 		{
 			case 1:
 				std::cout<<"Case 1 evoked: 4mu"<<std::endl;
@@ -687,7 +719,31 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 				break;
 			case 2:
 				std::cout<<"Case 2 evoked: 2GSFel and 2mu"<<std::endl;
-				H2GSFe2mu.Fill(higgsEvent,3);
+				H2GSFe2mu_Cut0.Fill(higgsEvent,3);
+				if( (e1Cut & 1) == 1 )
+				{
+					H2GSFe2mu_e1Cut1.Fill(higgsEvent,3);
+				}
+				if( (e1Cut & 2) == 2 )
+				{
+					H2GSFe2mu_e1Cut2.Fill(higgsEvent,3);
+				}
+				if( (e1Cut & 3) == 3 )
+				{
+					H2GSFe2mu_e1Cut3.Fill(higgsEvent,3);
+				}
+				if( (e2Cut & 1) == 1 )
+				{
+					H2GSFe2mu_e2Cut1.Fill(higgsEvent,3);
+				}
+				if( (e2Cut & 2) == 2 )
+				{
+					H2GSFe2mu_e2Cut2.Fill(higgsEvent,3);
+				}
+				if( (e2Cut & 3) == 3 )
+				{
+					H2GSFe2mu_e2Cut3.Fill(higgsEvent,3);
+				}
 				break;
 			case 3:
 				std::cout<<"Case 3 evoked: GSF + FarEE and 2mu"<<std::endl;
@@ -700,11 +756,9 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 		}
 	}	
 	
-	if( higgsEvent.getZ2(cuts.minimum_e2_z2_pt,cuts.minimum_mu2_z2_pt,
-			   cuts.minimum_z2_mass,cuts.minimum_zz_mass)==2 )
+	if( Z2type==2 )
 	{
-		switch( higgsEvent.getZ1(cuts.minimum_e1_z1_pt,cuts.minimum_e2_z1_pt,
-			   cuts.minimum_mu1_z1_pt,cuts.minimum_mu2_z1_pt,cuts.minimum_z1_mass) )
+		switch( Z1type )
 		{
 			case 1:
 				std::cout<<"Case 5 evoked: 2mu + 2GSF"<<std::endl;
