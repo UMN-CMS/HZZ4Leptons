@@ -13,7 +13,7 @@
 //
 // Original Author:  Bryan Dahmes
 //         Created:  Wed Sep 22 04:49:56 CDT 2010
-// $Id: HiggsGenAnalysis.cc,v 1.4 2012/04/18 15:43:30 afinkel Exp $
+// $Id: HiggsGenAnalysis.cc,v 1.5 2012/05/11 02:14:43 afinkel Exp $
 //
 // Edited by:   ALexey Finkel
 //
@@ -40,6 +40,7 @@
 
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "TH1.h"
+#include "TH2.h"
 #include "TVector3.h"
 #include "TLorentzVector.h"
 
@@ -80,11 +81,17 @@ private:
 
   // ----------member data ---------------------------
   struct HistStruct {
-      TH1D* h_higgsY, *h_higgsY_mm, *h_higgsY_ee, *h_higgsY_eFe, *mu1pt, *mu2pt, *mupt, *el1pt, *el2pt, *elpt,
-      				  *Phi1, *Phi, *CosTheta1, *CosTheta2, *CosTheta0,
-      				  *HiggsRestP2, *HiggsP2, *FarEEelEnergy, *HFelEnergy, *FarEEelPt, *HFelPt, *Z2e1Pt, *Z2e2Pt, *Z2elPt,
-      				  *H4Mu, *H4GSFe, *H2mu2GSF, *HGSF_FEE_2mu, *HGSF_HF_2mu, *HGSF_HF_2GSF, *HGSF_FEE_2GSF, *H2GSFe2mu,
-      				  *Ztypes, *AllForwardE, *AllForwardPt;
+      TH1D* h_higgsY, *PotRecoHiggs, //*h_higgsY_mm, *h_higgsY_ee, *h_higgsY_eFe, *mu1pt, *mu2pt, *mupt, *el1pt, *el2pt, *elpt,
+      		*Phi1, *Phi, *CosTheta1, *CosTheta2, *CosTheta0,
+      		//*HiggsRestP2, *HiggsP2,
+      		*FarEEelEnergy, *HFelEnergy,
+      		*FarEEelPt, *HFelPt,
+      		*FarEEeta, *HFeta,
+      		*Z2e1Pt, *Z2e2Pt, *Z2elPt,
+      		*H4Mu, *H4GSFe, *H2mu2GSF, *HGSF_FEE_2mu, *HGSF_HF_2mu, *HGSF_HF_2GSF, *HGSF_FEE_2GSF, *H2GSFe2mu,
+      		*Ztypes, *AllForwardE, *AllForwardPt, *AllZ1e1Pt, *AllZ1e2Pt,*AllZ1ElecPt, *AllZ1e1Eta, *AllZ1e2Eta, *AllZ1ElecEta;
+      		
+      TH2D *e1PtVsEta, *e2PtVsEta, *AllPtVsEta;
   } hists ; 
     
 };
@@ -106,31 +113,37 @@ HiggsGenAnalysis::HiggsGenAnalysis(const edm::ParameterSet& iConfig) {
     farElectronFilter_ = iConfig.getParameter<bool> ("filterFarElectronsOnly") ;
 
     hists.h_higgsY     = fs->make<TH1D > ("h_higgsY","Higgs rapidity", 100,-5.,5.) ;
-    hists.h_higgsY_mm  = fs->make<TH1D > ("h_higgsY_mm","Higgs rapidity", 100,-5.,5.) ; 
-    hists.h_higgsY_ee  = fs->make<TH1D > ("h_higgsY_ee","Higgs rapidity", 100,-5.,5.) ; 
-    hists.h_higgsY_eFe = fs->make<TH1D > ("h_higgsY_eFe","Higgs rapidity", 100,-5.,5.) ; 
+    hists.PotRecoHiggs = fs->make<TH1D > ("PotRecoHiggs","Potentially reconstructable Higgs rapidity", 100,-5.,5.) ;
+    //hists.h_higgsY_mm  = fs->make<TH1D > ("h_higgsY_mm","Higgs rapidity", 100,-5.,5.) ; 
+    //hists.h_higgsY_ee  = fs->make<TH1D > ("h_higgsY_ee","Higgs rapidity", 100,-5.,5.) ; 
+    //hists.h_higgsY_eFe = fs->make<TH1D > ("h_higgsY_eFe","Higgs rapidity", 100,-5.,5.) ; 
      
-    hists.mu1pt = fs->make<TH1D >("mu1pt","Mu1 pt",50,0.,100.);    
-    hists.mu2pt = fs->make<TH1D >("mu2pt","Mu2 pt",50,0.,100.);
-    hists.mupt = fs->make<TH1D >("mupt","Muon pt",50,0.,100.);
-    hists.el1pt = fs->make<TH1D >("el1pt","El1 pt",50,0.,100.);
-    hists.el2pt = fs->make<TH1D >("el2pt","El2 pt",50,0.,100.);
-    hists.elpt = fs->make<TH1D >("elpt","Electron pt",50,0.,100.);
+    //hists.mu1pt = fs->make<TH1D >("mu1pt","Mu1 pt",50,0.,100.);    
+    //hists.mu2pt = fs->make<TH1D >("mu2pt","Mu2 pt",50,0.,100.);
+    //hists.mupt = fs->make<TH1D >("mupt","Muon pt",50,0.,100.);
+    //hists.el1pt = fs->make<TH1D >("el1pt","El1 pt",50,0.,100.);
+    //hists.el2pt = fs->make<TH1D >("el2pt","El2 pt",50,0.,100.);
+    //hists.elpt = fs->make<TH1D >("elpt","Electron pt",50,0.,100.);
+    //hists.HiggsRestP2 = fs->make<TH1D>("HiggsRestP2","H rest frame p^2",100,0.,150);
+    //hists.HiggsP2 = fs->make<TH1D>("HiggsP2","H lab frame p^2",100,0.,1000);
+    
+    //hists.Z2e1Pt = fs->make<TH1D>("Z2e1Pt","Off-Shell Z GSFel1 Pt", 50, 0, 50);
+    //hists.Z2e2Pt = fs->make<TH1D>("Z2e2Pt","Off-Shell Z GSFel2 Pt", 50, 0, 50);
+    //hists.Z2elPt = fs->make<TH1D>("Z2elPt","Off-Shell Z GSFel-all Pt", 50, 0, 50);
+
     
     hists.Phi = fs->make<TH1D>("Phi","#Phi",20, -3.2,3.2);
     hists.Phi1 = fs->make<TH1D>("Phi1","#Phi_{1}",20, -3.2,3.2);
     hists.CosTheta0 = fs->make<TH1D>("CostTheta0","Cos(#theta_{0})",50,-1.,1.);
     hists.CosTheta1 = fs->make<TH1D>("CostTheta1","Cos(#theta_{1})",20,-1.,1.);
     hists.CosTheta2 = fs->make<TH1D>("CostTheta2","Cos(#theta_{2})",20,-1.,1.);
-    hists.HiggsRestP2 = fs->make<TH1D>("HiggsRestP2","H rest frame p^2",100,0.,150);
-    hists.HiggsP2 = fs->make<TH1D>("HiggsP2","H lab frame p^2",100,0.,1000);
+    
     hists.FarEEelEnergy = fs->make<TH1D>("FarEEelEnergy","(On-shell Z) FarEE electron energy", 100, 0., 1000);
     hists.HFelEnergy = fs->make<TH1D>("HFelEnergy","(On-shell Z) HF electron energy", 100, 0., 1000);    
-    hists.FarEEelPt = fs->make<TH1D>("FarEEelPt","(On-shell Z) FarEE electron Pt", 50, 0., 100);
-    hists.HFelPt = fs->make<TH1D>("HFelPt","(On-shell Z) HF electron Pt", 50, 0., 100);
-    hists.Z2e1Pt = fs->make<TH1D>("Z2e1Pt","Off-Shell Z GSFel1 Pt", 50, 0, 50);
-    hists.Z2e2Pt = fs->make<TH1D>("Z2e2Pt","Off-Shell Z GSFel2 Pt", 50, 0, 50);
-    hists.Z2elPt = fs->make<TH1D>("Z2elPt","Off-Shell Z GSFel-all Pt", 50, 0, 50);
+    hists.FarEEelPt = fs->make<TH1D>("FarEEelPt","(On-shell Z) FarEE electron Pt", 50, 0., 150);
+    hists.HFelPt = fs->make<TH1D>("HFelPt","(On-shell Z) HF electron Pt", 50, 0., 150);
+    hists.FarEEeta = fs->make<TH1D>("FarEEeta", "Far EE electron Eta",100, -5, 5 );
+    hists.HFeta = fs->make<TH1D>("HFeta", "HF electron Eta",100, -5, 5 );
     
     hists.H4Mu = fs->make<TH1D>("4Mu","H to 4Mu Y",20, -5., 5.);
     hists.H4GSFe = fs->make<TH1D>("4GSF","H to 4GSFel Y",20, -5., 5.);
@@ -153,7 +166,18 @@ HiggsGenAnalysis::HiggsGenAnalysis(const edm::ParameterSet& iConfig) {
     hists.Ztypes->GetXaxis()->SetBinLabel(9, "HF-E");
     
     hists.AllForwardE = fs->make<TH1D>("AllForwardE","All Forward Electron Energies", 100, 0, 1000);
-    hists.AllForwardPt = fs->make<TH1D>("AllForwardPt","All Forward Electron Pt", 50, 0, 100);
+    hists.AllForwardPt = fs->make<TH1D>("AllForwardPt","All Forward Electron Pt", 50, 0, 150);
+    
+    hists.AllZ1e1Pt = fs->make<TH1D>("AllZ1e1Pt","All e1s from Z1 with Central Z2 Pt",50,0,150);
+    hists.AllZ1e2Pt = fs->make<TH1D>("AllZ1e2Pt","All e2s from Z1 with Central Z2 Pt",50,0,150);
+    hists.AllZ1ElecPt = fs->make<TH1D>("AllZ1ElecPt","All electrons from Z1 with Central Z2 Pt",50,0,150);
+    hists.AllZ1e1Eta = fs->make<TH1D>("AllZ1e1Eta","All e1s from Z1 with Central Z2 Eta",48,-6,6);
+    hists.AllZ1e2Eta = fs->make<TH1D>("AllZ1e2Eta","All e2s from Z1 with Central Z2 Eta",48,-6,6);
+    hists.AllZ1ElecEta = fs->make<TH1D>("AllZ1ElecEta","All electrons from Z1 with Central Z2 Eta",48,-6,6);
+    
+    hists.e1PtVsEta = fs->make<TH2D>("e1PtVsEta","e1 Pt vs. Eta", 25, -5, 5, 50, 0, 150 );
+    hists.e2PtVsEta = fs->make<TH2D>("e2PtVsEta","e2 Pt vs. Eta", 25, -5, 5, 50, 0, 150 );
+    hists.AllPtVsEta = fs->make<TH2D>("AllPtVsEta","All electron Pt vs. Eta", 25, -5, 5, 50, 0, 150 );
 }
 
 
@@ -180,7 +204,7 @@ HiggsGenAnalysis::validZmumu(zboson theZ, bool offshell) {
 
     if ( (maxPt > minLep1pt && minPt > minLep2pt ) && 
 	   ( fabs(theZ.l1eta) < 2.1 || fabs(theZ.l2eta) < 2.1) &&
-       (fabs(theZ.l1eta) < 2.4 && fabs(theZ.l2eta) < 2.4) ) return true ;
+       (fabs(theZ.l1eta) < 2.4 && fabs(theZ.l2eta) < 2.4) && theZ.mode==13) return true ;
        
     return false ;
 }
@@ -198,7 +222,7 @@ HiggsGenAnalysis::validZee(zboson theZ, bool offshell) {
     double minPt = std::min(theZ.l1pt,theZ.l2pt);
 
     if ( (maxPt > minLep1pt && minPt > minLep2pt ) &&
-       ( fabs(theZ.l1eta) < 2.5 && fabs(theZ.l2eta) < 2.5 ) ) return true ;
+       ( fabs(theZ.l1eta) < 2.5 && fabs(theZ.l2eta) < 2.5 ) && theZ.mode==11) return true ;
     
     return false ;
 }
@@ -208,13 +232,22 @@ bool HiggsGenAnalysis::recZ(zboson theZ)//this checks if Z daughters could be re
 	double minMupt = 5.;
 	double minElpt = 7.;
 	double maxMuEta = 2.4;
-	double maxElEta = 5.;
+	double maxElEta = 3.;
+	double maxHFeta = 5.;
+	double maxGSFeta = 2.5;
+	double minHFpt = 15.;
+	double minZmass = 12;
 	
 	if (theZ.mode==13)
 		return ((fabs(theZ.l1eta)<maxMuEta) && (fabs(theZ.l2eta)<maxMuEta) && (theZ.l1pt>minMupt) && (theZ.l2pt>minMupt));
 		
-	if (theZ.mode==11)
-		return ((fabs(theZ.l1eta)<maxElEta) && (fabs(theZ.l2eta)<maxElEta) && (theZ.l1pt>minElpt) && (theZ.l2pt>minElpt));
+	if ( (theZ.mode==11) && (theZ.mass>minZmass) && (fabs(theZ.l1eta)<maxGSFeta && theZ.l1pt>minElpt) )//e1 central
+	{
+		if( fabs(theZ.l2eta)<maxElEta && theZ.l2pt>minElpt ) return true;//e2 is GSF or FEE
+		else if( fabs(theZ.l2eta)<maxHFeta && theZ.l2pt>minHFpt ) return true; //or e2 in HF
+	}
+	else if ( (theZ.mode==11) && (theZ.mass>minZmass) && (fabs(theZ.l2eta)<maxGSFeta && theZ.l2pt>minElpt) )//e2 central
+		return ( fabs(theZ.l1eta)<maxHFeta && theZ.l1pt>minElpt ); //since e1 is already NOT central
 		
 	return false;	
 }
@@ -232,14 +265,15 @@ void HiggsGenAnalysis::Angular(zboson z1, zboson z2, reco::Particle::LorentzVect
 	
 	//test to see that boost is working correctly
 	TLorentzVector Hclone = H;
-	hists.HiggsP2->Fill(Hclone.E());
+	//hists.HiggsP2->Fill(Hclone.E());
 	Hclone.Boost(-H.BoostVector());
-	hists.HiggsRestP2->Fill(Hclone.E());
+	//hists.HiggsRestP2->Fill(Hclone.E());
 	
 	//find theta-star and phi from Z1 in Higgs frame
 	TLorentzVector Z1clone = Z1;
 	Hclone = H;
 	Prot.Boost(-H.BoostVector());
+
 	Z1clone.Boost(-H.BoostVector());
 	hists.Phi1->Fill(Z1clone.Phi()+Hclone.Phi());
 	hists.CosTheta0->Fill(Z1clone.Vect()*Prot.Vect()/Z1clone.P()/Prot.P());
@@ -341,12 +375,25 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
                           nZ++ ; 
                           newZ.mass = iparticle->daughter(idg)->mass() ;
                           newZ.mode = ( (nele > 0) ? 11 : 13 ) ;
-                          newZ.E1 = newZ.Pl1.E();
-                          newZ.E2 = newZ.Pl2.E();
-                          newZ.l1pt = newZ.Pl1.pt();
-                          newZ.l2pt = newZ.Pl2.pt();
-                          newZ.l1eta = newZ.Pl1.eta();
-                          newZ.l2eta = newZ.Pl2.eta();
+	                      if(newZ.Pl1.pt()>newZ.Pl2.pt())
+	                      {   
+	                          newZ.E1 = newZ.Pl1.E();
+	                          newZ.E2 = newZ.Pl2.E();
+	                          newZ.l1pt = newZ.Pl1.pt();
+	                          newZ.l2pt = newZ.Pl2.pt();
+	                          newZ.l1eta = newZ.Pl1.eta();
+	                          newZ.l2eta = newZ.Pl2.eta();
+	                      }
+	                      else
+	                      {
+	                  		  newZ.E1 = newZ.Pl2.E();
+	                          newZ.E2 = newZ.Pl1.E();
+	                          newZ.l1pt = newZ.Pl2.pt();
+	                          newZ.l2pt = newZ.Pl1.pt();
+	                          newZ.l1eta = newZ.Pl2.eta();
+	                          newZ.l2eta = newZ.Pl1.eta();
+	                      }
+	                      
                       }
 
                       if ( nZ == 1 ) { // 1st Z found
@@ -388,10 +435,11 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
                           }
                           else
                           {
-                              if ( (fabs(z1.l1eta) < 2.5 || fabs(z1.l2eta) < 2.5) &&
-                                   (fabs(z1.l1eta) < 5.0 && fabs(z1.l2eta) < 5.0) && (z1.l1pt > 7.0) && (z1.l2pt > 7.0) )
+                              if ( //(fabs(z1.l1eta) < 2.5 || fabs(z1.l2eta) < 2.5) 
+                              		//&&(fabs(z1.l1eta) < 5.0 && fabs(z1.l2eta) < 5.0) 
+                                   	 recZ(z1) )
                               {
-                                  if ( z2.mode == 13 && validZmumu(z2,true) && (fabs(z1.l1eta) < 3.0 || fabs(z1.l2eta) < 3.0 ) ) zCat = 5 ;
+                                  if ( z2.mode == 13 && validZmumu(z2,true) && (fabs(z1.l1eta) < 3.0 || fabs(z1.l2eta) < 3.0) ) zCat = 5 ;
                                   if ( z2.mode == 11 && validZee(z2,true) && (fabs(z1.l1eta) < 3.0 || fabs(z1.l2eta) < 3.0 ) )   zCat = 6 ;
                                   if ( z2.mode == 13 && validZmumu(z2,true) && (fabs(z1.l1eta) > 3.0 || fabs(z1.l2eta) > 3.0 ) ) zCat = 7 ;
                                   if ( z2.mode == 11 && validZee(z2,true) && (fabs(z1.l1eta) > 3.0 || fabs(z1.l2eta) > 3.0 ) )   zCat = 8 ;
@@ -404,9 +452,20 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
               if ( zCat >= 0 ) {
 		passEvent = true ; 
 		
+		hists.h_higgsY->Fill( iparticle->y() ) ;
 		hists.Ztypes->Fill(zCat);
 
-		if ( recZ(z1) && recZ(z2) )	hists.h_higgsY->Fill( iparticle->y() ) ;
+		if ( recZ(z1) && recZ(z2) )
+		{
+			hists.PotRecoHiggs->Fill(iparticle->y());
+			if( z1.mode==11 )
+			{
+				hists.e1PtVsEta->Fill(z1.l1eta,z1.l1pt);
+				hists.e2PtVsEta->Fill(z1.l2eta,z1.l2pt);
+				hists.AllPtVsEta->Fill(z1.l1eta,z1.l1pt);
+				hists.AllPtVsEta->Fill(z1.l2eta,z1.l2pt);
+			}
+		}
 		
 		switch(zCat)
 		{
@@ -423,91 +482,77 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 				hists.H4GSFe->Fill( iparticle->y() ) ;
 				break;
 			case 5:
-				if( fabs(z1.l1eta) > 2.5 && fabs(z1.l1eta) < 3 )
+				if( (fabs(z1.l1eta) > 2.5) && (fabs(z1.l1eta) < 3)  && (fabs(z1.l2eta) < 2.5) )
 				{
+					hists.HGSF_FEE_2mu->Fill( iparticle->y() ) ;
 					hists.FarEEelEnergy->Fill(z1.E1);
 					hists.FarEEelPt->Fill(z1.l1pt);
+					hists.FarEEeta->Fill(z1.l1eta );
 				}
-				else if(fabs(z1.l2eta) > 2.5 && fabs(z1.l2eta) < 3)
+				else if( (fabs(z1.l2eta) > 2.5) && (fabs(z1.l2eta) < 3)  && (fabs(z1.l1eta) < 2.5) )
 				{
+					hists.HGSF_FEE_2mu->Fill( iparticle->y() ) ;
 					hists.FarEEelEnergy->Fill(z1.E2);
 					hists.FarEEelPt->Fill(z1.l2pt);
+					hists.FarEEeta->Fill(z1.l2eta );
 				}
 				break;
 			case 6:
-				hists.HGSF_FEE_2GSF->Fill( iparticle->y() ) ;
-				if( fabs(z1.l1eta) > 2.5 && fabs(z1.l1eta) < 3 )
+				if( (fabs(z1.l1eta) > 2.5) && (fabs(z1.l1eta) < 3) && (fabs(z1.l2eta) < 2.5) )
 				{
+					hists.HGSF_FEE_2GSF->Fill( iparticle->y() ) ;
 					hists.FarEEelEnergy->Fill(z1.E1);
 					hists.FarEEelPt->Fill(z1.l1pt);
+					hists.FarEEeta->Fill(z1.l1eta);
 				}
-				else if(fabs(z1.l2eta) > 2.5 && fabs(z1.l2eta) < 3)
+				else if( (fabs(z1.l2eta) > 2.5) && (fabs(z1.l2eta) < 3)  && (fabs(z1.l1eta) < 2.5) )
 				{
+					hists.HGSF_FEE_2GSF->Fill( iparticle->y() ) ;
 					hists.FarEEelEnergy->Fill(z1.E2);
 					hists.FarEEelPt->Fill(z1.l2pt);
+					hists.FarEEeta->Fill(z1.l2eta);
 				}
 				break;
 			case 7:
-				hists.HGSF_HF_2mu->Fill( iparticle->y() ) ;
-				if(fabs(z1.l1eta) > 3)
+				if( (fabs(z1.l1eta) > 3) && (fabs(z1.l2eta) < 2.5) && (z1.l1pt > 15) )
 				{
+					hists.HGSF_HF_2mu->Fill( iparticle->y() ) ;
 					hists.HFelEnergy->Fill(z1.E1);
 					hists.HFelPt->Fill(z1.l1pt);
+					hists.HFeta->Fill(z1.l1eta);
 				}
-				else if(fabs(z1.l2eta) > 3)
+				else if( (fabs(z1.l2eta) > 3) && (fabs(z1.l1eta) < 2.5) && (z1.l2pt > 15) )
 				{
+					hists.HGSF_HF_2mu->Fill( iparticle->y() ) ;
 					hists.HFelEnergy->Fill(z1.E2);
 					hists.HFelPt->Fill(z1.l2pt);
+					hists.HFeta->Fill(z1.l2eta);
 				}
 				break;
 			case 8:
-				hists.HGSF_HF_2GSF->Fill( iparticle->y() ) ;
-				if(fabs(z1.l1eta) > 3)
+				if( (fabs(z1.l1eta) > 3) && (fabs(z1.l2eta) < 2.5) && (z1.l1pt > 15) )
 				{
+					hists.HGSF_HF_2GSF->Fill( iparticle->y() ) ;
 					hists.HFelEnergy->Fill(z1.E1);
 					hists.HFelPt->Fill(z1.l1pt);
+					hists.HFeta->Fill(z1.l1eta );
 				}
-				else if(fabs(z1.l2eta) > 3)
+				else if( (fabs(z1.l2eta) > 3) && (fabs(z1.l1eta) < 2.5) && (z1.l2pt > 15) )
 				{
+					hists.HGSF_HF_2GSF->Fill( iparticle->y() ) ;
 					hists.HFelEnergy->Fill(z1.E2);
 					hists.HFelPt->Fill(z1.l2pt);
+					hists.HFeta->Fill(z1.l2eta);
 				}
 				break;
 		}
 		
-				
-		/*if ( zCat == 1 || zCat == 2 ) hists.h_higgsY_mm->Fill( iparticle->y() ) ;
-		if ( zCat == 3 || zCat == 4 ) hists.h_higgsY_ee->Fill( iparticle->y() ) ;
-		if ( zCat == 5 || zCat == 6 )
+		if( (z1.mode == 11) && recZ(z2) )
 		{
-			hists.h_higgsY_eFe->Fill( iparticle->y() ) ;
-			if(fabs(z1.l1eta) > 2.5 && fabs(z1.l1eta) < 3) 
-			{
-				hists.FarEEelEnergy->Fill(z1.E1);
-				hists.FarEEelPt->Fill(z1.l1pt);
-			}
-			if(fabs(z1.l2eta) > 2.5 && fabs(z1.l2eta) < 3) 
-			{
-				hists.FarEEelEnergy->Fill(z1.E2);
-				hists.FarEEelPt->Fill(z1.l2pt);
-			}
-			if(fabs(z1.l1eta) > 3 && fabs(z1.l1eta) < 5) 
-			{
-				hists.HFelEnergy->Fill(z1.E1);
-				hists.HFelPt->Fill(z1.l1pt);
-			}
-			if(fabs(z1.l2eta) > 3 && fabs(z1.l2eta) < 5) 
-			{
-				hists.HFelEnergy->Fill(z1.E2);
-				hists.HFelPt->Fill(z1.l2pt);
-			}
-		}*/
-		if(zCat==2||zCat==4||zCat==6)
-		{
-			hists.Z2e1Pt->Fill(z2.l1pt);
-			hists.Z2e2Pt->Fill(z2.l2pt);
-			hists.Z2elPt->Fill(z2.l1pt);
-			hists.Z2elPt->Fill(z2.l2pt);
+			hists.AllZ1e1Pt->Fill(z1.l1pt);
+			hists.AllZ1e2Pt->Fill(z1.l2pt);
+			hists.AllZ1e1Eta->Fill(z1.l1eta);
+			hists.AllZ1e2Eta->Fill(z1.l2eta);
 		}
 		
 		if ( farElectronFilter_ ) { 
@@ -540,6 +585,11 @@ HiggsGenAnalysis::endJob()
 		hists.AllForwardE->Add(hists.HFelEnergy);
 		hists.AllForwardPt->Add(hists.FarEEelPt);
 		hists.AllForwardPt->Add(hists.HFelPt);
+		
+		hists.AllZ1ElecPt->Add(hists.AllZ1e1Pt);
+		hists.AllZ1ElecPt->Add(hists.AllZ1e2Pt);
+		hists.AllZ1ElecEta->Add(hists.AllZ1e1Eta);
+		hists.AllZ1ElecEta->Add(hists.AllZ1e2Eta);
 
 }
   

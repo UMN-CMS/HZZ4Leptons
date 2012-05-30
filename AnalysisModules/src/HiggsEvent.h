@@ -42,7 +42,7 @@ public:
 
   void regularize();
   void scaleMuE(double mufactor=1.0, double efactor=1.0) ; 
-  int getZ1(double minElePt1, double minElePt2, double minMuPt1, double minMuPt2, double minMass) ; 
+  int getZ1(double minElePt1, double minElePt2, double minMuPt1, double minMuPt2, double minMass, double minHFpt) ; 
   int getZ2(double minElePt, double minMuPt, double minMass, double minM4) ; 
   void calculate();
   void decayID(const reco::GenParticleCollection& gpc);
@@ -88,12 +88,15 @@ public:
   reco::Particle::LorentzVector lv_evt;
   reco::Particle::LorentzVector vH;
 
-  double HY, mH, mZ1, mZ2, l1pt, l1eta, l2pt, l2eta, l3pt, l3eta, l4pt, l4eta ; 
+  double HY, mH, mZ1, mZ2, YZ1, YZ2;
+  double l1pt, l1eta, l2pt, l2eta, l3pt, l3eta, l4pt, l4eta ; 
   double ecalIsoByGSF_1, ecalIsoByGSF_2, ecalIso_1, ecalIso_2, ecalIso_3, ecalIso_4;
   double scTheta_1, scTheta_2, scTheta_3, scTheta_4;
   double e25Max_1, e25Max_2, e25Max_3, e25Max_4;
   double e15_1, e15_2, e15_3, e15_4;
   double e55_1, e55_2, e55_3, e55_4;
+  double HoEM, sIeIe;
+  double var2d, e9e25;
 
 };
 

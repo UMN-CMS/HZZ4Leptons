@@ -31,12 +31,24 @@ void HiggsEvent::scaleMuE(double mufactor, double efactor) {
 }
 
 // This routine determines the best Z candidate, among other things...
-int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, double minMuPt2, double minMass) { 
+int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, double minMuPt2, double minMass, double minHFpt) { 
 
   const double mZpdg = 91.1876 ; 
   double mZdiff = mZpdg ; 
   double deltaM = 0;
   reco::Particle::LorentzVector zCand, l1Cand, l2Cand;
+
+	ecalIsoByGSF_1 = -1;
+	e25Max_1 = -1;
+	e15_1 = -1;
+	e55_1 = -1;
+	ecalIsoByGSF_2 = -1;
+	e25Max_2 = -1;
+	e15_2 = -1;
+	e55_2 = -1;
+	HoEM = -1;
+	sIeIe = -1;
+  
  
   //std::cout << "Looking for the primary Z" << std::endl ; 
 
@@ -92,12 +104,12 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
 		Z1flavor = 2 ; 
 		Z1idx.first = i ; Z1idx.second = j ; 
 		l1Cand =  gsfCands.at(i).p4();
-		ecalIsoByGSF_1 = gsfCands.at(i).dr04EcalRecHitSumEt()/l1Cand.Et();
+		ecalIsoByGSF_1 = gsfCands.at(i).dr03EcalRecHitSumEt()/l1Cand.Et();
 		e25Max_1 = gsfCands.at(i).e2x5Max()/gsfCands.at(i).superCluster()->energy();
 		e15_1 = gsfCands.at(i).e1x5()/gsfCands.at(i).superCluster()->energy();
 		e55_1 = gsfCands.at(i).e5x5()/gsfCands.at(i).superCluster()->energy();
 		l2Cand = gsfCands.at(j).p4();
-		ecalIsoByGSF_2 = gsfCands.at(i).dr04EcalRecHitSumEt()/l2Cand.Et();
+		ecalIsoByGSF_2 = gsfCands.at(i).dr03EcalRecHitSumEt()/l2Cand.Et();
 		e25Max_2 = gsfCands.at(j).e2x5Max()/gsfCands.at(j).superCluster()->energy();
 		e15_2 = gsfCands.at(j).e1x5()/gsfCands.at(j).superCluster()->energy();
 		e55_2 = gsfCands.at(j).e5x5()/gsfCands.at(j).superCluster()->energy();
@@ -121,7 +133,7 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
 		Z1flavor = 3 ; 
 		Z1idx.first = i ; Z1idx.second = j ;
 		l1Cand =  gsfCands.at(i).p4();
-		ecalIso_1 = gsfCands.at(i).dr04EcalRecHitSumEt();
+		ecalIso_1 = gsfCands.at(i).dr03EcalRecHitSumEt();
 		e25Max_1 = gsfCands.at(i).e2x5Max();
 		e15_1 = gsfCands.at(i).e1x5();
 		e55_1 = gsfCands.at(i).e5x5();
@@ -130,13 +142,15 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
 		e25Max_2 = -1;
 		e15_2 = -1;
 		e55_2 = -1;
+		HoEM = ntCands.at(j).hadronicOverEm();
+		sIeIe = ntCands.at(j).sigmaIetaIeta();
 		//std::cout << "New best Z candidate: " << i << "," << j << std::endl ; 
       }
     }
 
     // Second electron is from HF 
     for (unsigned int j=0; j<hfCands.size(); j++) { 
-      if (hfCands.at(j).pt() < minElePt2) break ; // List is pT ordered
+      if (hfCands.at(j).pt() < minHFpt) break ; // List is pT ordered
       //std::cout << "Examining secondary HF candidate with pT = " << hfCands.at(j).pt() << std::endl ; 
       
       zCand = gsfCands.at(i).p4() + hfCands.at(j).p4() ; 
@@ -150,7 +164,7 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
 	Z1flavor = 4 ; 
 	Z1idx.first = i ; Z1idx.second = j ; 
 	l1Cand =  gsfCands.at(i).p4();
-	ecalIso_1 = gsfCands.at(i).dr04EcalRecHitSumEt();
+	ecalIso_1 = gsfCands.at(i).dr03EcalRecHitSumEt();
 	e25Max_1 = gsfCands.at(i).e2x5Max();
 	e15_1 = gsfCands.at(i).e1x5();
 	e55_1 = gsfCands.at(i).e5x5();
@@ -159,6 +173,7 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
 	e25Max_2 = -1;
 	e15_2 = -1;
 	e55_2 = -1;
+	
 	//std::cout << "New best Z candidate: " << i << "," << j << std::endl ; 
       }
     }
@@ -248,12 +263,12 @@ int HiggsEvent::getZ2(double minElePt, double minMuPt, double minMass, double mi
 	Z2flavor = 2 ; 
 	Z2idx.first = i ; Z2idx.second = j ; 
 	l3Cand = gsfCands.at(i).p4();
-	ecalIso_3 = gsfCands.at(i).dr04EcalRecHitSumEt();
+	ecalIso_3 = gsfCands.at(i).dr03EcalRecHitSumEt();
 	e25Max_3 = gsfCands.at(i).e2x5Max();
 	e15_3 = gsfCands.at(i).e1x5();
 	e55_3 = gsfCands.at(i).e5x5();
 	l4Cand = gsfCands.at(j).p4();
-	ecalIso_4 = gsfCands.at(j).dr04EcalRecHitSumEt();
+	ecalIso_4 = gsfCands.at(j).dr03EcalRecHitSumEt();
 	e25Max_4 = gsfCands.at(j).e2x5Max();
 	e15_4 = gsfCands.at(j).e1x5();
 	e55_4 = gsfCands.at(j).e5x5();
@@ -271,6 +286,8 @@ void HiggsEvent::calculate() {
 	
 	mZ1 = vZ1.M();
 	mZ2 = vZ2.M();
+	YZ1 = vZ1.Rapidity();
+	YZ2 = vZ2.Rapidity();
 	vH = vZ1 + vZ2 ; 
 	mH = vH.M() ;
 	HY = vH.Rapidity();

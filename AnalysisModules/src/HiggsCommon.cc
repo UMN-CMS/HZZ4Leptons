@@ -29,6 +29,7 @@ namespace higgs {
 	     m.isTrackerMuon() && 
 	     m.numberOfMatches() > 1 && 
 	     m.globalTrack()->hitPattern().numberOfValidPixelHits()>0 ) ; 
+  }
 
 
   double muIsolation(const pat::Muon& m, const double pTscale) {
@@ -362,7 +363,7 @@ namespace higgs {
 	double e25Max = eRef->e2x5Max() ; 
 	double e15 = eRef->e1x5() ; 
 	double e55 = eRef->e5x5() ; 
-	double ecalIso = eRef->dr04EcalRecHitSumEt() ; 
+	double ecalIso = eRef->dr03EcalRecHitSumEt() ; 
 
 	//if ( (int(eIDmap[eRef]) & cutlevel) != cutlevel ) continue ; // electron fails ID/iso/IP/conv
         electronList.push_back( *eRef ) ;        
@@ -381,7 +382,7 @@ namespace higgs {
 
   // A very basic HF electron ID
   bool passesHFElectronID(const reco::RecoEcalCandidate& electron, 
-			  const edm::Handle<reco::HFEMClusterShapeAssociationCollection>& clusterAssociation) { 
+			  const edm::Handle<reco::HFEMClusterShapeAssociationCollection>& clusterAssociation, HiggsEvent& HE) { 
 
     reco::SuperClusterRef hfclusRef = electron.superCluster() ;
     const reco::HFEMClusterShapeRef hfclusShapeRef = (*clusterAssociation).find(hfclusRef)->val ;
@@ -391,12 +392,15 @@ namespace higgs {
     double var2d      = hfshape.eCOREe9()-(hfshape.eSeL()*9./8.);
     double eCOREe9    = hfshape.eCOREe9();
     double eSeL       = hfshape.eSeL();
+    
+    HE.var2d = var2d;
+    HE.e9e25 = e9e25;
 
     // Parameters: e9e25_loose, e9e25_tight,  var2d_loose, var2d_tight,  eCOREe9_loose, eCOREe9_tight,  eSeL_loose, eSeL_tight;
     // hFselParams =  cms.vdouble(0.90, 0.94,      0.2, 0.40,    -9999, -9999,     9999, 9999),
 
-    if ( e9e25 <= 0.94) return false ; 
-    if ( var2d <= 0.30 ) return false ; 
+    //if ( e9e25 <= 0.94) return false ; 
+    //if ( var2d <= 0.40 ) return false ; 
     
     //std::cout << "HF candidate passes selection" << std::endl ; 
 
@@ -405,14 +409,14 @@ namespace higgs {
 
   std::vector< reco::RecoEcalCandidate > getElectronList(edm::Handle<reco::RecoEcalCandidateCollection>& recoElecs,
                                                          edm::Handle<reco::HFEMClusterShapeAssociationCollection>& clusterAssociation, 
-							 double minEt,double maxAbsEta) {
+							 double minEt,double maxAbsEta, HiggsEvent& HE) {
       
     std::vector< reco::RecoEcalCandidate > electronList ; 
     for (unsigned int iElectron=0; iElectron < recoElecs->size(); iElectron++) {
         edm::Ref<reco::RecoEcalCandidateCollection> eRef(recoElecs,iElectron);
         if ( eRef->pt() < minEt ) continue ;
         if ( fabs(eRef->eta()) > maxAbsEta ) continue ;
-	if ( passesHFElectronID(*eRef,clusterAssociation) ) electronList.push_back( *eRef ) ;        
+	if ( passesHFElectronID(*eRef,clusterAssociation, HE) ) electronList.push_back( *eRef ) ;        
     }
     std::sort(electronList.begin(),electronList.end(),pTcompare()) ; 
     return electronList ; 
@@ -422,8 +426,8 @@ namespace higgs {
   // Starting point: https://twiki.cern.ch/twiki/bin/view/CMS/Vgamma2011PhotonID
   bool passesNoTrackID( const reco::Photon& electron, const double rho ) {
 
-    if ( electron.hadronicOverEm() >= 0.05 ) return false ; 
-    if ( electron.sigmaIetaIeta() >= 0.03 ) return false ; 
+    //if ( electron.hadronicOverEm() >= 0.05 ) return false ; 
+    //if ( electron.sigmaIetaIeta() >= 0.03 ) return false ; 
 
     // Values to compute for isolation 
     double scEt = electron.pt() ; 
@@ -432,8 +436,7 @@ namespace higgs {
 
     if ( electron.ecalRecHitSumEtConeDR04() >= ecalIsoThreshold ) return false ; 
     if ( electron.hcalTowerSumEtConeDR04() >= hcalIsoThreshold ) return false ; 
-    
-    //std::cout << "NT passes selection" << std::endl ; 
+    //std::cout<<"H/EM is "<<electron.hadronicOverEm()<<"; sigmaIetaIeta is "<<electron.sigmaIetaIeta()<<std::endl;
 
     return true ; 
   }
