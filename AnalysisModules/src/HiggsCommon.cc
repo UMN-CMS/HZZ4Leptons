@@ -61,7 +61,8 @@ namespace higgs {
       return w;
   }
     
-  int numberOfPrimaryVertices(edm::Handle<reco::VertexCollection> pvHandle) { 
+  int numberOfPrimaryVertices(edm::Handle<reco::VertexCollection> pvHandle) 
+  { 
     int nvertex = 0 ; 
     
     const reco::VertexCollection& vertices = *pvHandle.product();
@@ -331,13 +332,6 @@ namespace higgs {
     }
     
     std::sort(muonList.begin(),muonList.end(),pTcompare()) ; 
-    /*if ( muonList.size() ) { 
-      std::cout << "Sorted muon list: " << std::endl ; 
-      for (unsigned int i=0; i<muonList.size(); i++) { 
-	std::cout << "Muon " << i+1 << " of " << muonList.size() 
-		  << " with pT " << muonList.at(i).pt() << " GeV" << std::endl ; 
-      }
-    }*/
     return muonList ; 
   }
 
@@ -399,8 +393,8 @@ namespace higgs {
     // Parameters: e9e25_loose, e9e25_tight,  var2d_loose, var2d_tight,  eCOREe9_loose, eCOREe9_tight,  eSeL_loose, eSeL_tight;
     // hFselParams =  cms.vdouble(0.90, 0.94,      0.2, 0.40,    -9999, -9999,     9999, 9999),
 
-    //if ( e9e25 <= 0.94) return false ; 
-    //if ( var2d <= 0.40 ) return false ; 
+    //if ( e9e25 <= 0.96) return false ; 
+    //if ( var2d <= 0.50 ) return false ; 
     
     //std::cout << "HF candidate passes selection" << std::endl ; 
 
