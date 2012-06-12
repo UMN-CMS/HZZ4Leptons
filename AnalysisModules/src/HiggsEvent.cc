@@ -2,6 +2,8 @@
 #include "TVector3.h"
 
 HiggsEvent::HiggsEvent() { 
+
+  n_pue = -1;
   eventWgt = 1.0 ; 
   cutlevel = -1 ; 
   nMuons = 0 ; 
@@ -104,11 +106,13 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
 		Z1flavor = 2 ; 
 		Z1idx.first = i ; Z1idx.second = j ; 
 		l1Cand =  gsfCands.at(i).p4();
+		ecalIso_1 = gsfCands.at(i).dr03EcalRecHitSumEt();
 		ecalIsoByGSF_1 = gsfCands.at(i).dr03EcalRecHitSumEt()/l1Cand.Et();
 		e25Max_1 = gsfCands.at(i).e2x5Max()/gsfCands.at(i).superCluster()->energy();
 		e15_1 = gsfCands.at(i).e1x5()/gsfCands.at(i).superCluster()->energy();
 		e55_1 = gsfCands.at(i).e5x5()/gsfCands.at(i).superCluster()->energy();
 		l2Cand = gsfCands.at(j).p4();
+		ecalIso_2 = gsfCands.at(i).dr03EcalRecHitSumEt();
 		ecalIsoByGSF_2 = gsfCands.at(i).dr03EcalRecHitSumEt()/l2Cand.Et();
 		e25Max_2 = gsfCands.at(j).e2x5Max()/gsfCands.at(j).superCluster()->energy();
 		e15_2 = gsfCands.at(j).e1x5()/gsfCands.at(j).superCluster()->energy();
