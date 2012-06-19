@@ -61,6 +61,7 @@ public:
   ~HiggsGenAnalysis();
   
   struct zboson {
+	  zboson();
       int mode; // 11, 13
       double mass, Y;
       double l1pt, l2pt ; 
@@ -93,7 +94,8 @@ private:
 
   // ----------member data ---------------------------
   struct HistStruct {
-      TH1D *Phi1, *Phi, *CosTheta1, *CosTheta2, *CosTheta0, *Ztypes, *HY;
+      TH1D *Phi1, *Phi, *CosTheta1, *CosTheta2, *CosTheta0, *Ztypes, *HY,
+      		*AllZ1e1Pt, *AllZ1e1Eta, *AllZ1e2Pt, *AllZ1e2Eta;
 
   } hists ;
     
@@ -122,9 +124,21 @@ private:
     HistPerDef  H4Mu, H4GSFe, H2mu2GSF, HGSF_FEE_2mu, HGSF_HF_2mu, HGSF_HF_2GSF, HGSF_FEE_2GSF, H2GSFe2mu,
     			AllHF, AllFEE, AllFwd, AllPassing;
     			
-    TH1 *Ztypes;
 };
     
+HiggsGenAnalysis::zboson::zboson()
+{
+	mode = 0;
+	mass = 0;
+	Y = 0;
+	E1 = 0;
+	E2 = 0;
+	l1pt = 0;
+	l2pt = 0;
+	l1eta = 0;
+	l2eta = 0;
+}
+
 void HiggsGenAnalysis::HistPerDef::Book(TFileDirectory *mydir, const std::string& post, int type) 
   {
     std::string t, T; // histogram title string;
@@ -187,11 +201,11 @@ void HiggsGenAnalysis::HistPerDef::Book(TFileDirectory *mydir, const std::string
     l2PtVsEta = mydir->make<TH2D>(t.c_str(), T.c_str(), 25, -5, 5, 50, 0, 150 );
   }
   
-  void HiggsGenAnalysis::HistPerDef::Fill(const HiggsGenEvent& he) 
-  {
-    HY->Fill(he.HY);
-    HMass->Fill(he.Hm);
-    Z1mass->Fill(he.Z1m);
+void HiggsGenAnalysis::HistPerDef::Fill(const HiggsGenEvent& he) 
+{
+	HY->Fill(he.HY);
+	HMass->Fill(he.Hm);
+	Z1mass->Fill(he.Z1m);
 	Z2mass->Fill(he.Z2m);
 	Z1Y->Fill(he.Z1Y);
 	Z2Y->Fill(he.Z2Y);
@@ -204,7 +218,7 @@ void HiggsGenAnalysis::HistPerDef::Book(TFileDirectory *mydir, const std::string
 	l4Pt->Fill(he.l4pt);
 	l4Eta->Fill(he.l4eta);
 	nVertex->Fill(he.n_primary_vertex);
-	
+
 	AllPtVsEta->Fill(he.l1eta,he.l1pt);
 	AllPtVsEta->Fill(he.l2eta,he.l2pt);	
 	if(he.l1pt>he.l2pt)
@@ -217,7 +231,7 @@ void HiggsGenAnalysis::HistPerDef::Book(TFileDirectory *mydir, const std::string
 		l1PtVsEta->Fill(he.l2eta,he.l2pt);
 		l2PtVsEta->Fill(he.l1eta,he.l1pt);
 	}
-  }
+}
   
 //
 // constants, enums and typedefs
@@ -253,6 +267,10 @@ HiggsGenAnalysis::HiggsGenAnalysis(const edm::ParameterSet& iConfig) {
     hists.CosTheta0 = fs->make<TH1D>("CostTheta0","Cos(#theta_{0})",50,-1.,1.);
     hists.CosTheta1 = fs->make<TH1D>("CostTheta1","Cos(#theta_{1})",20,-1.,1.);
     hists.CosTheta2 = fs->make<TH1D>("CostTheta2","Cos(#theta_{2})",20,-1.,1.);
+    hists.AllZ1e1Pt = fs->make<TH1D>("AllZ1e1Pt","Z1 e1 Pt with central Z2",100,0,200);
+    hists.AllZ1e2Pt = fs->make<TH1D>("AllZ1e2Pt","Z1 e2 Pt with central Z2",100,0,200);
+    hists.AllZ1e1Eta = fs->make<TH1D>("AllZ1e1Eta","Z1 e1 Eta with central Z2",50,-6,6);
+    hists.AllZ1e2Eta = fs->make<TH1D>("AllZ1e2Eta","Z1 e2 Eta with central Z2",50,-6,6);
        
     hists.Ztypes = fs->make<TH1D>("Ztypes", "Decay Channels of Z, Z*", 9, -0.5, 8.5 );
     hists.Ztypes->GetXaxis()->SetBinLabel(1, "Other");
@@ -324,7 +342,7 @@ bool HiggsGenAnalysis::recZ(zboson theZ)//this checks if Z daughters could be re
 	double maxElEta = 3.;
 	double maxHFeta = 5.;
 	double maxGSFeta = 2.5;
-	double minHFpt = 15.;
+	double minHFpt = 20.;
 	double minZmass = 12;
 	
 	if (theZ.mode==13)
@@ -436,9 +454,6 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       for (iparticle=genInfo->begin(); iparticle!=genInfo->end(); iparticle++) {
 
           if ( iparticle->pdgId() == 25 && iparticle->numberOfDaughters() > 0 ) { // Higgs
-              //std::cout << "Higgs with mass " << iparticle->mass()
-                        //<< " and rapidity " << iparticle->y()
-                        //<< " decays to " << std::endl ;
               zboson newZ ;
               for (unsigned int idg=0; idg<iparticle->numberOfDaughters(); idg++) {//loop over Higgs products
                   if ( iparticle->daughter(idg)->pdgId() == 23 ) { // Z boson
@@ -612,13 +627,13 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 				break;
 		}
 		
-		/*if( (z1.mode == 11) && recZ(z2) )
+		if( (z1.mode == 11) && recZ(z2) )
 		{
 			hists.AllZ1e1Pt->Fill(z1.l1pt);
 			hists.AllZ1e2Pt->Fill(z1.l2pt);
 			hists.AllZ1e1Eta->Fill(z1.l1eta);
 			hists.AllZ1e2Eta->Fill(z1.l2eta);
-		} */
+		}
 		
 		if ( farElectronFilter_ ) { 
 		  if ( z1.mode != 11 || z1.mass < 50. || z1.mass > 120. ) return false ; 
