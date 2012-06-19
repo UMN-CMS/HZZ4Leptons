@@ -352,25 +352,18 @@ namespace higgs {
         thePair.first = eRef->pt();
         thePair.second = int(eIDmap[eRef]);
         eleCutsByPt.push_back(thePair);
-	//std::cout << "Found an electron with pT: " << eRef->pt() << " and eta " << eRef->eta() << std::endl ; 
-	double scTheta = (2*atan(exp(-eRef->superCluster()->eta()))) ;
-	double e25Max = eRef->e2x5Max() ; 
-	double e15 = eRef->e1x5() ; 
-	double e55 = eRef->e5x5() ; 
-	double ecalIso = eRef->dr03EcalRecHitSumEt() ; 
 
+	//double scTheta = (2*atan(exp(-eRef->superCluster()->eta()))) ;
+	//double e25Max = eRef->e2x5Max() ; 
+	//double e15 = eRef->e1x5() ; 
+	//double e55 = eRef->e5x5() ; 
+	//double ecalIso = eRef->dr03EcalRecHitSumEt() ;
+	
 	//if ( (int(eIDmap[eRef]) & cutlevel) != cutlevel ) continue ; // electron fails ID/iso/IP/conv
         electronList.push_back( *eRef ) ;        
     }
     std::sort(electronList.begin(),electronList.end(),pTcompare()) ;
     std::sort(eleCutsByPt.begin(),eleCutsByPt.end()); 
-    /*if ( electronList.size() ) { 
-      std::cout << "Sorted GSF electron list: " << std::endl ; 
-      for (unsigned int i=0; i<electronList.size(); i++) { 
-	std::cout << "Electron " << i+1 << " of " << electronList.size() 
-		  << " with pT " << electronList.at(i).pt() << " GeV" << std::endl ; 
-      }
-    }*/
     return electronList ; 
   }
 
@@ -384,8 +377,8 @@ namespace higgs {
 
     double e9e25      = hfshape.eLong3x3()/hfshape.eLong5x5();
     double var2d      = hfshape.eCOREe9()-(hfshape.eSeL()*9./8.);
-    double eCOREe9    = hfshape.eCOREe9();
-    double eSeL       = hfshape.eSeL();
+    //double eCOREe9    = hfshape.eCOREe9();
+    //double eSeL       = hfshape.eSeL();
     
     HE.var2d = var2d;
     HE.e9e25 = e9e25;

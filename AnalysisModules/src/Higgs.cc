@@ -136,6 +136,7 @@ private:
     
     int Z1type, Z2type;
     int e1Cut, e2Cut ;
+    bool passIso, passIsoHoEM, passIsoHoEMsIe, passElecsCut_1, passElecsCut_2, passElecsCut_3 ;
 
     double ZwinMinGeV_, ZwinMaxGeV_; // for trigger efficiency studies
 
@@ -188,11 +189,18 @@ private:
         
       TH1  *HMass, *HY, *Z1mass, *Z2mass, *Z1Y, *Z2Y, *nVertex,
 		   *l1Pt, *l1Eta, *l2Pt, *l2Eta, *l3Pt, *l3Eta, *l4Pt, *l4Eta,
-      	   *EcalIso_1, *EcalIso_2, *EcalIsoByGSF_1, *EcalIsoByGSF_2,
+      	   *ecalSumEt_1, *ecalSumEt_2, *ecalSumEt_3, *ecalSumEt_4,
+      	   *hcalSumEt_1, *hcalSumEt_2, *hcalSumEt_3, *hcalSumEt_4,
+      	   *tkSumPt_1, *tkSumPt_2, *tkSumPt_3, *tkSumPt_4,
+      	   *EcalIsoByGSF_1, *EcalIsoByGSF_2, *EcalIsoByGSF_3, *EcalIsoByGSF_4,
+      	   *trackIso_1, *trackIso_2, *trackIso_3, *trackIso_4,
+      	   *netIso_1, *netIso_2, *netIso_3, *netIso_4,
       	   *E25Max_1, *E25Max_2, //*E25Max_3, *E25Max_4,
       	   *E15_1, *E15_2, //*E15_3, *E15_4,
       	   *E55_1, *E55_2, //*E55_3, *E55_4;
-      	   *FarEEPt, *FarEEeta, *HadrOverEM, *sIeIe,
+      	   *HadrOverEM_1, *HadrOverEM_2, *HadrOverEM_3, *HadrOverEM_4,
+      	   *sIeIe_1, *sIeIe_2, *sIeIe_3, *sIeIe_4,
+      	   *FarEEPt, *FarEEeta, 
       	   *HFPt, *HFeta, *e9e25, *var2d,
       	   *FwdElPt, *FwdElEta;
 			//*H4muMass, *H4GSFeMass, *H2mu2GSFMass, *HGSF_FEE_2muMass, *HGSF_HF_2muMass, *H2GSFe2muMass, *HGSF_HF_2GSFMass, *HGSF_FEE_2GSFMass,
@@ -201,29 +209,29 @@ private:
       		*l1PtVsNV, *l1etaVsNV,
       		*e9e25VsNV, *var2dVsNV;
     } ;
+    
+	struct CutLevels //this contains the folders for the sub-channels; one for every cut level
+    {   
+    	public:    
+    	HistPerDef  H4mu, H4GSFe, H2mu2GSF, HGSF_FEE_2mu, HGSF_HF_2mu, HGSF_HF_2GSF, HGSF_FEE_2GSF,	H2GSFe2mu,
+    				AllHF, AllFEE, AllFwd, AllEvents;
+    				
+    	TH1 *dummy;
+
+    	void book(TFileDirectory *mydir, const std::string);
+    	bool fill(const HiggsEvent& );
+
+    } ;
 
     bool init_;
     
-    TFileDirectory *rundir;    
-        
-    HistPerDef  H4mu, H4GSFe, H2mu2GSF, HGSF_FEE_2mu, HGSF_HF_2mu, HGSF_HF_2GSF, HGSF_FEE_2GSF,
-    			H2GSFe2mu_Cut0, H2GSFe2mu_e1Cut1, H2GSFe2mu_e1Cut2, H2GSFe2mu_e1Cut3,
-    			H2GSFe2mu_e2Cut0, H2GSFe2mu_e2Cut1, H2GSFe2mu_e2Cut2, H2GSFe2mu_e2Cut3,
-    			AllHF, AllFEE, AllFwd, AllEvents;
-    			
+    TFileDirectory *rundir;
+    
+    CutLevels NoCuts, ElecsCut_1, ElecsCut_2, ElecsCut_3, IsoCut, IsoHoEMCut, IsoHoEMsIeCut;
+    
     TH1 *genPU, *recoPU, *cutlevel;
     
     // gf set of histo for all Z definitions in a stack
-
-    /*struct HistStruct
-    {
-
-        TFileDirectory *rundir;
-
-
-        HistPerDef noCuts;if ( (recoMuons->size() + totalEMcands) > 3 )
-
-    } hists;*/
 
     struct CutsStruct
     {
@@ -264,7 +272,7 @@ void Higgs::HistPerDef::Book(TFileDirectory *mydir, const std::string& post, int
     t = post + "_HMass";
     T = post + " Reco H mass";
     std::cout<<"Created titles: "<<t<<", "<<T<<std::endl;        
-    HMass = mydir->make<TH1D> (t.c_str(), T.c_str(), 100, 0, 500 );  
+    HMass = mydir->make<TH1D> (t.c_str(), T.c_str(), 60, 90, 150 );  
     t = post + "_Z1Mass";
     T = post + " Reco Z1 mass";
     Z1mass = mydir->make<TH1D>(t.c_str(), T.c_str(), 70, 50, 120 );  
@@ -301,9 +309,10 @@ void Higgs::HistPerDef::Book(TFileDirectory *mydir, const std::string& post, int
     t = post + "_l4Eta";
     T = post + " Reco L4 Eta";
     l4Eta = mydir->make<TH1D>(t.c_str(), T.c_str(), 100, -5, 5 );
+	
     t = post + "_nVertex";
     T = post + " Number of Vertices";
-    nVertex = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 50 );
+    nVertex = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 50 );	
     
     t = post + "_AllPtVsEta";
     T = post + " l1, l2 Pt vs. Eta";
@@ -322,7 +331,7 @@ void Higgs::HistPerDef::Book(TFileDirectory *mydir, const std::string& post, int
     T = post + " First Eta vs. nVertex";
     l1etaVsNV = mydir->make<TH2D>(t.c_str(), T.c_str(), 50, 0, 50, 20, -5, 5 );
     
-    if(type == 1)
+    if(type == 1) //All things HF
     {
     	t = post + "_Pt";
     	T = post + " Pt";
@@ -335,8 +344,7 @@ void Higgs::HistPerDef::Book(TFileDirectory *mydir, const std::string& post, int
     	e9e25 = mydir->make<TH1D>(t.c_str(), T.c_str(), 30, 0.9, 1.05 );
     	t = post + "_var2d";
     	T = post + " Var2d";
-    	var2d = mydir->make<TH1D>(t.c_str(), T.c_str(), 20, 0.2, 1.2 );
-    	
+    	var2d = mydir->make<TH1D>(t.c_str(), T.c_str(), 20, 0.2, 1.2 );    	
     	t = post + "_e9e25VsNT";
 	    T = post + " E(3x30/E(5x5) vs. nVertex";
 	    e9e25VsNV = mydir->make<TH2D>(t.c_str(), T.c_str(), 50, 0, 50, 30, 0.9, 1.05 );
@@ -345,23 +353,7 @@ void Higgs::HistPerDef::Book(TFileDirectory *mydir, const std::string& post, int
 	    var2dVsNV = mydir->make<TH2D>(t.c_str(), T.c_str(), 50, 0, 50, 20, 0.2, 1.2 );
     }
     
-    if(type == 2)
-    {
-    	t = post + "_Pt";
-    	T = post + " Pt";
-    	FarEEPt = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 150 );
-    	t = post + "_Eta";
-    	T = post + " Eta";
-    	FarEEeta = mydir->make<TH1D>(t.c_str(), T.c_str(), 100, -5, 5 );
-    	t = post + "_sIeIe";
-    	T = post + " SigmaIetaIeta";
-    	sIeIe = mydir->make<TH1D>(t.c_str(),T.c_str(), 30, 0, 0.15);
-    	t = post + "_HadrOverEM";
-    	T = post + " HardonicOverEM";
-    	HadrOverEM = mydir->make<TH1D>(t.c_str(),T.c_str(), 25, 0, 0.25);
-    }
-    
-    if(type == 3)
+    if(type == 3) //All Forward
     {
     	t = post + "_Pt";
     	T = post + " Pt";
@@ -371,36 +363,116 @@ void Higgs::HistPerDef::Book(TFileDirectory *mydir, const std::string& post, int
     	FwdElEta = mydir->make<TH1D>(t.c_str(), T.c_str(), 100, -5, 5 );
     }
     
-    if(type==4)
+    if(type==4) //All things ECAL
     {
-    	t = post + "_ecalIso_1";
-    	T = post + " E1 Ecal Isolation";
-    	EcalIso_1 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 10 );
-    	t = post + "_ecalIso_2";
-    	T = post + " E2 Ecal Isolation";
-    	EcalIso_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 10 );
-    
-    	t = post + "_ecalIsoByGSF_1";
-    	T = post + " E1 Ecal Isolation by GSF Energy";
-    	EcalIsoByGSF_1 = mydir->make<TH1D>(t.c_str(), T.c_str(), 20, 0, 0.6 );
-    	t = post + "_ecalIsoByGSF_2";
-    	T = post + " E2 Ecal Isolation by GSF Energy";
-    	EcalIsoByGSF_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 20, 0, 0.6 );
-    	
+    	t = post + "_ecalSumEt_1";
+    	T = post + " E1 Ecal Sum Et";
+    	ecalSumEt_1 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 10 );
+    	t = post + "_ecalSumEt_2";
+    	T = post + " E2 Ecal Sum Et";
+    	ecalSumEt_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 10 );
+    	t = post + "_ecalSumEt_3";
+    	T = post + " E3 Ecal Sum Et";
+    	ecalSumEt_3 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 10 );
+    	t = post + "_ecalSumEt_4";
+    	T = post + " E4 Ecal Sum Et";
+    	ecalSumEt_4 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 10 );
+    	t = post + "_hcalSumEt_1";
+    	T = post + " E1 Hcal Sum Et";
+    	hcalSumEt_1 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 5 );
+    	t = post + "_hcalSumEt_2";
+    	T = post + " E2 Hcal Sum Et";
+    	hcalSumEt_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 5 );
+    	t = post + "_hcalSumEt_3";
+    	T = post + " E3 Hcal Sum Et";
+    	hcalSumEt_3 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 5 );
+    	t = post + "_hcalSumEt_4";
+    	T = post + " E4 Hcal Sum Et";
+    	hcalSumEt_4 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 5 );    	
+    	t = post + "_tkSumPt_1";
+    	T = post + " E1 Tracker Sum Pt";
+    	tkSumPt_1 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 5 );
+    	t = post + "_tkSumPt_2";
+    	T = post + " E2 Tracker Sum Pt";
+    	tkSumPt_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 5 );
+    	t = post + "_tkSumPt_3";
+    	T = post + " E3 Tracker Sum Pt";
+    	tkSumPt_3 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 5 );
+    	t = post + "_tkSumPt_4";
+    	T = post + " E4 Tracker Sum Pt";
+    	tkSumPt_4 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 5 );    	
+	    t = post + "_ecalIsoByGSF_1";
+		T = post + " E1 Ecal Isolation";
+		EcalIsoByGSF_1 = mydir->make<TH1D>(t.c_str(), T.c_str(), 60, 0, 0.6 );
+		t = post + "_ecalIsoByGSF_2";
+		T = post + " E2 Ecal Isolation";
+		EcalIsoByGSF_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 60, 0, 0.6 );
+		t = post + "_ecalIsoByGSF_3";
+		T = post + " E3 Ecal Isolation";
+		EcalIsoByGSF_3 = mydir->make<TH1D>(t.c_str(), T.c_str(), 60, 0, 0.6 );
+		t = post + "_ecalIsoByGSF_4";
+		T = post + " E4 Ecal Isolation";
+		EcalIsoByGSF_4 = mydir->make<TH1D>(t.c_str(), T.c_str(), 60, 0, 0.6 );
+		t = post + "_trackIso_1";
+    	T = post + " E1 Tracker Isolation";
+    	trackIso_1 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 0.5 );
+    	t = post + "_trackIso_2";
+    	T = post + " E2 Tracker Isolation";
+    	trackIso_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 0.5 );
+    	t = post + "_trackIso_3";
+    	T = post + " E3 Tracker Isolation";
+    	trackIso_3 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 0.5 );
+    	t = post + "_trackIso_4";
+    	T = post + " E4 Tracker Isolation";
+    	trackIso_4 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 0.5 );		
+		t = post + "_netIso_1";
+		T = post + " E1 Net Isolation";
+		netIso_1 = mydir->make<TH1D>(t.c_str(), T.c_str(), 60, 0, 0.6 );
+		t = post + "_netIso_2";
+		T = post + " E2 Net Isolation";
+		netIso_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 60, 0, 0.6 );
+		t = post + "_netIso_3";
+		T = post + " E3 Net Isolation";
+		netIso_3 = mydir->make<TH1D>(t.c_str(), T.c_str(), 60, 0, 0.6 );
+		t = post + "_netIso_4";
+		T = post + " E4 Net Isolation";
+		netIso_4 = mydir->make<TH1D>(t.c_str(), T.c_str(), 60, 0, 0.6 );
+		t = post + "_sIeIe_1";
+		T = post + " E1 SigmaIetaIeta";
+		sIeIe_1 = mydir->make<TH1D>(t.c_str(),T.c_str(), 50, 0, 0.1);
+		t = post + "_sIeIe_2";
+		T = post + " E2 SigmaIetaIeta";
+		sIeIe_2 = mydir->make<TH1D>(t.c_str(),T.c_str(), 50, 0, 0.1);
+		t = post + "_sIeIe_3";
+		T = post + " E3 SigmaIetaIeta";
+		sIeIe_3 = mydir->make<TH1D>(t.c_str(),T.c_str(), 50, 0, 0.1);
+		t = post + "_sIeIe_4";
+		T = post + " E4 SigmaIetaIeta";
+		sIeIe_4 = mydir->make<TH1D>(t.c_str(),T.c_str(), 50, 0, 0.1);
+		t = post + "_HadrOverEM_1";
+		T = post + " E1 HardonicOverEM";
+		HadrOverEM_1 = mydir->make<TH1D>(t.c_str(),T.c_str(), 50, 0, 0.5);
+		t = post + "_HadrOverEM_2";
+		T = post + " E2 HardonicOverEM";
+		HadrOverEM_2 = mydir->make<TH1D>(t.c_str(),T.c_str(), 50, 0, 0.5);
+		t = post + "_HadrOverEM_3";
+		T = post + " E3 HardonicOverEM";
+		HadrOverEM_3 = mydir->make<TH1D>(t.c_str(),T.c_str(), 50, 0, 0.5);
+		t = post + "_HadrOverEM_4";
+		T = post + " E4 HardonicOverEM";
+		HadrOverEM_4 = mydir->make<TH1D>(t.c_str(),T.c_str(), 50, 0, 0.5);    	
     	t = post + "_E25Max_1";
     	T = post + " el-1 E 2x5 Max";
     	E25Max_1 = mydir->make<TH1D>(t.c_str(), T.c_str(), 20, 0, 1 );    	
     	t = post + "_E25Max_2";
     	T = post + " el-2 E 2x5 Max";
-    	E25Max_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 20, 0, 1 );
-    	
+    	E25Max_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 20, 0, 1 );    	
     	t = post + "_E15_1";
     	T = post + " el-1 E 1x5";
     	E15_1 = mydir->make<TH1D>(t.c_str(), T.c_str(), 20, 0, 1 );    	
     	t = post + "_E15_2";
     	T = post + " el-2 E 1x5";
-    	E15_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 1 );
-   	
+    	E15_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 1 );   	
     	t = post + "_E55_1";
     	T = post + " el-1 E 5x5";
     	E55_1 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 1 );    	
@@ -408,18 +480,7 @@ void Higgs::HistPerDef::Book(TFileDirectory *mydir, const std::string& post, int
     	T = post + " el-2 E 5x5";
     	E55_2 = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 1 );
     }
-}// end of book()
-
-void Higgs::HistPerDef::Fill(// pat::MuonCollection muons,
-			     // pat::JetCollection jets,
-			     // pat::METCollection metc,
-                 bool isMC,
-                 double wgt,
-                 bool pfJets,
-			     int nPU, int nPV)
-{
-  //std::cout << "Basic fill not doing anything yet" << std::endl ; 
-}
+}// end of HistPerDef::Book()
 
 void Higgs::HistPerDef::Fill(const HiggsEvent& he,int type) 
 {
@@ -457,7 +518,6 @@ void Higgs::HistPerDef::Fill(const HiggsEvent& he,int type)
 	}
    
 	//Determine what type of event we got
-
 	if(type==1)//HF
 	{
 		HFPt->Fill(he.l2pt);
@@ -468,15 +528,7 @@ void Higgs::HistPerDef::Fill(const HiggsEvent& he,int type)
 		var2dVsNV->Fill(he.n_primary_vertex,he.var2d);
 	}
 	
-	if(type==2)//FEE
-	{
-		FarEEPt->Fill(he.l2pt);
-		FarEEeta->Fill(he.l2eta);
-		HadrOverEM->Fill(he.HoEM);
-		sIeIe->Fill(he.sIeIe);
-	}
-	
-	if(type==3)
+	if(type==3) //All Forward
 	{
 		FwdElPt->Fill(he.l2pt);
 		FwdElEta->Fill(he.l2eta);
@@ -484,24 +536,127 @@ void Higgs::HistPerDef::Fill(const HiggsEvent& he,int type)
 	
 	if(type==4)
 	{
-		EcalIso_1->Fill(he.ecalIso_1);
-		EcalIso_2->Fill(he.ecalIso_2);
-		
+		ecalSumEt_1->Fill(he.ecalSumEt_1);
+		ecalSumEt_2->Fill(he.ecalSumEt_2);
+		ecalSumEt_3->Fill(he.ecalSumEt_3);
+		ecalSumEt_4->Fill(he.ecalSumEt_4);
+		hcalSumEt_1->Fill(he.hcalSumEt_1);
+		hcalSumEt_2->Fill(he.hcalSumEt_2);
+		hcalSumEt_3->Fill(he.hcalSumEt_3);
+		hcalSumEt_4->Fill(he.hcalSumEt_4);
+		tkSumPt_1->Fill(he.tkSumPt_1);
+		tkSumPt_2->Fill(he.tkSumPt_2);
+		tkSumPt_3->Fill(he.tkSumPt_3);
+		tkSumPt_4->Fill(he.tkSumPt_4);	
 		EcalIsoByGSF_1->Fill(he.ecalIsoByGSF_1);
 		EcalIsoByGSF_2->Fill(he.ecalIsoByGSF_2);
-		
+		EcalIsoByGSF_3->Fill(he.ecalIsoByGSF_3);
+		EcalIsoByGSF_4->Fill(he.ecalIsoByGSF_4);
+		trackIso_1->Fill(he.trackIso_1);
+		trackIso_2->Fill(he.trackIso_2);
+		trackIso_3->Fill(he.trackIso_3);
+		trackIso_4->Fill(he.trackIso_4);
+		netIso_1->Fill(he.ecalIsoByGSF_1);
+		netIso_2->Fill(he.ecalIsoByGSF_2);
+		netIso_3->Fill(he.ecalIsoByGSF_3);
+		netIso_4->Fill(he.ecalIsoByGSF_4);
+		HadrOverEM_1->Fill(he.HoEM_1);
+		HadrOverEM_2->Fill(he.HoEM_2);
+		HadrOverEM_3->Fill(he.HoEM_3);
+		HadrOverEM_4->Fill(he.HoEM_4);
+		sIeIe_1->Fill(he.sIeIe_1);
+		sIeIe_2->Fill(he.sIeIe_2);
+		sIeIe_3->Fill(he.sIeIe_3);
+		sIeIe_4->Fill(he.sIeIe_4);		
 		E25Max_1->Fill(he.e25Max_1);
-		E25Max_2->Fill(he.e25Max_2);
-		
+		E25Max_2->Fill(he.e25Max_2);		
 		E15_1->Fill(he.e15_1);
-		E15_2->Fill(he.e15_2);
-		
+		E15_2->Fill(he.e15_2);		
 		E55_1->Fill(he.e55_1);
 		E55_2->Fill(he.e55_2);
 	}
 
-}// end of fill()
+}// end of HistPerDef:Fill()
 
+void Higgs::CutLevels::book(TFileDirectory *mydir, const std::string name)
+{
+	/*edm::Service<TFileService> fs;
+	TFileDirectory *mydir = new TFileDirectory(fs->mkdir(name.c_str()));
+	mydir->cd();*/
+	
+	dummy = mydir->make<TH1D>("dummy", "Dummy Hist", 10, 0, 1 );
+	
+	AllHF.Book(new TFileDirectory(mydir->mkdir("AllHF")),"AllHF",1);
+	AllFEE.Book(new TFileDirectory(mydir->mkdir("AllFEE")),"AllFEE",4);
+	AllFwd.Book(new TFileDirectory(mydir->mkdir("AllFwd")),"AllFwd",3);
+    AllEvents.Book(new TFileDirectory(mydir->mkdir("AllEvents")),"AllEvents");
+    H4mu.Book(new TFileDirectory(mydir->mkdir("4mu")),"4Mu");
+    H4GSFe.Book(new TFileDirectory(mydir->mkdir("4GSF")),"4GSF",4);
+    H2mu2GSF.Book(new TFileDirectory(mydir->mkdir("2Mu_2GSF")),"2Mu_2GSF",4);
+    HGSF_FEE_2mu.Book(new TFileDirectory(mydir->mkdir("GSF_FarEE_2Mu")),"GSF_FarEE_2Mu",4);
+    HGSF_FEE_2GSF.Book(new TFileDirectory(mydir->mkdir("GSF_FarEE_2GSF")),"GSF_FarEE_2GSF",4);
+    HGSF_HF_2mu.Book(new TFileDirectory(mydir->mkdir("GSF_HF_2Mu")),"GSF_HF_2Mu",4);
+    HGSF_HF_2GSF.Book(new TFileDirectory(mydir->mkdir("GSF_HF_2GSF")),"GSF_HF_2GSF",4);
+    H2GSFe2mu.Book(new TFileDirectory(mydir->mkdir("2GSF_2Mu")),"2GSF_2Mu",4);  
+}
+
+bool Higgs::CutLevels::fill(const HiggsEvent& higgsEvent)
+{
+	AllEvents.Fill(higgsEvent);
+    if( higgsEvent.Z2flavor==1 )
+	{
+		switch( higgsEvent.Z1flavor )
+		{
+			case 1:
+				//std::cout<<"4mu"<<std::endl;
+				H4mu.Fill(higgsEvent);
+				return true;
+			case 2:
+				//std::cout<<"2GSFel and 2mu"<<std::endl;
+				H2GSFe2mu.Fill(higgsEvent,4);
+				return true;
+			case 3:
+				//std::cout<<"GSF + FarEE and 2mu"<<std::endl;
+				HGSF_FEE_2mu.Fill(higgsEvent,4);
+				AllFEE.Fill(higgsEvent,4);
+				AllFwd.Fill(higgsEvent,3);
+				return true;
+			case 4:
+				//std::cout<<"GSF+HF and 2mu"<<std::endl;
+				HGSF_HF_2mu.Fill(higgsEvent,4);
+				AllHF.Fill(higgsEvent,1);
+				AllFwd.Fill(higgsEvent,3);
+				return true;
+		} 
+	}	
+	if( higgsEvent.Z2flavor==2 )
+	{
+		switch( higgsEvent.Z1flavor )
+		{
+			case 1:
+				//std::cout<<"2mu and 2GSF"<<std::endl;
+				H2mu2GSF.Fill(higgsEvent,4);
+				return true;
+			case 2:
+				//std::cout<<"4GSF el"<<std::endl;
+				H4GSFe.Fill(higgsEvent,4);
+				return true;
+			case 3:
+				//std::cout<<"GSF+FarEE and 2GSF"<<std::endl;
+				HGSF_FEE_2GSF.Fill(higgsEvent,4);
+				AllFEE.Fill(higgsEvent,4);
+				AllFwd.Fill(higgsEvent,3);
+				return true;
+			case 4:
+				//std::cout<<"GSF+HF and 2GSF"<<std::endl;
+				HGSF_HF_2GSF.Fill(higgsEvent,4);
+				AllHF.Fill(higgsEvent,1);
+				AllFwd.Fill(higgsEvent,3);
+				return true;
+		}
+	}
+	return false;
+}
 
 //
 // constants, enums and typedefs
@@ -510,8 +665,6 @@ void Higgs::HistPerDef::Fill(const HiggsEvent& he,int type)
 //
 // static data member definitions
 //
-
-
 
 //
 // constructors and destructor
@@ -566,12 +719,21 @@ Higgs::Higgs(const edm::ParameterSet& iConfig)
     Z2type = 0;
     e1Cut = 0;
     e2Cut = 0;
+    passIso = passIsoHoEM = passIsoHoEMsIe = passElecsCut_1 = passElecsCut_2 = passElecsCut_3 = false ;
+    
 
     // ==================== Book the histos ====================
     //
     
-
 	edm::Service<TFileService> fs;
+    
+    NoCuts.book(new TFileDirectory(fs->mkdir("NoCuts")),"NoCuts");
+    ElecsCut_1.book(new TFileDirectory(fs->mkdir("ElecsCut_1")),"ElecsCut_1");
+    ElecsCut_2.book(new TFileDirectory(fs->mkdir("ElecsCut_2")),"ElecsCut_2");
+    ElecsCut_3.book(new TFileDirectory(fs->mkdir("ElecsCut_3")),"ElecsCut_3");
+    IsoCut.book(new TFileDirectory(fs->mkdir("IsoCut")),"IsoCut");
+    IsoHoEMCut.book(new TFileDirectory(fs->mkdir("IsoHoEMCut")),"IsoHoEMCut");
+    IsoHoEMsIeCut.book(new TFileDirectory(fs->mkdir("IsoHoEMsIeCut")),"IsoHoEMsIeCut");
     
     cutlevel = fs->make<TH1D > ("cutlevel", "Cut Level", 11, -1.5, 9.5);
     cutlevel->GetXaxis()->SetBinLabel(1, "Raw");
@@ -618,27 +780,6 @@ Higgs::Higgs(const edm::ParameterSet& iConfig)
     std::cout << "min4objMass       = " << cuts.minimum_zz_mass << " GeV" << std::endl;
 
     std::cout << "PU era (shift)    = " << pileupEra_ << " (" << puShift_ << ")" << std::endl;
-    
-    
-	AllHF.Book(new TFileDirectory(fs->mkdir("AllHF")),"AllHF",1);
-	AllFEE.Book(new TFileDirectory(fs->mkdir("AllFEE")),"AllFEE",2);
-	AllFwd.Book(new TFileDirectory(fs->mkdir("AllFwd")),"AllFwd",3);
-    AllEvents.Book(new TFileDirectory(fs->mkdir("AllEvents")),"AllEvents");
-    H4mu.Book(new TFileDirectory(fs->mkdir("4mu")),"4Mu");
-    H4GSFe.Book(new TFileDirectory(fs->mkdir("4GSF")),"4GSF");
-    H2mu2GSF.Book(new TFileDirectory(fs->mkdir("2Mu_2GSF")),"2Mu_2GSF");
-    HGSF_FEE_2mu.Book(new TFileDirectory(fs->mkdir("GSF_FarEE_2Mu")),"GSF_FarEE_2Mu",2);
-    HGSF_FEE_2GSF.Book(new TFileDirectory(fs->mkdir("GSF_FarEE_2GSF")),"GSF_FarEE_2GSF",2);
-    HGSF_HF_2mu.Book(new TFileDirectory(fs->mkdir("GSF_HF_2Mu")),"GSF_HF_2Mu",1);
-    HGSF_HF_2GSF.Book(new TFileDirectory(fs->mkdir("GSF_HF_2GSF")),"GSF_HF_2GSF",1);
-    H2GSFe2mu_Cut0.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_Cut0")),"2GSF_2Mu",4); 
-	H2GSFe2mu_e1Cut1.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_e1Cut1")),"2GSF_2Mu",4); 
-	H2GSFe2mu_e1Cut2.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_e1Cut2")),"2GSF_2Mu",4); 
-	H2GSFe2mu_e1Cut3.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_e1Cut3")),"2GSF_2Mu",4); 
-	H2GSFe2mu_e2Cut1.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_e2Cut1")),"2GSF_2Mu",4); 
-	H2GSFe2mu_e2Cut2.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_e2Cut2")),"2GSF_2Mu",4); 
-	H2GSFe2mu_e2Cut3.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_e2Cut3")),"2GSF_2Mu",4);
-
 }
 
 Higgs::~Higgs()
@@ -648,8 +789,6 @@ Higgs::~Higgs()
     // (e.g. close files, deallocate resources etc.)
 
 }
-
-
 
 //
 // member functions
@@ -786,20 +925,13 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     if( !Z1type ) return false ; 
     if ( !Z2type ) return false ;
+    if (Z1type>4 || Z2type>4) return false;
     
     recoPU->Fill(higgsEvent.n_pue);
 			   
 	higgsEvent.calculate();
-    // Basic selection requirements: Require at least two muons, two jets
-
-	int totalEMcands = recoElectrons->size() + recoGammas->size() + recoHFElectrons->size() ; 
-    if ( (recoMuons->size() + totalEMcands) < 4 ) return false; 
-    //In following original paper and recent constraints, limit the H mass range:
-    //if( higgsEvent.mH<100 || higgsEvent.mH>140 ) return false;
-
-    cutlevel->Fill(0.0, higgsEvent.eventWgt);
-   
-    for(std::vector< std::pair<double,unsigned int> >::const_iterator i = eleCutsByPt.begin(); i != eleCutsByPt.end(); i++)
+	
+	for(std::vector< std::pair<double,unsigned int> >::const_iterator i = eleCutsByPt.begin(); i != eleCutsByPt.end(); i++)
     {
     	if( (fabs(higgsEvent.l1pt - i->first) < 1e-9))
     	{
@@ -810,88 +942,28 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     		e2Cut = i->second;
     	}    	
     }
-    
-    AllEvents.Fill(higgsEvent);
-    if( Z2type==1 )
-	{
-		switch( Z1type )
-		{
-			case 1:
-				std::cout<<"Event Number "<<iEvent.id().event()<<": 4mu"<<std::endl;
-				H4mu.Fill(higgsEvent);
-				break;
-			case 2:
-				std::cout<<"Event Number "<<iEvent.id().event()<<": 2GSFel and 2mu"<<std::endl;
-				H2GSFe2mu_Cut0.Fill(higgsEvent,4);
-				if( (e1Cut & 1) == 1 )
-				{
-					H2GSFe2mu_e1Cut1.Fill(higgsEvent,4);
-				}
-				if( (e1Cut & 2) == 2 )
-				{
-					H2GSFe2mu_e1Cut2.Fill(higgsEvent,4);
-				}
-				if( (e1Cut & 3) == 3 )
-				{
-					H2GSFe2mu_e1Cut3.Fill(higgsEvent,4);
-				}
-				if( (e2Cut & 1) == 1 )
-				{
-					H2GSFe2mu_e2Cut1.Fill(higgsEvent,4);
-				}
-				if( (e2Cut & 2) == 2 )
-				{
-					H2GSFe2mu_e2Cut2.Fill(higgsEvent,4);
-				}
-				if( (e2Cut & 3) == 3 )
-				{
-					H2GSFe2mu_e2Cut3.Fill(higgsEvent,4);
-				}
-				break;
-			case 3:
-				std::cout<<"Event Number "<<iEvent.id().event()<<": GSF + FarEE and 2mu"<<std::endl;
-				HGSF_FEE_2mu.Fill(higgsEvent,2);
-				AllFEE.Fill(higgsEvent,2);
-				AllFwd.Fill(higgsEvent,3);
-				break;
-			case 4:
-				std::cout<<"Event Number "<<iEvent.id().event()<<": GSF + HF and 2mu"<<std::endl;
-				HGSF_HF_2mu.Fill(higgsEvent,1);
-				AllHF.Fill(higgsEvent,1);
-				AllFwd.Fill(higgsEvent,3);
-				break;
-		} 
-	}	
 	
-	if( Z2type==2 )
-	{
-		switch( Z1type )
-		{
-			case 1:
-				std::cout<<"Event Number "<<iEvent.id().event()<<": 2mu + 2GSF"<<std::endl;
-				H2mu2GSF.Fill(higgsEvent);
-				break;
-			case 2:
-				std::cout<<"Event Number "<<iEvent.id().event()<<": 4GSF el"<<std::endl;
-				H4GSFe.Fill(higgsEvent);
-				break;
-			case 3:
-				std::cout<<"Event Number "<<iEvent.id().event()<<": GSF + FarEE and 2GSF"<<std::endl;
-				HGSF_FEE_2GSF.Fill(higgsEvent,2);
-				AllFEE.Fill(higgsEvent,2);
-				AllFwd.Fill(higgsEvent,3);
-				break;
-			case 4:
-				std::cout<<"Event Number "<<iEvent.id().event()<<": GSF + HF and 2GSF"<<std::endl;
-				HGSF_HF_2GSF.Fill(higgsEvent,1);
-				AllHF.Fill(higgsEvent,1);
-				AllFwd.Fill(higgsEvent,3);
-				break;
-		}
-	}
+	passIso = ( (higgsEvent.netIso_1<0.15)&&(higgsEvent.netIso_2<0.15)&&(higgsEvent.netIso_3<0.15)&&(higgsEvent.netIso_4<0.15) );
+	passIsoHoEM = ( (passIso)&&(higgsEvent.HoEM_1<0.15)&&(higgsEvent.HoEM_2<0.15)&&(higgsEvent.HoEM_3<0.15)&&(higgsEvent.HoEM_4<0.15) );
+	passIsoHoEMsIe = ( (passIsoHoEM)&&(higgsEvent.sIeIe_1<0.03)&&(higgsEvent.sIeIe_2<0.03)&&(higgsEvent.sIeIe_3<0.03)&&(higgsEvent.sIeIe_4<0.03) );
+	passElecsCut_1 = ( ( (e1Cut & 1) == 1 )&&( (e2Cut & 1) == 1 ) );
+	passElecsCut_2 = ( ( (e1Cut & 2) == 2 )&&( (e2Cut & 2) == 2 ) );
+	passElecsCut_3 = ( ( (e1Cut & 3) == 3 )&&( (e2Cut & 3) == 3 ) );
+	
+    // Basic selection requirements: Require at four leptopns
+	int totalEMcands = recoElectrons->size() + recoGammas->size() + recoHFElectrons->size() ; 
+    if ( (recoMuons->size() + totalEMcands) < 4 ) return false; 
+    //In following original paper and recent constraints, limit the H mass range:
+    if( higgsEvent.mH<100 || higgsEvent.mH>140 ) return false;
 
-
-    else return false;    		
+    cutlevel->Fill(0.0, higgsEvent.eventWgt);
+	NoCuts.fill(higgsEvent);
+	if(passIso) IsoCut.fill(higgsEvent); 	
+	if(passIsoHoEM) IsoHoEMCut.fill(higgsEvent);
+	if(passIsoHoEMsIe) IsoHoEMsIeCut.fill(higgsEvent);
+	if(passElecsCut_1)  ElecsCut_1.fill(higgsEvent);
+	if(passElecsCut_2)  ElecsCut_2.fill(higgsEvent);
+	if(passElecsCut_3)  ElecsCut_3.fill(higgsEvent);
 
     return true;
 }

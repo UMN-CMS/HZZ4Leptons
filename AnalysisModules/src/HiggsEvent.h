@@ -90,12 +90,18 @@ public:
 
   double HY, mH, mZ1, mZ2, YZ1, YZ2;
   double l1pt, l1eta, l2pt, l2eta, l3pt, l3eta, l4pt, l4eta ; 
-  double ecalIsoByGSF_1, ecalIsoByGSF_2, ecalIso_1, ecalIso_2, ecalIso_3, ecalIso_4;
+  double ecalSumEt_1, ecalSumEt_2, ecalSumEt_3, ecalSumEt_4;
+  double ecalIsoByGSF_1, ecalIsoByGSF_2, ecalIsoByGSF_3, ecalIsoByGSF_4;
+  double tkSumPt_1,tkSumPt_2,tkSumPt_3,tkSumPt_4;
+  double trackIso_1, trackIso_2, trackIso_3, trackIso_4;
+  double hcalSumEt_1, hcalSumEt_2, hcalSumEt_3, hcalSumEt_4;
+  double netIso_1, netIso_2, netIso_3, netIso_4;
   double scTheta_1, scTheta_2, scTheta_3, scTheta_4;
   double e25Max_1, e25Max_2, e25Max_3, e25Max_4;
   double e15_1, e15_2, e15_3, e15_4;
   double e55_1, e55_2, e55_3, e55_4;
-  double HoEM, sIeIe;
+  double HoEM_1, HoEM_2, HoEM_3, HoEM_4;
+  double sIeIe_1, sIeIe_2, sIeIe_3, sIeIe_4;
   double var2d, e9e25;
 
 };
