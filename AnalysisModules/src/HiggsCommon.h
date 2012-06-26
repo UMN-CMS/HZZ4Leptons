@@ -98,11 +98,13 @@ namespace higgs {
 
     std::vector<reco::Muon>              getMuonList(edm::Handle<reco::MuonCollection>& recoMuons,
 						     double minPt, double maxAbsEta,
+						     edm::Handle<reco::VertexCollection>& vertices,
 						     bool trackerPt=false);
     std::vector<reco::GsfElectron>       getElectronList(edm::Handle<reco::GsfElectronCollection>& recoElecs,
 							 edm::Handle< edm::ValueMap<float> >& valueMap,
 							 double minEt, double maxAbsEta, 
-							 int cutlevel, std::vector< std::pair<double,unsigned int> >&) ; 
+							 int cutlevel, std::vector< std::pair<double,unsigned int> >&,
+							 edm::Handle<reco::VertexCollection>& vertices) ; 
     std::vector<reco::RecoEcalCandidate> getElectronList(edm::Handle<reco::RecoEcalCandidateCollection>& recoElecs,
 							 edm::Handle<reco::HFEMClusterShapeAssociationCollection>& clusterAssociation, 
 							 double minEt, double maxAbsEta, HiggsEvent& HE) ; 

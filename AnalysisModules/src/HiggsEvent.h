@@ -103,6 +103,10 @@ public:
   double HoEM_1, HoEM_2, HoEM_3, HoEM_4;
   double sIeIe_1, sIeIe_2, sIeIe_3, sIeIe_4;
   double var2d, e9e25;
+  
+  bool passCombinedIso;
+  
+ // double muIso_1, muIso_2, muIso_3, muIso_4;
 
 };
 

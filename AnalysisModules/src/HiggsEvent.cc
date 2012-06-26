@@ -40,6 +40,13 @@ HiggsEvent::HiggsEvent() {
   netIso_2 = -1;
   netIso_3 = -1;
   netIso_4 = -1;
+  
+  passCombinedIso = false;
+  
+  /*muIso_1 = -1;
+  muIso_2 = -1;
+  muIso_3 = -1;
+  muIso_4 = -1;*/
 
   // Protection: scale factors set to 1 by default
   MuScale = 1.0 ;
@@ -75,6 +82,14 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
 		zCand = muCands.at(i).p4() + muCands.at(j).p4() ;
 		if (zCand.M() < minMass) continue ; 
 		deltaM = fabs(zCand.M() - mZpdg) ; 
+		
+		vl1 = muCands.at(i).p4();
+		vl2 = muCands.at(j).p4();
+		netIso_1 = ( muCands.at(i).isolationR03().sumPt + muCands.at(i).isolationR03().emEt + muCands.at(i).isolationR03().hadEt )/vl1.Pt() ;
+		netIso_2 = ( muCands.at(j).isolationR03().sumPt + muCands.at(j).isolationR03().emEt + muCands.at(j).isolationR03().hadEt )/vl1.Pt() ;
+		
+		if( netIso_1 + netIso_2 > 0.35 ) continue;
+		
 		if (deltaM < mZdiff) { // New "best" Z candidate
 		  mZdiff = deltaM ; 
 		  vZ1 = zCand ; 
@@ -92,41 +107,44 @@ int HiggsEvent::getZ1(double minElePt1, double minElePt2, double minMuPt1, doubl
     // Second electron is a GSF electron
     for (unsigned int j=i+1; j<gsfCands.size(); j++) { 
       if (gsfCands.at(j).pt() < minElePt2) break ; // List is pT ordered
-      if ((gsfCands.at(i).charge()*gsfCands.at(j).charge()) > 0) continue ;
-       
+      if ((gsfCands.at(i).charge()*gsfCands.at(j).charge()) > 0) continue ;       
       zCand = gsfCands.at(i).p4() + gsfCands.at(j).p4() ; 
-      if (zCand.M() < minMass) continue ; 
+      if (zCand.M() < minMass) continue ;
+      
+      vl1 =  gsfCands.at(i).p4();
+	  ecalSumEt_1 = gsfCands.at(i).dr03EcalRecHitSumEt();
+	  tkSumPt_1 = gsfCands.at(i).dr03TkSumPt();
+	  hcalSumEt_1 = gsfCands.at(i).dr03HcalTowerSumEt();
+	  ecalIsoByGSF_1 = ecalSumEt_1/vl1.Et();
+	  trackIso_1 = tkSumPt_1/vl1.Pt();
+	  e25Max_1 = gsfCands.at(i).e2x5Max()/gsfCands.at(i).superCluster()->energy();
+	  e15_1 = gsfCands.at(i).e1x5()/gsfCands.at(i).superCluster()->energy();
+	  e55_1 = gsfCands.at(i).e5x5()/gsfCands.at(i).superCluster()->energy();
+	  HoEM_1 = gsfCands.at(i).hcalOverEcal();
+	  sIeIe_1 = gsfCands.at(i).sigmaIetaIeta();
+	  netIso_1 = ( tkSumPt_1 + ecalSumEt_1 + hcalSumEt_1 )/vl1.Pt();
+	
+	  l2Cand = gsfCands.at(j).p4();		
+	  ecalSumEt_2 = gsfCands.at(j).dr03EcalRecHitSumEt();
+	  tkSumPt_2 = gsfCands.at(j).dr03TkSumPt();
+	  hcalSumEt_2 = gsfCands.at(j).dr03HcalTowerSumEt();
+	  ecalIsoByGSF_2 = ecalSumEt_2/l2Cand.Et();
+	  trackIso_2 = tkSumPt_2/l2Cand.Pt();
+	  e25Max_2 = gsfCands.at(j).e2x5Max()/gsfCands.at(j).superCluster()->energy();
+	  e15_2 = gsfCands.at(j).e1x5()/gsfCands.at(j).superCluster()->energy();
+	  e55_2 = gsfCands.at(j).e5x5()/gsfCands.at(j).superCluster()->energy();
+	  HoEM_2 = gsfCands.at(j).hcalOverEcal();
+	  sIeIe_2 = gsfCands.at(j).sigmaIetaIeta();
+	  netIso_2 = ( tkSumPt_2 + ecalSumEt_2 + hcalSumEt_2 )/l1Cand.Pt();
+	  
+	  if( netIso_1 + netIso_2 > 0.35 ) continue;
+		 
       deltaM = fabs(zCand.M() - mZpdg) ; 
       if (deltaM < mZdiff) { // New "best" Z candidate
 		mZdiff = deltaM ; 
 		vZ1 = zCand ; 
 		Z1flavor = 2 ; 
 		Z1idx.first = i ; Z1idx.second = j ; 
-		vl1 =  gsfCands.at(i).p4();
-		ecalSumEt_1 = gsfCands.at(i).dr03EcalRecHitSumEt();
-		tkSumPt_1 = gsfCands.at(i).dr03TkSumPt();
-		hcalSumEt_1 = gsfCands.at(i).dr03HcalTowerSumEt();
-		ecalIsoByGSF_1 = ecalSumEt_1/vl1.Et();
-		trackIso_1 = tkSumPt_1/vl1.Pt();
-		e25Max_1 = gsfCands.at(i).e2x5Max()/gsfCands.at(i).superCluster()->energy();
-		e15_1 = gsfCands.at(i).e1x5()/gsfCands.at(i).superCluster()->energy();
-		e55_1 = gsfCands.at(i).e5x5()/gsfCands.at(i).superCluster()->energy();
-		HoEM_1 = gsfCands.at(i).hcalOverEcal();
-		sIeIe_1 = gsfCands.at(i).sigmaIetaIeta();
-		netIso_1 = ( tkSumPt_1 + ecalSumEt_1 + hcalSumEt_1 )/vl1.Pt();
-		
-		l2Cand = gsfCands.at(j).p4();		
-		ecalSumEt_2 = gsfCands.at(j).dr03EcalRecHitSumEt();
-		tkSumPt_2 = gsfCands.at(j).dr03TkSumPt();
-		hcalSumEt_2 = gsfCands.at(j).dr03HcalTowerSumEt();
-		ecalIsoByGSF_2 = ecalSumEt_2/l2Cand.Et();
-		trackIso_2 = tkSumPt_2/l2Cand.Pt();
-		e25Max_2 = gsfCands.at(j).e2x5Max()/gsfCands.at(j).superCluster()->energy();
-		e15_2 = gsfCands.at(j).e1x5()/gsfCands.at(j).superCluster()->energy();
-		e55_2 = gsfCands.at(j).e5x5()/gsfCands.at(j).superCluster()->energy();
-		HoEM_2 = gsfCands.at(j).hcalOverEcal();
-		sIeIe_2 = gsfCands.at(j).sigmaIetaIeta();
-		netIso_2 = ( tkSumPt_2 + ecalSumEt_2 + hcalSumEt_2 )/l1Cand.Pt();
       }
     }
 
@@ -222,8 +240,15 @@ int HiggsEvent::getZ2(double minElePt, double minMuPt, double minMass, double mi
 	
 	zCand = muCands.at(i).p4() + muCands.at(j).p4() ;
 	if (zCand.M() < minMass) continue ; 
-	l4Cand = zCand + vZ1 ; 
 	
+	vl1 = muCands.at(i).p4();
+	vl2 = muCands.at(j).p4();
+	netIso_3 = ( muCands.at(i).isolationR03().sumPt + muCands.at(i).isolationR03().emEt + muCands.at(i).isolationR03().hadEt )/vl1.Pt() ;
+	netIso_4 = ( muCands.at(j).isolationR03().sumPt + muCands.at(j).isolationR03().emEt + muCands.at(j).isolationR03().hadEt )/vl1.Pt() ;
+	
+	if( netIso_3 + netIso_4 > 0.35 ) continue;
+	
+	l4Cand = zCand + vZ1 ; 	
 	if (l4Cand.M() < minM4) continue ; 
 	sumPt = muCands.at(i).pt() + muCands.at(j).pt() ; 
 	if (sumPt > minSumPt) { // New "best" Z candidate
@@ -254,38 +279,42 @@ int HiggsEvent::getZ2(double minElePt, double minMuPt, double minMass, double mi
       if (zCand.M() > vZ1.M()) continue ; // Z1 should be mostly "on shell"      
       l4Cand = zCand + vZ1 ;       
       if (l4Cand.M() < minM4) continue ; 
+       
+	  Z2idx.first = i ; Z2idx.second = j ; 
+	  vl3 =  gsfCands.at(i).p4();
+	  ecalSumEt_3 = gsfCands.at(i).dr03EcalRecHitSumEt();
+	  tkSumPt_3 = gsfCands.at(i).dr03TkSumPt();
+	  hcalSumEt_3 = gsfCands.at(i).dr03HcalTowerSumEt();
+	  ecalIsoByGSF_3 = ecalSumEt_3/vl3.Et();
+	  trackIso_3 = tkSumPt_3/vl3.Pt();
+	  e25Max_3 = gsfCands.at(i).e2x5Max()/gsfCands.at(i).superCluster()->energy();
+	  e15_3 = gsfCands.at(i).e1x5()/gsfCands.at(i).superCluster()->energy();
+	  e55_3 = gsfCands.at(i).e5x5()/gsfCands.at(i).superCluster()->energy();
+	  HoEM_3 = gsfCands.at(i).hcalOverEcal();
+	  sIeIe_3 = gsfCands.at(i).sigmaIetaIeta();
+	  netIso_3 = ( tkSumPt_3 + ecalSumEt_3 + hcalSumEt_3 )/vl3.Pt();
+			
+	  vl4 =  gsfCands.at(j).p4();
+	  ecalSumEt_4 = gsfCands.at(j).dr03EcalRecHitSumEt();
+	  tkSumPt_4 = gsfCands.at(j).dr03TkSumPt();
+	  hcalSumEt_4 = gsfCands.at(j).dr03HcalTowerSumEt();
+	  ecalIsoByGSF_4 = ecalSumEt_4/vl4.Et();
+	  trackIso_4 = tkSumPt_4/vl4.Pt();
+	  e25Max_4 = gsfCands.at(j).e2x5Max()/gsfCands.at(j).superCluster()->energy();
+	  e15_4 = gsfCands.at(j).e1x5()/gsfCands.at(j).superCluster()->energy();
+	  e55_4 = gsfCands.at(j).e5x5()/gsfCands.at(j).superCluster()->energy();
+	  HoEM_4 = gsfCands.at(j).hcalOverEcal();
+	  sIeIe_4 = gsfCands.at(j).sigmaIetaIeta();
+	  netIso_4 = ( tkSumPt_4 + ecalSumEt_4 + hcalSumEt_4 )/vl4.Pt();
+	  
+	  if( netIso_3 + netIso_4 > 0.35 ) continue;
+      
       sumPt = gsfCands.at(i).pt() + gsfCands.at(j).pt() ; 
       if (sumPt > minSumPt) { // New "best" Z candidate
-	minSumPt = sumPt ; 
-	vZ2 = zCand ; 
-	vH = l4Cand ; 
-	Z2flavor = 2 ; 
-	Z2idx.first = i ; Z2idx.second = j ; 
-	vl3 =  gsfCands.at(i).p4();
-	ecalSumEt_3 = gsfCands.at(i).dr03EcalRecHitSumEt();
-	tkSumPt_3 = gsfCands.at(i).dr03TkSumPt();
-	hcalSumEt_3 = gsfCands.at(i).dr03HcalTowerSumEt();
-	ecalIsoByGSF_3 = ecalSumEt_3/vl3.Et();
-	trackIso_3 = tkSumPt_3/vl3.Pt();
-	e25Max_3 = gsfCands.at(i).e2x5Max()/gsfCands.at(i).superCluster()->energy();
-	e15_3 = gsfCands.at(i).e1x5()/gsfCands.at(i).superCluster()->energy();
-	e55_3 = gsfCands.at(i).e5x5()/gsfCands.at(i).superCluster()->energy();
-	HoEM_3 = gsfCands.at(i).hcalOverEcal();
-	sIeIe_3 = gsfCands.at(i).sigmaIetaIeta();
-	netIso_3 = ( tkSumPt_3 + ecalSumEt_3 + hcalSumEt_3 )/vl3.Pt();
-		
-	vl4 =  gsfCands.at(j).p4();
-	ecalSumEt_4 = gsfCands.at(j).dr03EcalRecHitSumEt();
-	tkSumPt_4 = gsfCands.at(j).dr03TkSumPt();
-	hcalSumEt_4 = gsfCands.at(j).dr03HcalTowerSumEt();
-	ecalIsoByGSF_4 = ecalSumEt_4/vl4.Et();
-	trackIso_4 = tkSumPt_4/vl4.Pt();
-	e25Max_4 = gsfCands.at(j).e2x5Max()/gsfCands.at(j).superCluster()->energy();
-	e15_4 = gsfCands.at(j).e1x5()/gsfCands.at(j).superCluster()->energy();
-	e55_4 = gsfCands.at(j).e5x5()/gsfCands.at(j).superCluster()->energy();
-	HoEM_4 = gsfCands.at(j).hcalOverEcal();
-	sIeIe_4 = gsfCands.at(j).sigmaIetaIeta();
-	netIso_4 = ( tkSumPt_4 + ecalSumEt_4 + hcalSumEt_4 )/vl4.Pt();
+      	minSumPt = sumPt ; 
+	    vZ2 = zCand ; 
+	    vH = l4Cand ; 
+	    Z2flavor = 2 ;	
       }
     }
   }
@@ -309,6 +338,13 @@ void HiggsEvent::calculate() {
 	l3eta = vl3.Eta();
 	l4pt = vl4.Pt();
 	l4eta = vl4.Eta();	
+	
+	if( Z1flavor && Z2flavor )
+	{
+		if( (netIso_1 + netIso_3 < 0.35) && (netIso_1 + netIso_4 < 0.35) && (netIso_2 + netIso_3 < 0.35) && (netIso_2 + netIso_4 < 0.35) ){
+			passCombinedIso = true;
+		}
+	}
 
   /*
   reco::Particle::LorentzVector j1p4 = j1.p4();

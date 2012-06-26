@@ -159,7 +159,7 @@ process.higgsAnalysis = cms.EDFilter( "Higgs",
         maxMuAbsEta      = cms.double( 2.4 ), 
         electronTag      = cms.InputTag( "gsfElectrons" ), 
         electronMap      = cms.InputTag( "eIDRobustLoose" ), 
-        electronCutValue = cms.int32( 7 ), 
+        electronCutValue = cms.int32( 0 ), 
         minZ1e1pt        = cms.double( z1lepton1pt ), 
         minZ1e2pt        = cms.double( z1lepton2pt ), 
         minZ2e2pt        = cms.double( 7.0 ), 
@@ -197,11 +197,28 @@ process.p = cms.Path(
     process.AnalysisIntroSequence + 
     process.higgsGen + 
     process.higgsAnalysis
-)
+)z
 
  
 #--- Output histgram file ---#
 process.TFileService = cms.Service("TFileService",
        fileName = cms.string("GluGlu_120GeV_Higgs_MC_Reco_Analysis_Cutlevel_0.root"),
 )
+
+
+#---Output Module----#
+process.out = cms.OutputModule("PoolOutputModule",
+                              fileName = cms.untracked.string('HToZZTo4L_candidates.root'),
+                              # save only events passing the full path
+                              SelectEvents=cms.untracked.PSet(SelectEvents=cms.vstring('p')),
+                              outputCommands = cms.untracked.vstring("keep *")
+                              )
+process.outpath  = cms.EndPath(process.out)
+
+
+
+
+
+
+
 

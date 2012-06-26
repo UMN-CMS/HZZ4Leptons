@@ -270,8 +270,7 @@ void Higgs::HistPerDef::Book(TFileDirectory *mydir, const std::string& post, int
     T = post + " Reco H Rapidity";
     HY = mydir->make<TH1D> (t.c_str(), T.c_str(), 20, -5, 5 );
     t = post + "_HMass";
-    T = post + " Reco H mass";
-    std::cout<<"Created titles: "<<t<<", "<<T<<std::endl;        
+    T = post + " Reco H mass";        
     HMass = mydir->make<TH1D> (t.c_str(), T.c_str(), 60, 90, 150 );  
     t = post + "_Z1Mass";
     T = post + " Reco Z1 mass";
@@ -899,10 +898,10 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // Look for valid muons
     std::vector<reco::Muon> muCands =
-      higgs::getMuonList(recoMuons, cuts.minimum_mu2_z2_pt, cuts.maximum_mu_abseta, false) ; 
+      higgs::getMuonList(recoMuons, cuts.minimum_mu2_z2_pt, cuts.maximum_mu_abseta, pvHandle, false) ; 
       
     std::vector<reco::GsfElectron> eleCands =
-      higgs::getElectronList(recoElectrons, eIDValueMap, cuts.minimum_e2_z2_pt, cuts.maximum_e_abseta, elecCut_, eleCutsByPt) ; 
+      higgs::getElectronList(recoElectrons, eIDValueMap, cuts.minimum_e2_z2_pt, cuts.maximum_e_abseta, elecCut_, eleCutsByPt, pvHandle) ; 
 
     std::vector<reco::RecoEcalCandidate> hfEleCands =
       higgs::getElectronList(recoHFElectrons, clusterAssociation, cuts.minimum_e2_z1_pt, cuts.maximum_eHF_abseta, higgsEvent) ;
@@ -930,6 +929,8 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     recoPU->Fill(higgsEvent.n_pue);
 			   
 	higgsEvent.calculate();
+	
+	if ( !higgsEvent.passCombinedIso ) return false;
 	
 	for(std::vector< std::pair<double,unsigned int> >::const_iterator i = eleCutsByPt.begin(); i != eleCutsByPt.end(); i++)
     {
