@@ -16,27 +16,6 @@ const float pileup2011A = 5.0;
 const double muScaleLUTarray100[5] = { 0.379012,0.162107,0.144514,0.0125131,-0.392431 } ; 
 
 namespace higgs {
-  bool isVBTFloose(const reco::Muon& m)
-  {
-    return ( muon::isGoodMuon(m,muon::AllGlobalMuons) && m.innerTrack()->numberOfValidHits() > 10 ) ;  
-  }
-  
-  // Note: No impact parameter requirement is applied!!!
-  bool isVBTFtight(const reco::Muon& m)
-  {
-    if( !isVBTFloose(m) ) return false; // this should already have been checked.
-    return ( muon::isGoodMuon(m,muon::GlobalMuonPromptTight) &&
-	     m.isTrackerMuon() && 
-	     m.numberOfMatches() > 1 && 
-	     m.globalTrack()->hitPattern().numberOfValidPixelHits()>0 ) ; 
-  }
-
-
-  double muIsolation(const pat::Muon& m, const double pTscale) {
-    double mupt = pTscale * m.pt() ; 
-    return (m.trackIso() / mupt) ; 
-  }
-
   void initPDFSet(int i, std::string name) {
       LHAPDF::initPDFSet(i,name) ; 
   }
@@ -316,17 +295,48 @@ namespace higgs {
   //   // To get GeV scale, need to divide by 10^3
   //   return muScaleLUTarray100[ieta] / 1000. ; 
   // } 
+  
+  bool isVBTFloose(const reco::Muon& m)
+  {
+    return ( muon::isGoodMuon(m,muon::AllGlobalMuons) && m.innerTrack()->numberOfValidHits() > 10 ) ;  
+  }
+  
+  // Note: No impact parameter requirement is applied!!!
+  bool isVBTFtight(const reco::Muon& m)
+  {
+    if( !isVBTFloose(m) ) return false; // this should already have been checked.
+    return ( muon::isGoodMuon(m,muon::GlobalMuonPromptTight) &&
+	     m.isTrackerMuon() && 
+	     m.numberOfMatches() > 1 && 
+	     m.globalTrack()->hitPattern().numberOfValidPixelHits()>0 //&& need dz and d0
+	      ) ; 
+  }
+
+
+  double muIsolation(const pat::Muon& m, const double pTscale) {
+    double mupt = pTscale * m.pt() ; 
+    return (m.trackIso() / mupt) ; 
+  }
 
   std::vector<reco::Muon> getMuonList(edm::Handle<reco::MuonCollection>& recoMuons,
 				     double minPt, double maxAbsEta, 
+				     edm::Handle<reco::VertexCollection>& vertices,
 				     bool trackerPt) {
 
     std::vector<reco::Muon> muonList ; 
     for (unsigned int iMuon = 0; iMuon < recoMuons->size(); iMuon++) {
-        reco::Muon iM = recoMuons->at(iMuon) ; 
+        reco::Muon iM = recoMuons->at(iMuon) ;
+        reco::Vertex iV = vertices->at(0); 
         if ( fabs(iM.eta()) > maxAbsEta ) continue ; 
         if ( iM.pt() < minPt ) continue ; 
         if ( !isVBTFloose(iM) ) continue ; 
+        if( (fabs(iM.eta())<1.48)&&(iM.pt()>20)&&(iM.pfIsolationR03().sumChargedParticlePt/iM.pt()>0.13) ) continue;
+        if( (fabs(iM.eta())<1.48)&&(iM.pt()<20)&&(iM.pfIsolationR03().sumChargedParticlePt/iM.pt()>0.06) ) continue;
+        if( (fabs(iM.eta())>1.48)&&(iM.pt()>20)&&(iM.pfIsolationR03().sumChargedParticlePt/iM.pt()>0.09) ) continue;
+        if( (fabs(iM.eta())>1.48)&&(iM.pt()<20)&&(iM.pfIsolationR03().sumChargedParticlePt/iM.pt()>0.05) ) continue;
+        if( iM.innerTrack()->dxy(iV.position())>0.02 ) continue;
+        if( iM.innerTrack()->dz(iV.position())>0.1 ) continue;
+        //std::cout<<"MuCand vertex |Z| = "<<iM.vz()<<std::endl;
         
         muonList.push_back(iM) ; 
     }
@@ -338,7 +348,8 @@ namespace higgs {
   std::vector< reco::GsfElectron > getElectronList(edm::Handle<reco::GsfElectronCollection>& recoElecs,
 						   							edm::Handle< edm::ValueMap<float> >& valueMap, 
                                                     double minEt, double maxAbsEta, 
-						   							int cutlevel, std::vector< std::pair<double,unsigned int> >& eleCutsByPt) { 
+						   							int cutlevel, std::vector< std::pair<double,unsigned int> >& eleCutsByPt,
+						   							edm::Handle<reco::VertexCollection>& vertices) { 
 
     const edm::ValueMap<float> &eIDmap = *valueMap ;
     
@@ -347,8 +358,21 @@ namespace higgs {
     std::vector< reco::GsfElectron > electronList ; 
     for (unsigned int iElectron=0; iElectron < recoElecs->size(); iElectron++) {
         edm::Ref<reco::GsfElectronCollection> eRef(recoElecs,iElectron);
+        reco::Vertex iV = vertices->at(0);
         if ( eRef->pt() < minEt ) continue ;
         if ( fabs(eRef->eta()) > maxAbsEta ) continue ;
+        if ( eRef->dr03TkSumPt()/eRef->pt() > 0.3 ) continue ;
+        if ( eRef->dr03EcalRecHitSumEt()/eRef->pt() > 0.3 ) continue ;
+        if ( eRef->dr03HcalTowerSumEt()/eRef->pt() > 0.3 ) continue ;
+        if ( fabs(eRef->eta()) < 1.48 && eRef->hcalOverEcal() >0.12 ) continue ;
+        if ( fabs(eRef->eta()) > 1.48 && eRef->hcalOverEcal() >0.10 ) continue ;
+        if( (fabs(eRef->eta())<1.48)&&(eRef->pt()>20)&&(eRef->pfIsolationVariables().chargedHadronIso/eRef->pt()>0.45) ) continue;
+        if( (fabs(eRef->eta())<1.48)&&(eRef->pt()<20)&&(eRef->pfIsolationVariables().chargedHadronIso/eRef->pt()>0.50) ) continue;
+        if( (fabs(eRef->eta())>1.48)&&(eRef->pt()>20)&&(eRef->pfIsolationVariables().chargedHadronIso/eRef->pt()>0.30) ) continue;
+        if( (fabs(eRef->eta())>1.48)&&(eRef->pt()<20)&&(eRef->pfIsolationVariables().chargedHadronIso/eRef->pt()>0.30) ) continue;
+        if ( fabs(eRef->gsfTrack()->dz(iV.position()))>0.1 ) continue;
+        //if ( fabs(eRef->gsfTrack()->dxy(vertex->position()))>0.02 ) continue;
+        //std::cout<<"GsfCand. vertex |Z| = "<<fabs(eRef->trackPositionAtVtx().z())<<std::endl;
         thePair.first = eRef->pt();
         thePair.second = int(eIDmap[eRef]);
         eleCutsByPt.push_back(thePair);

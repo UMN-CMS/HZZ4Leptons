@@ -13,7 +13,7 @@
 //
 // Original Author:  Bryan Dahmes
 //         Created:  Wed Sep 22 04:49:56 CDT 2010
-// $Id: HiggsGenAnalysis.cc,v 1.6 2012/05/30 01:03:50 afinkel Exp $
+// $Id: HiggsGenAnalysis.cc,v 1.8 2012/06/19 00:26:54 afinkel Exp $
 //
 // Edited by:   ALexey Finkel
 //
@@ -572,8 +572,9 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
                   }
               }
              
-              if ( zCat >= 0 ) {
-		passEvent = true ; 
+              if ( zCat > 0 ) {
+              
+        passEvent = true;
 		
 		hists.HY->Fill( iparticle->y() ) ;
 		hists.Ztypes->Fill(zCat);
