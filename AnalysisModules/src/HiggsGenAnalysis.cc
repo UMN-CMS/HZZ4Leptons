@@ -13,7 +13,7 @@
 //
 // Original Author:  Bryan Dahmes
 //         Created:  Wed Sep 22 04:49:56 CDT 2010
-// $Id: HiggsGenAnalysis.cc,v 1.8 2012/06/19 00:26:54 afinkel Exp $
+// $Id: HiggsGenAnalysis.cc,v 1.9 2012/06/26 23:43:23 afinkel Exp $
 //
 // Edited by:   ALexey Finkel
 //
@@ -72,10 +72,13 @@ public:
   
   struct HiggsGenEvent
   {
-  	double  Hm, HY, Z1m, Z2m, Z1Y, Z2Y,
+  	double  M4L, Hm, HY, Z1m, Z2m, Z1Y, Z2Y,
   			l1pt, l2pt, l3pt, l4pt,
-  			l1eta, l2eta, l3eta, l4eta;
+  			l1eta, l2eta, l3eta, l4eta,  			
+  			Phi, Phi1, cosTheta0, cosTheta1, cosTheta2;
+  			
 	int n_primary_vertex, n_pue;
+	reco::Particle::LorentzVector PH;
   } he;
   
 
@@ -87,7 +90,7 @@ private:
   bool validZmumu(zboson theZ, bool offshell=false) ; 
   bool validZee(zboson theZ, bool offshell=false) ;
   bool recZ(zboson theZ);
-  void Angular(zboson z1, zboson z2, reco::Particle::LorentzVector H);
+  void Angular(zboson z1, zboson z2, HiggsGenEvent& he);
   TLorentzVector TLV(reco::Particle::LorentzVector);
 
   bool farElectronFilter_ ; 
@@ -95,7 +98,8 @@ private:
   // ----------member data ---------------------------
   struct HistStruct {
       TH1D *Phi1, *Phi, *CosTheta1, *CosTheta2, *CosTheta0, *Ztypes, *HY,
-      		*AllZ1e1Pt, *AllZ1e1Eta, *AllZ1e2Pt, *AllZ1e2Eta;
+      		*AllZ1e1Pt, *AllZ1e1Eta, *AllZ1e2Pt, *AllZ1e2Eta,
+      		*ValidZ1e1Pt, *ValidZ1e1Eta, *ValidZ1e2Pt, *ValidZ1e2Eta;
 
   } hists ;
     
@@ -104,25 +108,23 @@ private:
     	public:
         //book histogram set w/ common suffix inside the provided TFileDirectory
         void Book(TFileDirectory *, const std::string&, int type=0) ; 
-      	void Fill(const HiggsGenEvent& he) ; 
+      	void Fill(const HiggsGenEvent& he, int type=0) ; 
         
-      TH1  *HMass, *HY, *Z1mass, *Z2mass, *Z1Y, *Z2Y, *nVertex,
+      TH1  *M4L, *HMass, *HY, *Z1mass, *Z2mass, *Z1Y, *Z2Y, *nVertex,
 		   *l1Pt, *l1Eta, *l2Pt, *l2Eta, *l3Pt, *l3Eta, *l4Pt, *l4Eta,
-      	   *EcalIso_1, *EcalIso_2, *EcalIsoByGSF_1, *EcalIsoByGSF_2,
-      	   *E25Max_1, *E25Max_2, //*E25Max_3, *E25Max_4,
-      	   *E15_1, *E15_2, //*E15_3, *E15_4,
-      	   *E55_1, *E55_2, //*E55_3, *E55_4;
       	   *FarEEPt, *FarEEeta, *HadrOverEM, *sIeIe,
       	   *HFPt, *HFeta, *e9e25, *var2d,
-      	   *FwdElPt, *FwdElEta;
+      	   *FwdElPt, *FwdElEta,
+      	   *Phi, *Phi1, *cosTheta0, *cosTheta1, *cosTheta2;
       
       TH2 *AllPtVsEta, *l1PtVsEta, *l2PtVsEta;
   } ;
     
     TFileDirectory *rundir;    
         
-    HistPerDef  H4Mu, H4GSFe, H2mu2GSF, HGSF_FEE_2mu, HGSF_HF_2mu, HGSF_HF_2GSF, HGSF_FEE_2GSF, H2GSFe2mu,
-    			AllHF, AllFEE, AllFwd, AllPassing;
+    HistPerDef  H4Mu, H4GSFe, H2mu2GSF, H2GSFe2mu, HGSF_FEE_2mu, HGSF_HF_2mu, HGSF_HF_2GSF, HGSF_FEE_2GSF,
+    			AllHF, AllFEE, AllFwd, AllPassing,
+    			AngularAll, AngularValid, AngularGSFxMu, AngularExMu;
     			
 };
     
@@ -140,96 +142,121 @@ HiggsGenAnalysis::zboson::zboson()
 }
 
 void HiggsGenAnalysis::HistPerDef::Book(TFileDirectory *mydir, const std::string& post, int type) 
-  {
-    std::string t, T; // histogram title string;
-    TH1::SetDefaultSumw2();
-    t = post + "_HY";
-    T = post + " Gen H Rapidity";
-    HY = mydir->make<TH1D> (t.c_str(), T.c_str(), 20, -5, 5 );
-    t = post + "_HMass";
-    T = post + " Gen H mass";
-    std::cout<<"Created titles: "<<t<<", "<<T<<std::endl;        
-    HMass = mydir->make<TH1D> (t.c_str(), T.c_str(), 50, 100, 200 );  
-    t = post + "_Z1Mass";
-    T = post + " Gen Z1 mass";
-    Z1mass = mydir->make<TH1D>(t.c_str(), T.c_str(), 70, 50, 120 );  
-    t = post + "_Z2Mass";
-    T = post + " Gen Z2 mass";
-    Z2mass = mydir->make<TH1D>(t.c_str(), T.c_str(), 90, 0, 90 );    
-    t = post + "_Z1Y";
-    T = post + " Gen Z1 Rapidity";
-    Z1Y = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, -5, 5 );  
-    t = post + "_Z2Y";
-    T = post + " Gen Z2 Rapidity";
-    Z2Y = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, -5, 5 );
-    t = post + "_l1Pt";
-    T = post + " Gen L1 Pt";
-    l1Pt = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 150 );    
-    t = post + "_l2Pt";
-    T = post + " Gen L2 Pt";
-    l2Pt = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 100 );
-    t = post + "_l3Pt";
-    T = post + " Gen L3Pt";
-    l3Pt = mydir->make<TH1D>(t.c_str(), T.c_str(), 25, 0, 100 );    
-    t = post + "_l4Pt";
-    T = post + " Gen L4 Pt";
-    l4Pt = mydir->make<TH1D>(t.c_str(), T.c_str(), 25, 0, 100 );
-    t = post + "_l1Eta";
-    T = post + " Gen L1 Eta";
-    l1Eta = mydir->make<TH1D>(t.c_str(), T.c_str(), 100, -5, 5 );    
-    t = post + "_l2Eta";
-    T = post + " Gen L2 Eta";
-    l2Eta = mydir->make<TH1D>(t.c_str(), T.c_str(), 100, -5, 5 );
-    t = post + "_l3Eta";
-    T = post + " Gen L3 Eta";
-    l3Eta = mydir->make<TH1D>(t.c_str(), T.c_str(), 100, -5, 5 );    
-    t = post + "_l4Eta";
-    T = post + " Gen L4 Eta";
-    l4Eta = mydir->make<TH1D>(t.c_str(), T.c_str(), 100, -5, 5 );
-    t = post + "_nVertex";
-    T = post + " Number of Vertices";
-    nVertex = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 50 );
-    
-    t = post + "_AllPtVsEta";
-    T = post + " l1, l2 Pt vs. Eta";
-    AllPtVsEta = mydir->make<TH2D>(t.c_str(), T.c_str(), 25, -5, 5, 50, 0, 150 );
-    t = post + "_l1PtVsEta";
-    T = post + " Highest Pt vs. Eta";
-    l1PtVsEta = mydir->make<TH2D>(t.c_str(), T.c_str(), 25, -5, 5, 50, 0, 150 );
-    t = post + "_l2PtVsEta";
-    T = post + " Second Pt vs. Eta";
-    l2PtVsEta = mydir->make<TH2D>(t.c_str(), T.c_str(), 25, -5, 5, 50, 0, 150 );
-  }
-  
-void HiggsGenAnalysis::HistPerDef::Fill(const HiggsGenEvent& he) 
 {
-	HY->Fill(he.HY);
-	HMass->Fill(he.Hm);
-	Z1mass->Fill(he.Z1m);
-	Z2mass->Fill(he.Z2m);
-	Z1Y->Fill(he.Z1Y);
-	Z2Y->Fill(he.Z2Y);
-	l1Pt->Fill(he.l1pt);
-	l1Eta->Fill(he.l1eta);
-	l2Pt->Fill(he.l2pt);
-	l2Eta->Fill(he.l2eta);
-	l3Pt->Fill(he.l3pt);
-	l3Eta->Fill(he.l3eta);
-	l4Pt->Fill(he.l4pt);
-	l4Eta->Fill(he.l4eta);
-	nVertex->Fill(he.n_primary_vertex);
-
-	AllPtVsEta->Fill(he.l1eta,he.l1pt);
-	AllPtVsEta->Fill(he.l2eta,he.l2pt);	
-	if(he.l1pt>he.l2pt)
+	std::string t, T; // histogram title string;
+	if(type != 10)
 	{
-		l1PtVsEta->Fill(he.l1eta,he.l1pt);
-		l2PtVsEta->Fill(he.l2eta,he.l2pt);
+	    TH1::SetDefaultSumw2();
+	    t = post + "_HY";
+	    T = post + " Gen H Rapidity";
+	    HY = mydir->make<TH1D> (t.c_str(), T.c_str(), 20, -5, 5 );
+	    t = post + "_HMass";
+	    T = post + " Gen H mass";
+	    HMass = mydir->make<TH1D> (t.c_str(), T.c_str(), 50, 100, 200 );
+	    t = post + "_M4L";
+	    T = post + " 4-lepton invariant mass";
+	    M4L = mydir->make<TH1D> (t.c_str(), T.c_str(), 50, 100, 200 );  
+	    t = post + "_Z1Mass";
+	    T = post + " Gen Z1 mass";
+	    Z1mass = mydir->make<TH1D>(t.c_str(), T.c_str(), 70, 50, 120 );  
+	    t = post + "_Z2Mass";
+	    T = post + " Gen Z2 mass";
+	    Z2mass = mydir->make<TH1D>(t.c_str(), T.c_str(), 90, 0, 90 );    
+	    t = post + "_Z1Y";
+	    T = post + " Gen Z1 Rapidity";
+	    Z1Y = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, -5, 5 );  
+	    t = post + "_Z2Y";
+	    T = post + " Gen Z2 Rapidity";
+	    Z2Y = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, -5, 5 );
+	    t = post + "_l1Pt";
+	    T = post + " Gen L1 Pt";
+	    l1Pt = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 150 );    
+	    t = post + "_l2Pt";
+	    T = post + " Gen L2 Pt";
+	    l2Pt = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 100 );
+	    t = post + "_l3Pt";
+	    T = post + " Gen L3Pt";
+	    l3Pt = mydir->make<TH1D>(t.c_str(), T.c_str(), 25, 0, 100 );    
+	    t = post + "_l4Pt";
+	    T = post + " Gen L4 Pt";
+	    l4Pt = mydir->make<TH1D>(t.c_str(), T.c_str(), 25, 0, 100 );
+	    t = post + "_l1Eta";
+	    T = post + " Gen L1 Eta";
+	    l1Eta = mydir->make<TH1D>(t.c_str(), T.c_str(), 100, -5, 5 );    
+	    t = post + "_l2Eta";
+	    T = post + " Gen L2 Eta";
+	    l2Eta = mydir->make<TH1D>(t.c_str(), T.c_str(), 100, -5, 5 );
+	    t = post + "_l3Eta";
+	    T = post + " Gen L3 Eta";
+	    l3Eta = mydir->make<TH1D>(t.c_str(), T.c_str(), 100, -5, 5 );    
+	    t = post + "_l4Eta";
+	    T = post + " Gen L4 Eta";
+	    l4Eta = mydir->make<TH1D>(t.c_str(), T.c_str(), 100, -5, 5 );
+	    t = post + "_nVertex";
+	    T = post + " Number of Vertices";
+	    nVertex = mydir->make<TH1D>(t.c_str(), T.c_str(), 50, 0, 50 );
+	    
+	    t = post + "_AllPtVsEta";
+	    T = post + " l1, l2 Pt vs. Eta";
+	    AllPtVsEta = mydir->make<TH2D>(t.c_str(), T.c_str(), 25, -5, 5, 50, 0, 150 );
+	    t = post + "_l1PtVsEta";
+	    T = post + " Highest Pt vs. Eta";
+	    l1PtVsEta = mydir->make<TH2D>(t.c_str(), T.c_str(), 25, -5, 5, 50, 0, 150 );
+	    t = post + "_l2PtVsEta";
+	    T = post + " Second Pt vs. Eta";
+	    l2PtVsEta = mydir->make<TH2D>(t.c_str(), T.c_str(), 25, -5, 5, 50, 0, 150 );
 	}
 	else
-	{	
-		l1PtVsEta->Fill(he.l2eta,he.l2pt);
-		l2PtVsEta->Fill(he.l1eta,he.l1pt);
+	{
+		Phi = mydir->make<TH1D>("Phi", "Phi (Angle between Z decay planes)", 50, -3.1, 3.1 );
+	    Phi1 = mydir->make<TH1D>("Phi1", "Phi1 (Angle between Z1 plane and beam)", 50, -3.1, 3.1 );
+	    cosTheta0 = mydir->make<TH1D>("cosTheta0","Cos(#theta_{0}) (Angle between PZ1 and beam)",50,-1,1);
+	    cosTheta1 = mydir->make<TH1D>("cosTheta1","Cos(#theta_{1}) (Angle between Pl1 and PZ1)",50,-1,1);
+	    cosTheta2 = mydir->make<TH1D>("cosTheta2","Cos(#theta_{2}) (Angle between Pl3 and PZ2)",50,-1,1);
+	}
+}
+  
+void HiggsGenAnalysis::HistPerDef::Fill(const HiggsGenEvent& he, int type) 
+{
+	if(type != 10)
+	{
+		HY->Fill(he.HY);
+		HMass->Fill(he.Hm);
+		M4L->Fill(he.M4L);
+		Z1mass->Fill(he.Z1m);
+		Z2mass->Fill(he.Z2m);
+		Z1Y->Fill(he.Z1Y);
+		Z2Y->Fill(he.Z2Y);
+		l1Pt->Fill(he.l1pt);
+		l1Eta->Fill(he.l1eta);
+		l2Pt->Fill(he.l2pt);
+		l2Eta->Fill(he.l2eta);
+		l3Pt->Fill(he.l3pt);
+		l3Eta->Fill(he.l3eta);
+		l4Pt->Fill(he.l4pt);
+		l4Eta->Fill(he.l4eta);
+		nVertex->Fill(he.n_primary_vertex);
+
+		AllPtVsEta->Fill(he.l1eta,he.l1pt);
+		AllPtVsEta->Fill(he.l2eta,he.l2pt);	
+		if(he.l1pt>he.l2pt)
+		{
+			l1PtVsEta->Fill(he.l1eta,he.l1pt);
+			l2PtVsEta->Fill(he.l2eta,he.l2pt);
+		}
+		else
+		{	
+			l1PtVsEta->Fill(he.l2eta,he.l2pt);
+			l2PtVsEta->Fill(he.l1eta,he.l1pt);
+		}
+	}
+	else
+	{
+		Phi->Fill(he.Phi);
+		Phi1->Fill(he.Phi1);
+		cosTheta0->Fill(he.cosTheta0);	
+		cosTheta1->Fill(he.cosTheta1);
+		cosTheta2->Fill(he.cosTheta2);
 	}
 }
   
@@ -261,16 +288,25 @@ HiggsGenAnalysis::HiggsGenAnalysis(const edm::ParameterSet& iConfig) {
     HGSF_HF_2mu.Book(new TFileDirectory(fs->mkdir("GSF_HF_2Mu")),"GSF_HF_2Mu");
     HGSF_HF_2GSF.Book(new TFileDirectory(fs->mkdir("GSF_HF_2GSF")),"GSF_HF_2GSF");
     H2GSFe2mu.Book(new TFileDirectory(fs->mkdir("2GSF_2Mu_Cut0")),"2GSF_2Mu");
+    AngularAll.Book(new TFileDirectory(fs->mkdir("AngularAll")),"AngularAll", 10);
+    AngularValid.Book(new TFileDirectory(fs->mkdir("AngularValid")),"AngularValid", 10);
+    AngularGSFxMu.Book(new TFileDirectory(fs->mkdir("AngularGSFxMu")),"AngularGSFxMu", 10);
+    AngularExMu.Book(new TFileDirectory(fs->mkdir("AngularExMu")),"AngularExMu", 10);   
     
-    hists.Phi = fs->make<TH1D>("Phi","#Phi",20, -3.2,3.2);
+    /*hists.Phi = fs->make<TH1D>("Phi","#Phi",20, -3.2,3.2);
     hists.Phi1 = fs->make<TH1D>("Phi1","#Phi_{1}",20, -3.2,3.2);
     hists.CosTheta0 = fs->make<TH1D>("CostTheta0","Cos(#theta_{0})",50,-1.,1.);
     hists.CosTheta1 = fs->make<TH1D>("CostTheta1","Cos(#theta_{1})",20,-1.,1.);
-    hists.CosTheta2 = fs->make<TH1D>("CostTheta2","Cos(#theta_{2})",20,-1.,1.);
+    hists.CosTheta2 = fs->make<TH1D>("CostTheta2","Cos(#theta_{2})",20,-1.,1.);*/
     hists.AllZ1e1Pt = fs->make<TH1D>("AllZ1e1Pt","Z1 e1 Pt with central Z2",100,0,200);
     hists.AllZ1e2Pt = fs->make<TH1D>("AllZ1e2Pt","Z1 e2 Pt with central Z2",100,0,200);
-    hists.AllZ1e1Eta = fs->make<TH1D>("AllZ1e1Eta","Z1 e1 Eta with central Z2",50,-6,6);
-    hists.AllZ1e2Eta = fs->make<TH1D>("AllZ1e2Eta","Z1 e2 Eta with central Z2",50,-6,6);
+    hists.AllZ1e1Eta = fs->make<TH1D>("AllZ1e1Eta","Z1 e1 Eta with central Z2",60,-6,6);
+    hists.AllZ1e2Eta = fs->make<TH1D>("AllZ1e2Eta","Z1 e2 Eta with central Z2",60,-6,6);
+    
+    hists.ValidZ1e1Pt = fs->make<TH1D>("ValidZ1e1Pt","Z1 e1 Pt with valid Z1, Z2, 100<M4L140 GeV",100,0,200);
+    hists.ValidZ1e2Pt = fs->make<TH1D>("ValidZ1e2Pt","Z1 e2 Pt with valid Z1, Z2, 100<M4L140 GeV",100,0,200);
+    hists.ValidZ1e1Eta = fs->make<TH1D>("ValidZ1e1Eta","Z1 e1 Eta with valid Z1, Z2, 100<M4L140 GeV",60,-6,6);
+    hists.ValidZ1e2Eta = fs->make<TH1D>("ValidZ1e2Eta","Z1 e2 Eta with valid Z1, Z2, 100<M4L140 GeV",60,-6,6);
        
     hists.Ztypes = fs->make<TH1D>("Ztypes", "Decay Channels of Z, Z*", 9, -0.5, 8.5 );
     hists.Ztypes->GetXaxis()->SetBinLabel(1, "Other");
@@ -359,7 +395,7 @@ bool HiggsGenAnalysis::recZ(zboson theZ)//this checks if Z daughters could be re
 	return false;	
 }
 
-void HiggsGenAnalysis::Angular(zboson z1, zboson z2, reco::Particle::LorentzVector H0)
+void HiggsGenAnalysis::Angular(zboson z1, zboson z2, HiggsGenEvent& he)
 {
 	TLorentzVector Z1, Z2, l11, l12, l21, l22, H, Prot(0,0,1,1);
 	Z1 = TLV(z1.PZ);
@@ -368,34 +404,34 @@ void HiggsGenAnalysis::Angular(zboson z1, zboson z2, reco::Particle::LorentzVect
 	Z2 = TLV(z2.PZ);
 	l21 = TLV(z2.Pl1);
 	l22 = TLV(z2.Pl2);
-	H = TLV(H0);
-	
-	//test to see that boost is working correctly
-	TLorentzVector Hclone = H;
-	//hists.HiggsP2->Fill(Hclone.E());
-	Hclone.Boost(-H.BoostVector());
-	//hists.HiggsRestP2->Fill(Hclone.E());
-	
-	//find theta-star and phi from Z1 in Higgs frame
-	TLorentzVector Z1clone = Z1;
-	Hclone = H;
-	Prot.Boost(-H.BoostVector());
+	H = TLV(he.PH);
 
+	//find theta0 and phi1 from Z1 in Higgs frame
+	TLorentzVector Z1clone = Z1;
+	TLorentzVector l11clone = l11;
+	TLorentzVector Hclone = H;
+	Prot.Boost(-H.BoostVector());
+	l11clone.Boost(-H.BoostVector());
 	Z1clone.Boost(-H.BoostVector());
-	hists.Phi1->Fill(Z1clone.Phi()+Hclone.Phi());
-	hists.CosTheta0->Fill(Z1clone.Vect()*Prot.Vect()/Z1clone.P()/Prot.P());
-	Z1clone.Boost(H.BoostVector());
+	he.cosTheta0 = Z1clone.Vect()*Prot.Vect()/Z1clone.P()/Prot.P();
+	
+	TVector3 NZ1 = Z1clone.Vect().Cross(l11clone.Vect());
+	TVector3 NPZ = Prot.Vect().Cross(Z1clone.Vect());
+	
+	he.Phi1 = acos( NZ1*NPZ/( NZ1.Mag()*NPZ.Mag() ) );
+	he.Phi1 *= (NZ1.Phi()>NPZ.Phi())? 1: -1;
+	//hists.Phi1->Fill(Phi1);
 	
 	//go to Z1 frame to get theta1
 	TLorentzVector Z2clone = Z2;
-	TLorentzVector l11clone = l11;
+	l11clone = l11;
 	Hclone = H;
 	Z2clone.Boost(-Z1.BoostVector());
 	Hclone.Boost(-Z1.BoostVector());
 	l11clone.Boost(-Z1.BoostVector());
 	
-	double cosTh1 = l11clone.Vect()*Hclone.Vect()/l11clone.P()/Hclone.P();
-	hists.CosTheta1->Fill(cosTh1);
+	he.cosTheta1 = l11clone.Vect()*(-Z2clone.Vect())/l11clone.P()/Z2clone.P();
+	//hists.CosTheta1->Fill(cosTh1);
 	
 	//go to Z2 frame and get theta2
 	Z1clone = Z1;
@@ -404,8 +440,8 @@ void HiggsGenAnalysis::Angular(zboson z1, zboson z2, reco::Particle::LorentzVect
 	Z1clone.Boost(-Z2.BoostVector());
 	l21clone.Boost(-Z2.BoostVector());
 	
-	double cosTh2 = l21clone.Vect()*Z1clone.Vect()/l21clone.P()/Z1clone.P();
-	hists.CosTheta2->Fill(cosTh2);
+	he.cosTheta2 = l21clone.Vect()*(-Z1clone.Vect())/l21clone.P()/Z1clone.P();
+	//hists.CosTheta2->Fill(cosTh2);
 	
 	//now try to get the phi angle (between Z decay planes)
 	l11clone=l11;
@@ -417,13 +453,13 @@ void HiggsGenAnalysis::Angular(zboson z1, zboson z2, reco::Particle::LorentzVect
 	Z1clone.Boost(-H.BoostVector());
 	Z2clone.Boost(-H.BoostVector());
 	
-	TLorentzVector l1perp = l11clone-(l11clone.Vect()*Z1clone.Vect())/(Z1clone.Vect()*Z1clone.Vect())*Z1clone;
-	TLorentzVector l2perp = l21clone-(l21clone.Vect()*Z2clone.Vect())/(Z2clone.Vect()*Z2clone.Vect())*Z2clone;
+	TVector3 N1 = Z1clone.Vect().Cross(l11clone.Vect());
 	
-	double delPhi = acos( l1perp.Vect()*l2perp.Vect()/(l1perp.P()*l2perp.P()) );
-	delPhi *= (l11clone.Phi()>l21clone.Phi())? 1: -1;
+	TVector3 N2 = Z2clone.Vect().Cross(-l21clone.Vect());
 	
-	hists.Phi->Fill( delPhi );
+	he.Phi = acos( N1*N2/( N1.Mag()*N2.Mag() ) );
+	he.Phi *= (N1.Phi()>N2.Phi())? 1: -1;
+	//hists.Phi->Fill( Phi );
 	
 }
 
@@ -515,8 +551,9 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
                               z1 = newZ ;
                           }
                       }
-                      Angular(z1,z2, iparticle->p4()); //angular distributions computed
                       
+                      he.PH = z1.Pl1 + z1.Pl2 + z2.Pl1 +z2.Pl2;
+                      he.M4L = he.PH.mass();
                       he.Hm = iparticle->mass();
                       he.HY = iparticle->y();
                       he.Z1m = z1.mass;
@@ -531,6 +568,8 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
                       he.l3eta = z1.l1eta;
                       he.l4pt = z1.l2pt;
                       he.l4eta = z1.l2eta;
+                      
+                      Angular(z1,z2, he); //angular distributions computed
                   }
               }
               
@@ -572,75 +611,92 @@ HiggsGenAnalysis::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
                   }
               }
              
-              if ( zCat > 0 ) {
-              
-        passEvent = true;
-		
-		hists.HY->Fill( iparticle->y() ) ;
-		hists.Ztypes->Fill(zCat);
-		AllPassing.Fill( he );
+              AngularAll.Fill( he, 10 );//pure gen, regardless of passing cuts
+              if ( zCat > 0 ) 
+              {              
+		        passEvent = true;
+				
+				hists.HY->Fill( iparticle->y() ) ;
+				hists.Ztypes->Fill(zCat);
+				AllPassing.Fill( he );
+				AngularValid.Fill( he, 10);
 
-		/* if ( recZ(z1) && recZ(z2) )
-		{
-			hists.PotRecoHiggs->Fill(iparticle->y());
-			if( z1.mode==11 )
-			{
-				hists.e1PtVsEta->Fill(z1.l1eta,z1.l1pt);
-				hists.e2PtVsEta->Fill(z1.l2eta,z1.l2pt);
-				hists.AllPtVsEta->Fill(z1.l1eta,z1.l1pt);
-				hists.AllPtVsEta->Fill(z1.l2eta,z1.l2pt);
-			}
-		} */
-		
-		switch(zCat)
-		{
-			case 1:
-				H4Mu.Fill( he );
-				break;
-			case 2:
-				H2mu2GSF.Fill( he );
-				break;
-			case 3:
-				H2GSFe2mu.Fill( he ) ;
-				break;
-			case 4:
-				H4GSFe.Fill( he ) ;
-				break;
-			case 5:
-				HGSF_FEE_2mu.Fill( he ) ;
-				AllFEE.Fill( he );
-				AllFwd.Fill( he );
-				break;
-			case 6:
-				HGSF_FEE_2GSF.Fill( he ) ;
-				AllFEE.Fill( he );
-				AllFwd.Fill( he );
-				break;
-			case 7:
-				HGSF_HF_2mu.Fill( he ) ;
-				AllHF.Fill( he );
-				AllFwd.Fill( he );
-				break;
-			case 8:
-				HGSF_HF_2GSF.Fill( he ) ;
-				AllHF.Fill( he );
-				AllFwd.Fill( he );
-				break;
-		}
-		
-		if( (z1.mode == 11) && recZ(z2) )
-		{
-			hists.AllZ1e1Pt->Fill(z1.l1pt);
-			hists.AllZ1e2Pt->Fill(z1.l2pt);
-			hists.AllZ1e1Eta->Fill(z1.l1eta);
-			hists.AllZ1e2Eta->Fill(z1.l2eta);
-		}
-		
-		if ( farElectronFilter_ ) { 
-		  if ( z1.mode != 11 || z1.mass < 50. || z1.mass > 120. ) return false ; 
-		  if ( fabs(z1.l1eta) < 2.5 && fabs(z1.l2eta) < 2.5 ) return false ; 
-		  //std::cout << "*** This event has an HF/NT electron candidate ***" << std::endl ; 
-		}
+				/* if ( recZ(z1) && recZ(z2) )
+				{
+					hists.PotRecoHiggs->Fill(iparticle->y());
+					if( z1.mode==11 )
+					{
+						hists.e1PtVsEta->Fill(z1.l1eta,z1.l1pt);
+						hists.e2PtVsEta->Fill(z1.l2eta,z1.l2pt);
+						hists.AllPtVsEta->Fill(z1.l1eta,z1.l1pt);
+						hists.AllPtVsEta->Fill(z1.l2eta,z1.l2pt);
+					}
+				} */
+				
+				switch(zCat)
+				{
+					case 1:
+						H4Mu.Fill( he );
+						break;
+					case 2:
+						H2mu2GSF.Fill( he );
+						AngularGSFxMu.Fill( he, 10 );
+						AngularExMu.Fill( he, 10 );
+						break;
+					case 3:
+						H2GSFe2mu.Fill( he ) ;
+						AngularGSFxMu.Fill( he, 10 );
+						AngularExMu.Fill( he, 10 );
+						break;
+					case 4:
+						H4GSFe.Fill( he ) ;
+						break;
+					case 5:
+						HGSF_FEE_2mu.Fill( he ) ;
+						AllFEE.Fill( he );
+						AllFwd.Fill( he );
+						AngularExMu.Fill( he, 10 );
+						break;
+					case 6:
+						HGSF_FEE_2GSF.Fill( he ) ;
+						AllFEE.Fill( he );
+						AllFwd.Fill( he );
+						break;
+					case 7:
+						HGSF_HF_2mu.Fill( he ) ;
+						AngularExMu.Fill( he, 10 );
+						AllHF.Fill( he );
+						AllFwd.Fill( he );
+						break;
+					case 8:
+						HGSF_HF_2GSF.Fill( he ) ;
+						AllHF.Fill( he );
+						AllFwd.Fill( he );
+						break;
+				}
+				
+				if( (z1.mode == 11) && recZ(z2) )
+				{
+					hists.AllZ1e1Pt->Fill(z1.l1pt);
+					hists.AllZ1e2Pt->Fill(z1.l2pt);
+					hists.AllZ1e1Eta->Fill(z1.l1eta);
+					hists.AllZ1e2Eta->Fill(z1.l2eta);
+				}
+				
+				if( (zCat==2||zCat==3||zCat==5||zCat==7) && (he.M4L>100 && he.M4L<140) ) //ee-mumu only, to avoid difficulties in pair picking, in some mass range
+				{
+					hists.ValidZ1e1Pt->Fill(z1.l1pt);
+					hists.ValidZ1e2Pt->Fill(z1.l2pt);
+					hists.ValidZ1e1Eta->Fill(z1.l1eta);
+					hists.ValidZ1e2Eta->Fill(z1.l2eta);
+				}
+				
+				
+				if ( farElectronFilter_ ) { 
+				  if ( z1.mode != 11 || z1.mass < 50. || z1.mass > 120. ) return false ; 
+				  if ( fabs(z1.l1eta) < 2.5 && fabs(z1.l2eta) < 2.5 ) return false ; 
+				  //std::cout << "*** This event has an HF/NT electron candidate ***" << std::endl ; 
+				}
               }
           }
       }
