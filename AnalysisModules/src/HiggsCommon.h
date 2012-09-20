@@ -22,7 +22,6 @@
 #include "DataFormats/RecoCandidate/interface/RecoEcalCandidate.h"
 #include "DataFormats/RecoCandidate/interface/RecoEcalCandidateFwd.h"
 #include "DataFormats/EgammaReco/interface/HFEMClusterShapeAssociation.h"
-#include "HiggsEvent.h"
 
 #include "Math/VectorUtil.h"
 #include <math.h>
@@ -68,7 +67,7 @@ namespace higgs {
     double muIsolation     ( const reco::Muon& m, const double scale=1.0 ) ; 
     bool passesNoTrackID   ( const reco::Photon& electron ) ; 
     bool passesHFElectronID( const reco::RecoEcalCandidate& electron, 
-			     const edm::Handle<reco::HFEMClusterShapeAssociationCollection>& clusterAssociation, HiggsEvent&) ; 
+			     const edm::Handle<reco::HFEMClusterShapeAssociationCollection>& clusterAssociation) ; 
 
     /* double getElectronEt    ( const pat::Electron& e ) ;  */
     /* double getElectronSCEta ( const pat::Electron& e ) ;  */
@@ -98,16 +97,14 @@ namespace higgs {
 
     std::vector<reco::Muon>              getMuonList(edm::Handle<reco::MuonCollection>& recoMuons,
 						     double minPt, double maxAbsEta,
-						     edm::Handle<reco::VertexCollection>& vertices,
 						     bool trackerPt=false);
     std::vector<reco::GsfElectron>       getElectronList(edm::Handle<reco::GsfElectronCollection>& recoElecs,
 							 edm::Handle< edm::ValueMap<float> >& valueMap,
 							 double minEt, double maxAbsEta, 
-							 int cutlevel, std::vector< std::pair<double,unsigned int> >&,
-							 edm::Handle<reco::VertexCollection>& vertices) ; 
+							 int cutlevel) ; 
     std::vector<reco::RecoEcalCandidate> getElectronList(edm::Handle<reco::RecoEcalCandidateCollection>& recoElecs,
 							 edm::Handle<reco::HFEMClusterShapeAssociationCollection>& clusterAssociation, 
-							 double minEt, double maxAbsEta, HiggsEvent& HE) ; 
+							 double minEt, double maxAbsEta) ; 
     std::vector<reco::Photon>            getElectronList(edm::Handle<reco::PhotonCollection>& recoElecs,
 							 const double rho, 
 							 double minEt, double minAbsEta, double maxAbsEta) ; 

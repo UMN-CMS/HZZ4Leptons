@@ -5,7 +5,6 @@ import os
 #--- Data/MC switch ---#
 isMC=True
 isData=not isMC
-isSignal=True
 
 #--- Special flag for 44x/Fall11 ---#
 is44x=True
@@ -38,7 +37,7 @@ process.options = cms.untracked.PSet(
 
 # source
 process.source = cms.Source("PoolSource",
-    fileNames=cms.untracked.vstring()
+    fileNames=cms.untracked.vstring('file:/local/cms/phedex/store/mc/Fall11/GluGluToHToZZTo4L_M-120_7TeV-powheg-pythia6/AODSIM/PU_S6_START44_V9B-v1/0000/168AF24E-F82E-E111-BBC4-00215E221812.root')
     # fileNames=cms.untracked.vstring('input.root')
 )
 
@@ -61,18 +60,13 @@ else:
         process.GlobalTag.globaltag = cms.string('GR_R_44_V13::All')
     else:
         process.GlobalTag.globaltag = cms.string('GR_R_42_V20::All')
-        
-if (isSignal):
-	print "=================> Analyzing SIGNAL <===================="
-else:
-	print "=================> Analyzing BACKGROUND <===================="
 
 process.load("Configuration.StandardSequences.MagneticField_cff")
 process.load('Configuration.StandardSequences.Services_cff')
 
 #--- Output module: 
 process.out = cms.OutputModule("PoolOutputModule",
-                               fileName = cms.untracked.string('/local/cms/user/finkel/GluGlu_120GeV_Higgs_MCReco_Baseline.root'),
+                               fileName = cms.untracked.string('candevents.root'),
                                # save only events passing the full path
                                SelectEvents=cms.untracked.PSet(SelectEvents=cms.vstring('p')),
                                outputCommands = cms.untracked.vstring("keep *")
@@ -165,7 +159,7 @@ process.higgsAnalysis = cms.EDFilter( "Higgs",
         maxMuAbsEta      = cms.double( 2.4 ), 
         electronTag      = cms.InputTag( "gsfElectrons" ), 
         electronMap      = cms.InputTag( "eIDRobustLoose" ), 
-        electronCutValue = cms.int32( 0 ), 
+        electronCutValue = cms.int32( 7 ), 
         minZ1e1pt        = cms.double( z1lepton1pt ), 
         minZ1e2pt        = cms.double( z1lepton2pt ), 
         minZ2e2pt        = cms.double( 7.0 ), 
@@ -176,10 +170,10 @@ process.higgsAnalysis = cms.EDFilter( "Higgs",
         minNoTrkAbsEta   = cms.double( 2.5 ), 
         maxNoTrkAbsEta   = cms.double( 3.0 ), 
         hfTag            = cms.InputTag( "hfRecoEcalCandidate" ), 
-        minHFpt          = cms.double( 20 ), 
+        minHFpt          = cms.double( z1lepton2pt ), 
         minHFElecAbsEta  = cms.double( 3.0 ), 
         maxHFElecAbsEta  = cms.double( 5.0 ), 
-        minZ1Mass        = cms.double( 50.0 ),
+        minZ1Mass        = cms.double( 60.0 ),
         maxZ1Mass        = cms.double( 120.0 ),
         minZ2Mass        = cms.double( 12.0 ),
         maxZ2Mass        = cms.double( 120.0 ),
@@ -205,10 +199,9 @@ process.p = cms.Path(
     process.higgsAnalysis
 )
 
-#process.End = cms.EndPath(process.out)
  
 #--- Output histgram file ---#
 process.TFileService = cms.Service("TFileService",
-       fileName = cms.string("GGToH120GeV_MCReco_Skim_BaseCuts.root"),
+       fileName = cms.string("analysis.root"),
 )
 

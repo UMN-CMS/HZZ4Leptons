@@ -13,7 +13,7 @@
 //
 // Original Author:  Jeremy M Mans
 //         Created:  Mon May 31 07:00:26 CDT 2010
-// $Id: Higgs.cc,v 1.12 2012/06/26 23:43:23 afinkel Exp $
+// $Id: Higgs.cc,v 1.90 2012/01/27 00:51:25 bdahmes Exp $
 //
 //
 
@@ -73,11 +73,9 @@
 #include "TProfile2D.h"
 #include "TVector3.h"
 #include "TRandom.h"
-#include "TLorentzVector.h"
 
 #include "HZZ4Leptons/AnalysisModules/src/HiggsEvent.h"
 #include "HZZ4Leptons/AnalysisModules/src/HiggsCommon.h"
-#include "HZZ4Leptons/AnalysisModules/src/HiggsHists.h"
 
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
@@ -122,30 +120,23 @@ private:
     virtual void endJob();
 
     virtual TH1 *bookRunHisto(uint32_t runNumber);
-    
-    TLorentzVector TLV(reco::Particle::LorentzVector V);
-    void Angular(HiggsEvent& he);
 
     edm::InputTag muonTag_;
   // edm::InputTag trackTag_;
     edm::InputTag jetTag_;
     edm::InputTag metTag_;
     edm::InputTag elecTag_;
-  	edm::InputTag elecMap_; 
+  edm::InputTag elecMap_; 
     edm::InputTag photTag_;
     edm::InputTag hfTag_;
-  	edm::InputTag rhoTag_ ; 
+  edm::InputTag rhoTag_ ; 
 
 
     int evtCounter;
-    
-    int Z1type, Z2type;
-    int e1Cut, e2Cut ;
-    bool passIso, passIsoHoEM, passIsoHoEMsIe, passElecsCut_1, passElecsCut_2, passElecsCut_3 ;
 
     double ZwinMinGeV_, ZwinMaxGeV_; // for trigger efficiency studies
 
-	int elecCut_ ; 
+  int elecCut_ ; 
 
     int pileupEra_;
     double puShift_ ;
@@ -167,30 +158,45 @@ private:
 
 
     // ----------member data ---------------------------
-    
-	struct CutLevels //this contains the folders for the sub-channels; one for every cut level
-    {   
-    	public:    
-    	HistPerDef  H4mu, H4GSFe, H2mu2GSF, HGSF_FEE_2mu, HGSF_HF_2mu, HGSF_HF_2GSF, HGSF_FEE_2GSF,	H2GSFe2mu,
-    				AllHF, AllFEE, AllFwd, AllEvents,
-    				AngularAll, AngularExMu, AngularGSFxMu;
-    				
-    	TH1 *dummy; //*Phi, *Phi1, *cosTheta0, *cosTheta1, *cosTheta2;
 
-    	void book(TFileDirectory *mydir, const std::string);
-    	bool fill(const HiggsEvent& );
+    struct HistPerDef
+    {
+        //book histogram set w/ common suffix inside the provided TFileDirectory
+        void book(TFileDirectory *, const std::string&) ; 
+      // void bookTagProbe(TFileDirectory *, const std::string&);
+        // fill all histos of the set with the two electron candidates
+      void fill(// pat::MuonCollection muons,
+                  // pat::JetCollection jets,
+                  // pat::METCollection metc,
+                  bool isMC,
+                  double wgt,
+                  bool pfJets,
+		  int nPU,
+		  int nPV);
+        // fill all histos of the set with the two electron candidates
+      void fill(const HiggsEvent& he) ; 
+        // Special fill for muon efficiency studies
+        // void fill(const pat::Muon& theTag, const pat::Muon& theProbe, const double probeTrkIso, const double wgt) ; 
+        // void fill(const pat::Muon& theTag, const pat::GenericParticle& theProbe, const double trkIso, const double wgt) ; 
+        
 
-    } ;
+        TFileDirectory *mydir;
+
+    };
 
     bool init_;
-    
-    TFileDirectory *rundir;
-    
-    CutLevels NoCuts, ElecsCut_1, ElecsCut_2, ElecsCut_3, IsoCut, IsoHoEMCut, IsoHoEMsIeCut;
-    
-    TH1 *genPU, *recoPU, *cutlevel;
-    
+
     // gf set of histo for all Z definitions in a stack
+
+    struct HistStruct
+    {
+
+        TFileDirectory *rundir;
+        TH1* cutlevel;
+
+        HistPerDef noCuts;
+
+    } hists;
 
     struct CutsStruct
     {
@@ -221,157 +227,37 @@ private:
 
 };
 
-void Higgs::CutLevels::book(TFileDirectory *mydir, const std::string name)
+void Higgs::HistPerDef::book(TFileDirectory *td, const std::string& post) 
 {
-	/*edm::Service<TFileService> fs;
-	TFileDirectory *mydir = new TFileDirectory(fs->mkdir(name.c_str()));
-	mydir->cd();*/
-	
-	AllHF.Book(new TFileDirectory(mydir->mkdir("AllHF")),"AllHF",1);
-	AllFEE.Book(new TFileDirectory(mydir->mkdir("AllFEE")),"AllFEE",4);
-	AllFwd.Book(new TFileDirectory(mydir->mkdir("AllFwd")),"AllFwd",3);
-    AllEvents.Book(new TFileDirectory(mydir->mkdir("AllEvents")),"AllEvents");
-    H4mu.Book(new TFileDirectory(mydir->mkdir("4mu")),"4Mu");
-    H4GSFe.Book(new TFileDirectory(mydir->mkdir("4GSF")),"4GSF",4);
-    H2mu2GSF.Book(new TFileDirectory(mydir->mkdir("2Mu_2GSF")),"2Mu_2GSF",4);
-    HGSF_FEE_2mu.Book(new TFileDirectory(mydir->mkdir("GSF_FarEE_2Mu")),"GSF_FarEE_2Mu",4);
-    HGSF_FEE_2GSF.Book(new TFileDirectory(mydir->mkdir("GSF_FarEE_2GSF")),"GSF_FarEE_2GSF",4);
-    HGSF_HF_2mu.Book(new TFileDirectory(mydir->mkdir("GSF_HF_2Mu")),"GSF_HF_2Mu",4);
-    HGSF_HF_2GSF.Book(new TFileDirectory(mydir->mkdir("GSF_HF_2GSF")),"GSF_HF_2GSF",4);
-    H2GSFe2mu.Book(new TFileDirectory(mydir->mkdir("2GSF_2Mu")),"2GSF_2Mu",4);
-    AngularAll.Book(new TFileDirectory(mydir->mkdir("AngularAll")),"AngularAll",10); //Warning: 10 is for the Angular kind only!  
-    AngularExMu.Book(new TFileDirectory(mydir->mkdir("AngularExMu")),"AngularExMu",10);
-    AngularGSFxMu.Book(new TFileDirectory(mydir->mkdir("AngularGSFxMu")),"AngularGSFxMu",10);
-    
-    dummy = mydir->make<TH1D>("dummy","Dummy Hist",10,1,0);
+    std::string t; // histogram title string;
+
+    TH1::SetDefaultSumw2();
+
+    mydir = td;
+
+    std::cout << "book doing nothing at the moment" << std::endl ; 
+
+}// end of book()
+
+void Higgs::HistPerDef::fill(// pat::MuonCollection muons,
+			     // pat::JetCollection jets,
+			     // pat::METCollection metc,
+                               bool isMC,
+                               double wgt,
+                               bool pfJets,
+			       int nPU, int nPV)
+{
+  std::cout << "Basic fill not doing anything yet" << std::endl ; 
 }
 
-bool Higgs::CutLevels::fill(const HiggsEvent& he)
+void Higgs::HistPerDef::fill(const HiggsEvent& he) 
 {
-	//if (!he.Z1flavor || !he.Z2flavor) return false;
-	AllEvents.Fill(he);
-	AngularAll.Fill(he,10);
-    if( he.Z2flavor==1 )
-	{
-		switch( he.Z1flavor )
-		{
-			case 1:
-				H4mu.Fill(he);
-				return true;
-			case 2:
-				H2GSFe2mu.Fill(he,4);
-				AngularGSFxMu.Fill(he,10);
-				AngularExMu.Fill(he,10);
-				return true;
-			case 3:
-				HGSF_FEE_2mu.Fill(he,4);
-				AllFEE.Fill(he,4);
-				AllFwd.Fill(he,3);
-				AngularExMu.Fill(he,10);
-				return true;
-			case 4:
-				HGSF_HF_2mu.Fill(he,4);
-				AngularExMu.Fill(he,10);
-				AllHF.Fill(he,1);
-				AllFwd.Fill(he,3);
-				return true;
-		} 
-	}	
-	if( he.Z2flavor==2 )
-	{
-		switch( he.Z1flavor )
-		{
-			case 1:
-				H2mu2GSF.Fill(he,4);
-				AngularGSFxMu.Fill(he,10);
-				AngularExMu.Fill(he,10);
-				return true;
-			case 2:
-				H4GSFe.Fill(he,4);
-				return true;
-			case 3:
-				HGSF_FEE_2GSF.Fill(he,4);
-				AllFEE.Fill(he,4);
-				AllFwd.Fill(he,3);
-				return true;
-			case 4:
-				HGSF_HF_2GSF.Fill(he,4);
-				AllHF.Fill(he,1);
-				AllFwd.Fill(he,3);
-				return true;
-		}
-	}
-	return false;
-}
+  std::cout << "fill not doing anything yet" << std::endl ;
 
-void Higgs::Angular(HiggsEvent& he)
-{
-	TLorentzVector Z1, Z2, l11, l12, l21, l22, H, Prot(0,0,1,1);
-	Z1 = TLV(he.vZ1);
-	l11 = TLV(he.vl1);
-	l12 = TLV(he.vl2);
-	Z2 = TLV(he.vZ2);
-	l21 = TLV(he.vl3);
-	l22 = TLV(he.vl4);
-	H = TLV(he.vH);
-	
-	//find theta-star and phi1 from Z1 in Higgs frame
-	TLorentzVector Z1clone = Z1;
-	TLorentzVector l11clone = l11;
-	TLorentzVector Hclone = H;
-	Prot.Boost(-H.BoostVector());
-	l11clone.Boost(-H.BoostVector());
-	Z1clone.Boost(-H.BoostVector());
-	he.cosTheta0 = Z1clone.Vect()*Prot.Vect()/Z1clone.P()/Prot.P();
-	
-	TVector3 NZ1 = Z1clone.Vect().Cross(l11clone.Vect());
-	TVector3 NPZ = Prot.Vect().Cross(Z1clone.Vect());
-	
-	he.Phi1 = acos( NZ1*NPZ/( NZ1.Mag()*NPZ.Mag() ) );
-	he.Phi1 *= (NZ1.Phi()>NPZ.Phi())? 1: -1;
-	
-	//go to Z1 frame to get theta1
-	TLorentzVector Z2clone = Z2;
-	l11clone = l11;
-	Hclone = H;
-	Z2clone.Boost(-Z1.BoostVector());
-	Hclone.Boost(-Z1.BoostVector());
-	l11clone.Boost(-Z1.BoostVector());
-	
-	he.cosTheta1 = l11clone.Vect()*(-Z2clone.Vect())/l11clone.P()/Z2clone.P();
-	
-	//go to Z2 frame and get theta2
-	Z1clone = Z1;
-	Hclone = H;
-	TLorentzVector l21clone = l21;
-	Z1clone.Boost(-Z2.BoostVector());
-	l21clone.Boost(-Z2.BoostVector());
-	
-	he.cosTheta2 = l21clone.Vect()*(-Z1clone.Vect())/l21clone.P()/Z1clone.P();
-	
-	//now try to get the phi angle (between Z decay planes)
-	l11clone=l11;
-	l21clone=l21;
-	Z1clone=Z1;
-	Z2clone=Z2;
-	l11clone.Boost(-H.BoostVector());
-	l21clone.Boost(-H.BoostVector());
-	Z1clone.Boost(-H.BoostVector());
-	Z2clone.Boost(-H.BoostVector());
-	
-	TVector3 N1 = Z1clone.Vect().Cross(l11clone.Vect());
-	
-	TVector3 N2 = Z2clone.Vect().Cross(l21clone.Vect());
-	
-	he.Phi = acos( N1*N2/( N1.Mag()*N2.Mag() ) );
-	he.Phi *= (N1.Phi()>N2.Phi())? 1: -1;
-}
 
-TLorentzVector Higgs::TLV(reco::Particle::LorentzVector V)
-{
-//converts a reco::Particle::LorentzVector into a TLorentzVector
-	return TLorentzVector(V.px(),V.py(),V.pz(),V.E());
-}
+}// end of fill()
+
+
 //
 // constants, enums and typedefs
 //
@@ -379,6 +265,8 @@ TLorentzVector Higgs::TLV(reco::Particle::LorentzVector V)
 //
 // static data member definitions
 //
+
+
 
 //
 // constructors and destructor
@@ -429,41 +317,23 @@ Higgs::Higgs(const edm::ParameterSet& iConfig)
 
     // ==================== Init other members ====================
     //
-    Z1type = 0;
-    Z2type = 0;
-    e1Cut = 0;
-    e2Cut = 0;
-    passIso = passIsoHoEM = passIsoHoEMsIe = passElecsCut_1 = passElecsCut_2 = passElecsCut_3 = false ;
-    
 
     // ==================== Book the histos ====================
     //
-    
-	edm::Service<TFileService> fs;
-    
-    NoCuts.book(new TFileDirectory(fs->mkdir("NoCuts")),"NoCuts");
-    ElecsCut_1.book(new TFileDirectory(fs->mkdir("ElecsCut_1")),"ElecsCut_1");
-    ElecsCut_2.book(new TFileDirectory(fs->mkdir("ElecsCut_2")),"ElecsCut_2");
-    ElecsCut_3.book(new TFileDirectory(fs->mkdir("ElecsCut_3")),"ElecsCut_3");
-    IsoCut.book(new TFileDirectory(fs->mkdir("IsoCut")),"IsoCut");
-    IsoHoEMCut.book(new TFileDirectory(fs->mkdir("IsoHoEMCut")),"IsoHoEMCut");
-    IsoHoEMsIeCut.book(new TFileDirectory(fs->mkdir("IsoHoEMsIeCut")),"IsoHoEMsIeCut");
-    
-    cutlevel = fs->make<TH1D > ("cutlevel", "Cut Level", 11, -1.5, 9.5);
-    cutlevel->GetXaxis()->SetBinLabel(1, "Raw");
-    cutlevel->GetXaxis()->SetBinLabel(2, "No cuts");
-    cutlevel->GetXaxis()->SetBinLabel(3, "Dummy");
-    cutlevel->GetXaxis()->SetBinLabel(4, "Dummy");
-    cutlevel->GetXaxis()->SetBinLabel(5, "Dummy");
-    cutlevel->GetXaxis()->SetBinLabel(6, "Dummy");
-    cutlevel->GetXaxis()->SetBinLabel(7, "Dummy");
-    cutlevel->GetXaxis()->SetBinLabel(8, "Dummy");
-    cutlevel->GetXaxis()->SetBinLabel(9, "Dummy");
-    rundir = new TFileDirectory(fs->mkdir("RunDir"));
-    
-    genPU = fs->make<TH1D>("genPU", "Gen-Level Pile-Up", 50, 0, 50);
-    recoPU = fs->make<TH1D>("recoPU", "Reco-Level Pile-Up", 50, 0, 50);
-    
+    edm::Service<TFileService> fs;
+
+    hists.cutlevel = fs->make<TH1D > ("cutlevel", "Cut Level", 11, -1.5, 9.5);
+    hists.cutlevel->GetXaxis()->SetBinLabel(1, "Raw");
+    hists.cutlevel->GetXaxis()->SetBinLabel(2, "No cuts");
+    hists.cutlevel->GetXaxis()->SetBinLabel(3, "Dummy");
+    hists.cutlevel->GetXaxis()->SetBinLabel(4, "Dummy");
+    hists.cutlevel->GetXaxis()->SetBinLabel(5, "Dummy");
+    hists.cutlevel->GetXaxis()->SetBinLabel(6, "Dummy");
+    hists.cutlevel->GetXaxis()->SetBinLabel(7, "Dummy");
+    hists.cutlevel->GetXaxis()->SetBinLabel(8, "Dummy");
+    hists.cutlevel->GetXaxis()->SetBinLabel(9, "Dummy");
+    hists.rundir = new TFileDirectory(fs->mkdir("RunDir"));
+
     init_ = false;
 
     MCweightByVertex_ = edm::LumiReWeighting(higgs::generate_flat10_mc(pileupEra_),
@@ -492,7 +362,10 @@ Higgs::Higgs(const edm::ParameterSet& iConfig)
     std::cout << "electronRelIso    = " << cuts.electron_reliso_limit << std::endl;
     std::cout << "muonRelIso        = " << cuts.muon_reliso_limit << std::endl;
     std::cout << "min4objMass       = " << cuts.minimum_zz_mass << " GeV" << std::endl;
+
     std::cout << "PU era (shift)    = " << pileupEra_ << " (" << puShift_ << ")" << std::endl;
+
+
 }
 
 Higgs::~Higgs()
@@ -503,16 +376,17 @@ Higgs::~Higgs()
 
 }
 
+
+
 //
 // member functions
 //
 
 
-
 TH1 * Higgs::bookRunHisto(uint32_t runNumber)
 {
     std::string runstr = int2str<uint32_t > (runNumber);
-    return rundir->make <TH1I > (runstr.c_str(), runstr.c_str(), 1, 1, 2);
+    return hists.rundir->make <TH1I > (runstr.c_str(), runstr.c_str(), 1, 1, 2);
 }
 
 
@@ -600,86 +474,67 @@ bool Higgs::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     iEvent.getByLabel("offlinePrimaryVertices", pvHandle);
     higgsEvent.n_primary_vertex = higgs::numberOfPrimaryVertices(pvHandle);
 
-    if (!recoElectrons.isValid() || !recoMuons.isValid() || !recoGammas.isValid() || !recoHFElectrons.isValid()) return false;
+    if (!recoElectrons.isValid() || !recoMuons.isValid() || !recoGammas.isValid() || !recoHFElectrons.isValid()) 
+    {
+        std::cout << "Exiting as valid PAT objects not found" << std::endl;
+        std::cout << "Electrons:    " << recoElectrons.isValid() << std::endl;
+        std::cout << "HF Electrons: " << recoElectrons.isValid() << std::endl;
+        std::cout << "Photons:      " << recoGammas.isValid() << std::endl;
+        std::cout << "Muons:        " << recoMuons.isValid() << std::endl;
+        return false;
+    }
 
     if(firstEvent_)
     {
-        //std::cout << "===============================================" << std::endl;
+        std::cout << "===============================================" << std::endl;
         firstEvent_ = false;
     }
-    
-    std::vector< std::pair<double,unsigned int> > eleCutsByPt;
 
+    hists.cutlevel->Fill(-1.0, higgsEvent.eventWgt);
+
+    // Basic selection requirements: Require at least two muons, two jets
+    int totalEMcands = recoElectrons->size() + recoGammas->size() + recoHFElectrons->size() ; 
+    if ( (recoMuons->size() + totalEMcands) > 3 ) 
+    {
+        hists.cutlevel->Fill(0.0, higgsEvent.eventWgt);
+    }
+    else return false;
+    
     // Look for valid muons
     std::vector<reco::Muon> muCands =
-      higgs::getMuonList(recoMuons, cuts.minimum_mu2_z2_pt, cuts.maximum_mu_abseta, pvHandle, false) ; 
+      higgs::getMuonList(recoMuons, cuts.minimum_mu2_z2_pt, cuts.maximum_mu_abseta, false) ; 
       
     std::vector<reco::GsfElectron> eleCands =
-      higgs::getElectronList(recoElectrons, eIDValueMap, cuts.minimum_e2_z2_pt, cuts.maximum_e_abseta, elecCut_, eleCutsByPt, pvHandle) ; 
+      higgs::getElectronList(recoElectrons, eIDValueMap, cuts.minimum_e2_z2_pt, cuts.maximum_e_abseta, elecCut_) ; 
 
     std::vector<reco::RecoEcalCandidate> hfEleCands =
-      higgs::getElectronList(recoHFElectrons, clusterAssociation, cuts.minimum_e2_z1_pt, cuts.maximum_eHF_abseta, higgsEvent) ;
+      higgs::getElectronList(recoHFElectrons, clusterAssociation, cuts.minimum_e2_z1_pt, cuts.maximum_eHF_abseta) ;
 
     std::vector<reco::Photon> ntEleCands =
       higgs::getElectronList(recoGammas, photonRho, cuts.minimum_e2_z1_pt, 
-		     cuts.minimum_eNT_abseta, cuts.maximum_eNT_abseta) ;
+			     cuts.minimum_eNT_abseta, cuts.maximum_eNT_abseta) ;
 
-    higgsEvent.SetMuonList(muCands) ; 
-    higgsEvent.SetGsfElectronList(eleCands) ; 
-    higgsEvent.SetPhotonList(ntEleCands) ; 
-    higgsEvent.SetHFList(hfEleCands) ; 
-    
-    genPU->Fill(higgsEvent.n_pue);
-    
-    Z1type = higgsEvent.getZ1(cuts.minimum_e1_z1_pt,cuts.minimum_e2_z1_pt, cuts.minimum_mu1_z1_pt,
-    							cuts.minimum_mu2_z1_pt,cuts.minimum_z1_mass,cuts.minimum_eHF_z1_pt, pvHandle);
-	Z2type = higgsEvent.getZ2(cuts.minimum_e2_z2_pt,cuts.minimum_mu2_z2_pt,
-			   cuts.minimum_z2_mass,cuts.minimum_zz_mass, pvHandle); 
+    std::cout << "Event has " << muCands.size() << " muons, " 
+	      << eleCands.size() << "(gsf) + " 
+	      << ntEleCands.size() << "(nt) + " 
+	      << hfEleCands.size() << "(hf) = " 
+	      << eleCands.size() + ntEleCands.size() + hfEleCands.size() 
+	      << " electrons" << std::endl ; 
 
-    if( !Z1type ) return false ; 
-    if ( !Z2type ) return false ;
-    if (Z1type>4 || Z2type>4) return false;
-    
-    recoPU->Fill(higgsEvent.n_pue);
-			   
-	higgsEvent.calculate();
-	Angular(higgsEvent);
-	
-	if ( !higgsEvent.passCombinedIso ) return false;
-	
-	for(std::vector< std::pair<double,unsigned int> >::const_iterator i = eleCutsByPt.begin(); i != eleCutsByPt.end(); i++)
-    {
-    	if( (fabs(higgsEvent.l1pt - i->first) < 1e-9))
-    	{
-    		e1Cut = i->second;
-    	}
-    	if( (fabs(higgsEvent.l2pt - i->first) < 1e-9))
-    	{
-    		e2Cut = i->second;
-    	}    	
-    }
-	
-	passIso = ( (higgsEvent.netIso_1<0.15)&&(higgsEvent.netIso_2<0.15)&&(higgsEvent.netIso_3<0.15)&&(higgsEvent.netIso_4<0.15) );
-	passIsoHoEM = ( (passIso)&&(higgsEvent.HoEM_1<0.15)&&(higgsEvent.HoEM_2<0.15)&&(higgsEvent.HoEM_3<0.15)&&(higgsEvent.HoEM_4<0.15) );
-	passIsoHoEMsIe = ( (passIsoHoEM)&&(higgsEvent.sIeIe_1<0.03)&&(higgsEvent.sIeIe_2<0.03)&&(higgsEvent.sIeIe_3<0.03)&&(higgsEvent.sIeIe_4<0.03) );
-	passElecsCut_1 = ( ( (e1Cut & 1) == 1 )&&( (e2Cut & 1) == 1 ) );
-	passElecsCut_2 = ( ( (e1Cut & 2) == 2 )&&( (e2Cut & 2) == 2 ) );
-	passElecsCut_3 = ( ( (e1Cut & 3) == 3 )&&( (e2Cut & 3) == 3 ) );
-	
-    // Basic selection requirements: Require at four leptopns
-	int totalEMcands = recoElectrons->size() + recoGammas->size() + recoHFElectrons->size() ; 
-    if ( (recoMuons->size() + totalEMcands) < 4 ) return false; 
-    //In following original paper and recent constraints, limit the H mass range:
-    if( higgsEvent.mH<100 || higgsEvent.mH>140 ) return false;
+    higgsEvent.muCands  = muCands ; 
+    higgsEvent.gsfCands = eleCands ; 
+    higgsEvent.ntCands  = ntEleCands ; 
+    higgsEvent.hfCands  = hfEleCands ; 
 
-    cutlevel->Fill(0.0, higgsEvent.eventWgt);
-	NoCuts.fill(higgsEvent);
-	if(passIso) IsoCut.fill(higgsEvent); 	
-	if(passIsoHoEM) IsoHoEMCut.fill(higgsEvent);
-	if(passIsoHoEMsIe) IsoHoEMsIeCut.fill(higgsEvent);
-	if(passElecsCut_1)  ElecsCut_1.fill(higgsEvent);
-	if(passElecsCut_2)  ElecsCut_2.fill(higgsEvent);
-	if(passElecsCut_3)  ElecsCut_3.fill(higgsEvent);
+    if ( !higgsEvent.getZ1(cuts.minimum_e1_z1_pt,cuts.minimum_e2_z1_pt,
+			   cuts.minimum_mu1_z1_pt,cuts.minimum_mu2_z1_pt,
+			   cuts.minimum_z1_mass) ) return false ; 
+    if ( !higgsEvent.getZ2(cuts.minimum_e2_z2_pt,cuts.minimum_mu2_z2_pt,
+			   cuts.minimum_z2_mass,cuts.minimum_zz_mass) ) return false ; 
+
+    higgsEvent.calculate() ; 
+
+
 
     return true;
 }
@@ -703,7 +558,6 @@ void Higgs::beginJob()
 
 void Higgs::endJob()
 {
-
 }
 
 //define this as a plug-in

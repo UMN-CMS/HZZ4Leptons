@@ -16,6 +16,112 @@ const float pileup2011A = 5.0;
 const double muScaleLUTarray100[5] = { 0.379012,0.162107,0.144514,0.0125131,-0.392431 } ; 
 
 namespace higgs {
+  bool isVBTFloose(const reco::Muon& m)
+  {
+    return ( muon::isGoodMuon(m,muon::AllGlobalMuons) && m.innerTrack()->numberOfValidHits() > 10 ) ;  
+  }
+  
+  // Note: No impact parameter requirement is applied!!!
+  bool isVBTFtight(const reco::Muon& m)
+  {
+    if( !isVBTFloose(m) ) return false; // this should already have been checked.
+    return ( muon::isGoodMuon(m,muon::GlobalMuonPromptTight) &&
+	     m.isTrackerMuon() && 
+	     m.numberOfMatches() > 1 && 
+	     m.globalTrack()->hitPattern().numberOfValidPixelHits()>0 ) ; 
+
+    // reco::TrackRef gt = m.globalTrack();
+    // if (gt.isNull()) {
+    //   std::cerr << "Mu global track reference is NULL" << std::endl;
+    //   return false;
+    // }
+    // return (// m.isTrackerMuon() &&
+	    // ??? (m.dB() < 0.2) &&
+	    // (m.normChi2() < 10) &&
+	    // (m.numberOfMatches() > 1) &&
+	    // (gt->hitPattern().numberOfValidMuonHits()>0) &&
+	    // (gt->hitPattern().numberOfValidPixelHits()>0) );
+
+  } // Higgs::isVBTFtight
+
+  // double getElectronEt(const pat::Electron& e) { 
+  //   reco::Particle::LorentzVector eScaled = e.p4() * (e.caloEnergy() / e.energy()) ;
+  //   return eScaled.Et() ; 
+  // } 
+
+  // double getElectronSCEta(const pat::Electron& e) { 
+  //   return e.superCluster()->eta() ; 
+  // }
+
+  // bool passesHEEPv31(const pat::Electron& e) { 
+  //   if ( !e.ecalDriven() ) return false ; 
+  //   double ePt  = getElectronEt(e) ; 
+  //   double eEta = getElectronSCEta(e) ; 
+
+  //   // common requirements 
+  //   bool HoE    = (e.hadronicOverEm() < 0.05) ; 
+  //   bool dPhiIn = (fabs(e.deltaPhiSuperClusterTrackAtVtx()) < 0.09) ; 
+  //   if ( !HoE || !dPhiIn ) return false ; 
+  //   int nLostHits = e.gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() ; 
+  //   if ( nLostHits > 0 ) return false ; // conversion rejection
+
+  //   double ecalIso  = e.dr03EcalRecHitSumEt() ; 
+  //   double hcalIso1 = e.dr03HcalDepth1TowerSumEt() ; 
+  //   double hcalIso2 = e.dr03HcalDepth2TowerSumEt() ; 
+  //   double trkIso   = e.dr03TkSumPt() ; 
+
+  //   if ( fabs(eEta) < 1.442 ) { // Barrel HEEP electron candidate
+  //     double e15 = e.e1x5() / e.e5x5() ; 
+  //     double e25 = e.e2x5Max() / e.e5x5() ; 
+  //     bool shape = ( e15 > 0.83 ) || ( e25 > 0.94 ) ; 
+  //     bool dEta  = ( fabs(e.deltaEtaSuperClusterTrackAtVtx()) < 0.005 ) ; 
+  //     bool isolated  = ( (ecalIso + hcalIso1) < (2. + 0.03*ePt) ) && 
+  // 	( trkIso < 7.5 ) ; 
+  //     return ( shape && dEta && isolated ) ; 
+  //   } else if ( fabs(eEta) > 1.560 ) { // Endcap HEEP electron candidate 
+  //     bool shape = ( e.sigmaIetaIeta() < 0.03 ) ; 
+  //     bool dEta  = ( fabs(e.deltaEtaSuperClusterTrackAtVtx()) < 0.007 ) ; 
+  //     double threshold = ( ePt < 50. ) ? (2.5) : (2.5 + 0.03 * (ePt-50)) ; 
+  //     bool isolated = ((ecalIso + hcalIso1) < threshold) && (hcalIso2 < 0.5) && (trkIso < 15.) ; 
+  //     return ( shape && dEta && isolated ) ; 
+  //   }
+  //   return false ; 
+  // }
+
+  double muIsolation(const pat::Muon& m, const double pTscale) {
+    double mupt = pTscale * m.pt() ; 
+    return (m.trackIso() / mupt) ; 
+  }
+
+  // int jetID(const pat::Jet& j) {
+  //   int val = -1 ; 
+
+  //   if (j.isPFJet()) { 
+  //     PFJetIDSelectionFunctor jetIDloose(PFJetIDSelectionFunctor::FIRSTDATA, PFJetIDSelectionFunctor::LOOSE);
+  //     PFJetIDSelectionFunctor jetIDtight(PFJetIDSelectionFunctor::FIRSTDATA, PFJetIDSelectionFunctor::TIGHT);
+
+  //     pat::strbitset ret = jetIDloose.getBitTemplate();
+  //     ret.set(false); bool loose  = jetIDloose (j, ret);
+  //     // ret.set(false); bool medium = jetIDmedium(j, ret);
+  //     ret.set(false); bool tight  = jetIDtight (j, ret);
+  //     if (tight)       val = 3 ; 
+  //     // else if (medium) val = 2 ; 
+  //     else if (loose)  val = 1 ;
+  //     else             val = 0 ; 
+  //   } else { // Calo jets (deprecated)
+  //     JetIDSelectionFunctor jetIDloose(JetIDSelectionFunctor::PURE09, JetIDSelectionFunctor::LOOSE);
+  //     JetIDSelectionFunctor jetIDtight(JetIDSelectionFunctor::PURE09, JetIDSelectionFunctor::TIGHT);
+
+  //     pat::strbitset ret = jetIDloose.getBitTemplate();
+  //     ret.set(false); bool loose = jetIDloose(j, ret);
+  //     ret.set(false); bool tight = jetIDtight(j, ret);
+  //     if ( tight )      val = 3 ; 
+  //     else if ( loose ) val = 1 ; 
+  //     else              val = 0 ; 
+  //   }
+  //   return val ; 
+  // }
+
   void initPDFSet(int i, std::string name) {
       LHAPDF::initPDFSet(i,name) ; 
   }
@@ -40,8 +146,7 @@ namespace higgs {
       return w;
   }
     
-  int numberOfPrimaryVertices(edm::Handle<reco::VertexCollection> pvHandle) 
-  { 
+  int numberOfPrimaryVertices(edm::Handle<reco::VertexCollection> pvHandle) { 
     int nvertex = 0 ; 
     
     const reco::VertexCollection& vertices = *pvHandle.product();
@@ -58,7 +163,76 @@ namespace higgs {
     return nvertex ; 
   }
 
- 
+  // double avgVertex(const reco::JPTJet &tjet, double maxDeltaVR) {
+  //     double avetz=0, weight=0;
+  //     double thresh=0.0001;
+  //     reco::TrackRefVector::const_iterator itrack;
+  //     for (itrack=tjet.getPionsInVertexInCalo().begin(); itrack!=tjet.getPionsInVertexInCalo().end(); itrack++) {
+  //         if ( ( maxDeltaVR > thresh && sqrt( pow((*itrack)->vx(),2) + pow((*itrack)->vy(),2) ) < maxDeltaVR ) || maxDeltaVR < 0.0 ) {
+  //             avetz+=(*itrack)->vz()/(*itrack)->normalizedChi2();
+  //             weight+=1./(*itrack)->normalizedChi2();
+  //         }
+  //     }
+  //     for (itrack=tjet.getPionsInVertexOutCalo().begin(); itrack!=tjet.getPionsInVertexOutCalo().end(); itrack++) {
+  //         if ( ( maxDeltaVR > thresh && sqrt( pow((*itrack)->vx(),2) + pow((*itrack)->vy(),2) ) < maxDeltaVR ) || maxDeltaVR < 0.0 ) {
+  //             avetz+=(*itrack)->vz()/(*itrack)->normalizedChi2();
+  //             weight+=1./(*itrack)->normalizedChi2();
+  //         }
+  //     }
+  //     for (itrack=tjet.getPionsOutVertexInCalo().begin(); itrack!=tjet.getPionsOutVertexInCalo().end(); itrack++) {
+  //         if ( ( maxDeltaVR > thresh && sqrt( pow((*itrack)->vx(),2) + pow((*itrack)->vy(),2) ) < maxDeltaVR ) || maxDeltaVR < 0.0 ) {
+  //             avetz+=(*itrack)->vz()/(*itrack)->normalizedChi2();
+  //             weight+=1./(*itrack)->normalizedChi2();
+  //         }
+  //     }
+
+  //     if (weight<0.01) { // throw out weight ~= 0 results
+  //         return -100;
+  //     } else {
+  //         return avetz/weight;
+  //     }
+  // }
+
+  //   double avgVertex(const pat::Jet &tJet, double maxDeltaVR)
+  //   {
+  //       double avetz = 0, weight = 0;
+  //       double thresh = 0.0001;
+  //       reco::PFCandidateFwdPtrVector::const_iterator itrack;
+  //       for(itrack = tJet.pfCandidatesFwdPtr().begin(); itrack != tJet.pfCandidatesFwdPtr().end(); itrack++)
+  //       {
+  //           if(((maxDeltaVR > thresh && sqrt(pow((*itrack)->vx(), 2) + pow((*itrack)->vy(), 2)) < maxDeltaVR) || maxDeltaVR < 0.0) && abs((*itrack)->pdgId()) == 211)
+  //           {
+  //               avetz += (*itrack)->vz() / (*itrack)->vertexChi2();
+  //               weight += 1. / (*itrack)->vertexChi2();
+  //           }
+  //       }
+
+  //       if(weight < 0.01)
+  //       { // throw out weight ~= 0 results
+  //           return -100;
+  //       }
+  //       else
+  //       {
+  //           return avetz / weight;
+  //       }
+  //   }
+
+
+  // double caloJetVertex(const pat::Jet &pJet, const reco::JPTJetCollection &jptJets, double maxDeltaVR){
+
+  //       // Find best match jptjets
+  //       reco::JPTJetCollection::const_iterator tJet=jptJets.end();
+  //       for (reco::JPTJetCollection::const_iterator i=jptJets.begin(); i != jptJets.end(); i++){
+  //           if (tJet == jptJets.end() || ROOT::Math::VectorUtil::DeltaR(pJet.p4(),i->p4()) < ROOT::Math::VectorUtil::DeltaR(pJet.p4(),tJet->p4())){
+  //               tJet =i;
+  //           }
+  //       }
+
+  //       // Return Vert
+  // 	if ( tJet != jptJets.end() ) return avgVertex(*tJet, maxDeltaVR);
+  // 	return -100. ; 
+  // }
+
   std::vector<float> generate_flat10_mc(int era){
     // see SimGeneral/MixingModule/python/mix_E7TeV_FlatDist10_2011EarlyData_inTimeOnly_cfi.py; copy and paste from there:
     // const double npu_probs[25] = {0.0698146584,0.0698146584,0.0698146584,0.0698146584,0.0698146584,  // 0-4
@@ -252,6 +426,22 @@ namespace higgs {
     }
     weight = puWeight.weight( nPileup );
     
+//     if (pPU.isValid() && pPU->size() > 0) {
+//       std::vector<PileupSummaryInfo>::const_iterator puIter ; 
+
+//       float sum_nvtx = 0 ; 
+//       for (puIter=pPU->begin(); puIter!=pPU->end(); puIter++) 
+// 	sum_nvtx += float( puIter->getPU_NumInteractions() ) ; 
+
+//       avg_nvtx = sum_nvtx / 3. ; 
+
+//       // std::cout << "About to look up weight for " << avg_nvtx << " vertices, initial weight " << weight << std::endl ; 
+//       weight = puWeight.weight3BX( avg_nvtx ) ; 
+//       // if ( nPileup > int(mcWeight.size()) || nPileup < 0 ) 
+//       // 	std::cout << "WARNING: Weight vector is too small, size " << mcWeight.size() << std::endl ; 
+//       // weight *= mcWeight[nPileup];
+//       // std::cout << "MC weight is now " << weight << std::endl ; 
+//     }
 
     // std::pair<float,double> pileupInfo = std::make_pair(avg_nvtx,weight) ; 
     std::pair<float,double> pileupInfo = std::make_pair(nPileup,weight) ; 
@@ -295,105 +485,93 @@ namespace higgs {
   //   // To get GeV scale, need to divide by 10^3
   //   return muScaleLUTarray100[ieta] / 1000. ; 
   // } 
-  
-  bool isVBTFloose(const reco::Muon& m)
-  {
-    return ( muon::isGoodMuon(m,muon::AllGlobalMuons) && m.innerTrack()->numberOfValidHits() > 10 ) ;  
-  }
-  
-  // Note: No impact parameter requirement is applied!!!
-  bool isVBTFtight(const reco::Muon& m)
-  {
-    if( !isVBTFloose(m) ) return false; // this should already have been checked.
-    return ( muon::isGoodMuon(m,muon::GlobalMuonPromptTight) &&
-	     m.isTrackerMuon() && 
-	     m.numberOfMatches() > 1 && 
-	     m.globalTrack()->hitPattern().numberOfValidPixelHits()>0 //&& need dz and d0
-	      ) ; 
-  }
-
-
-  double muIsolation(const pat::Muon& m, const double pTscale) {
-    double mupt = pTscale * m.pt() ; 
-    return (m.trackIso() / mupt) ; 
-  }
 
   std::vector<reco::Muon> getMuonList(edm::Handle<reco::MuonCollection>& recoMuons,
 				     double minPt, double maxAbsEta, 
-				     edm::Handle<reco::VertexCollection>& vertices,
 				     bool trackerPt) {
 
     std::vector<reco::Muon> muonList ; 
     for (unsigned int iMuon = 0; iMuon < recoMuons->size(); iMuon++) {
-        reco::Muon iM = recoMuons->at(iMuon) ;
-        reco::Vertex iV = vertices->at(0); 
+        reco::Muon iM = recoMuons->at(iMuon) ; 
         if ( fabs(iM.eta()) > maxAbsEta ) continue ; 
         if ( iM.pt() < minPt ) continue ; 
         if ( !isVBTFloose(iM) ) continue ; 
-        //if( (fabs(iM.eta())<1.48)&&(iM.pt()>20)&&(iM.pfIsolationR03().sumChargedParticlePt/iM.pt()>0.13) ) continue;
-        //if( (fabs(iM.eta())<1.48)&&(iM.pt()<20)&&(iM.pfIsolationR03().sumChargedParticlePt/iM.pt()>0.06) ) continue;
-        //if( (fabs(iM.eta())>1.48)&&(iM.pt()>20)&&(iM.pfIsolationR03().sumChargedParticlePt/iM.pt()>0.09) ) continue;
-        //if( (fabs(iM.eta())>1.48)&&(iM.pt()<20)&&(iM.pfIsolationR03().sumChargedParticlePt/iM.pt()>0.05) ) continue;
-        if( iM.innerTrack()->dxy(iV.position())>0.02 ) continue;
-        if( iM.innerTrack()->dz(iV.position())>0.1 ) continue;
-        //std::cout<<"MuCand vertex |Z| = "<<iM.vz()<<std::endl;
         
         muonList.push_back(iM) ; 
     }
     
     std::sort(muonList.begin(),muonList.end(),pTcompare()) ; 
+    if ( muonList.size() ) { 
+      std::cout << "Sorted muon list: " << std::endl ; 
+      for (unsigned int i=0; i<muonList.size(); i++) { 
+	std::cout << "Muon " << i+1 << " of " << muonList.size() 
+		  << " with pT " << muonList.at(i).pt() << " GeV" << std::endl ; 
+      }
+    }
     return muonList ; 
   }
 
   std::vector< reco::GsfElectron > getElectronList(edm::Handle<reco::GsfElectronCollection>& recoElecs,
-						   							edm::Handle< edm::ValueMap<float> >& valueMap, 
-                                                    double minEt, double maxAbsEta, 
-						   							int cutlevel, std::vector< std::pair<double,unsigned int> >& eleCutsByPt,
-						   							edm::Handle<reco::VertexCollection>& vertices) { 
+						   edm::Handle< edm::ValueMap<float> >& valueMap, 
+                                                   double minEt, double maxAbsEta, 
+						   int cutlevel) { 
 
     const edm::ValueMap<float> &eIDmap = *valueMap ;
-    
-    std::pair<double,unsigned int> thePair;
-    
+      
     std::vector< reco::GsfElectron > electronList ; 
     for (unsigned int iElectron=0; iElectron < recoElecs->size(); iElectron++) {
         edm::Ref<reco::GsfElectronCollection> eRef(recoElecs,iElectron);
-        reco::Vertex iV = vertices->at(0);
         if ( eRef->pt() < minEt ) continue ;
         if ( fabs(eRef->eta()) > maxAbsEta ) continue ;
-        if ( eRef->dr03TkSumPt()/eRef->pt() > 0.3 ) continue ;
-        if ( eRef->dr03EcalRecHitSumEt()/eRef->pt() > 0.3 ) continue ;
-        if ( eRef->dr03HcalTowerSumEt()/eRef->pt() > 0.3 ) continue ;
-        if ( fabs(eRef->eta()) < 1.48 && eRef->hcalOverEcal() >0.12 ) continue ;
-        if ( fabs(eRef->eta()) > 1.48 && eRef->hcalOverEcal() >0.10 ) continue ;
-        //if ( fabs(eRef->gsfTrack()->dz(iV.position()))>0.1 ) continue;
-        //if( (fabs(eRef->eta())<1.48)&&(eRef->pt()>20)&&(eRef->pfIsolationVariables().chargedHadronIso/eRef->pt()>0.45) ) continue;
-        //if( (fabs(eRef->eta())<1.48)&&(eRef->pt()<20)&&(eRef->pfIsolationVariables().chargedHadronIso/eRef->pt()>0.50) ) continue;
-        //if( (fabs(eRef->eta())>1.48)&&(eRef->pt()>20)&&(eRef->pfIsolationVariables().chargedHadronIso/eRef->pt()>0.30) ) continue;
-        //if( (fabs(eRef->eta())>1.48)&&(eRef->pt()<20)&&(eRef->pfIsolationVariables().chargedHadronIso/eRef->pt()>0.30) ) continue;
-        //if ( fabs(eRef->gsfTrack()->dxy(vertex->position()))>0.02 ) continue;
-        //std::cout<<"GsfCand. vertex |Z| = "<<fabs(eRef->trackPositionAtVtx().z())<<std::endl;
-        thePair.first = eRef->pt();
-        thePair.second = int(eIDmap[eRef]);
-        eleCutsByPt.push_back(thePair);
-
-	//double scTheta = (2*atan(exp(-eRef->superCluster()->eta()))) ;
-	//double e25Max = eRef->e2x5Max() ; 
-	//double e15 = eRef->e1x5() ; 
-	//double e55 = eRef->e5x5() ; 
-	//double ecalIso = eRef->dr03EcalRecHitSumEt() ;
-	
-	//if ( (int(eIDmap[eRef]) & cutlevel) != cutlevel ) continue ; // electron fails ID/iso/IP/conv
+	std::cout << "Found an electron with pT: " << eRef->pt() << " and eta " << eRef->eta() << std::endl ; 
+	double scTheta = (2*atan(exp(-eRef->superCluster()->eta()))) ;
+	double e25Max = eRef->e2x5Max() ; 
+	double e15 = eRef->e1x5() ; 
+	double e55 = eRef->e5x5() ; 
+	double ecalIso = eRef->dr04EcalRecHitSumEt() ; 
+	std::cout << "Additional values        : " 
+		  << "  scTheta = " << scTheta
+		  << ";  scEt = " << eRef->superCluster()->energy()*sin(scTheta)
+		  << ";  eta = " << eRef->p4().Eta()
+		  << ";  eOverP = " << eRef->eSuperClusterOverP()
+		  << ";  hOverE = " << eRef->hadronicOverEm()
+		  << ";  sigmaee = " << eRef->sigmaIetaIeta()
+		  << ";  e25Max = " << e25Max
+		  << ";  e15 = " << e15
+		  << ";  e55 = " << e55
+		  << ";  e25Maxoe55 = " << e25Max/e55
+		  << ";  e15oe55 = " << e15/e55 
+		  << ";  deltaPhiIn = " << eRef->deltaPhiSuperClusterTrackAtVtx()
+		  << ";  deltaEtaIn = " << eRef->deltaEtaSuperClusterTrackAtVtx()
+		  << ";  tkIso = " << eRef->dr03TkSumPt()
+		  << ";  ecalIso = " << ecalIso
+		  << ";  ecalIsoPed = " << ((eRef->isEB())?std::max(0.,ecalIso-1.):ecalIso)
+		  << ";  hcalIso = " << eRef->dr04HcalTowerSumEt()
+		  << ";  hcalIso1 = " << eRef->dr04HcalDepth1TowerSumEt()
+		  << ";  hcalIso2 = " << eRef->dr04HcalDepth2TowerSumEt()
+		  << ";  mishits = " << eRef->gsfTrack()->trackerExpectedHitsInner().numberOfHits()
+		  << ";  pixel = " << eRef->gsfTrack()->hitPattern().hasValidHitInFirstPixelBarrel()
+		  << ";  dist = " << fabs(eRef->convDist())
+		  << ";  dcot = " << fabs(eRef->convDcot())
+		  << std::endl ; 
+	std::cout << "Value map returns        : " << eIDmap[eRef] << std::endl ; 
+	if ( (int(eIDmap[eRef]) & cutlevel) != cutlevel ) continue ; // electron fails ID/iso/IP/conv
         electronList.push_back( *eRef ) ;        
     }
-    std::sort(electronList.begin(),electronList.end(),pTcompare()) ;
-    std::sort(eleCutsByPt.begin(),eleCutsByPt.end()); 
+    std::sort(electronList.begin(),electronList.end(),pTcompare()) ; 
+    if ( electronList.size() ) { 
+      std::cout << "Sorted GSF electron list: " << std::endl ; 
+      for (unsigned int i=0; i<electronList.size(); i++) { 
+	std::cout << "Electron " << i+1 << " of " << electronList.size() 
+		  << " with pT " << electronList.at(i).pt() << " GeV" << std::endl ; 
+      }
+    }
     return electronList ; 
   }
 
   // A very basic HF electron ID
   bool passesHFElectronID(const reco::RecoEcalCandidate& electron, 
-			  const edm::Handle<reco::HFEMClusterShapeAssociationCollection>& clusterAssociation, HiggsEvent& HE) { 
+			  const edm::Handle<reco::HFEMClusterShapeAssociationCollection>& clusterAssociation) { 
 
     reco::SuperClusterRef hfclusRef = electron.superCluster() ;
     const reco::HFEMClusterShapeRef hfclusShapeRef = (*clusterAssociation).find(hfclusRef)->val ;
@@ -401,35 +579,48 @@ namespace higgs {
 
     double e9e25      = hfshape.eLong3x3()/hfshape.eLong5x5();
     double var2d      = hfshape.eCOREe9()-(hfshape.eSeL()*9./8.);
-    //double eCOREe9    = hfshape.eCOREe9();
-    //double eSeL       = hfshape.eSeL();
-    
-    HE.var2d = var2d;
-    HE.e9e25 = e9e25;
+    double eCOREe9    = hfshape.eCOREe9();
+    double eSeL       = hfshape.eSeL();
+
+    std::cout << "HF electron candidate with " 
+	      << " pt = " << electron.pt() 
+	      << "; eta = " << electron.eta()
+	      << "; e9e25 = " << e9e25 
+	      << "; var2d = " << var2d 
+	      << "; eCOREe9 = " << eCOREe9 
+	      << "; eSeL = " << eSeL
+	      << std::endl ;
 
     // Parameters: e9e25_loose, e9e25_tight,  var2d_loose, var2d_tight,  eCOREe9_loose, eCOREe9_tight,  eSeL_loose, eSeL_tight;
     // hFselParams =  cms.vdouble(0.90, 0.94,      0.2, 0.40,    -9999, -9999,     9999, 9999),
 
-    //if ( e9e25 <= 0.96) return false ; 
-    //if ( var2d <= 0.50 ) return false ; 
+    if ( e9e25 <= 0.94 ) return false ; 
+    if ( var2d <= 0.40 ) return false ; 
     
-    //std::cout << "HF candidate passes selection" << std::endl ; 
+    std::cout << "HF candidate passes selection" << std::endl ; 
 
     return true ; 
   }
 
   std::vector< reco::RecoEcalCandidate > getElectronList(edm::Handle<reco::RecoEcalCandidateCollection>& recoElecs,
                                                          edm::Handle<reco::HFEMClusterShapeAssociationCollection>& clusterAssociation, 
-							 double minEt,double maxAbsEta, HiggsEvent& HE) {
+							 double minEt,double maxAbsEta) {
       
     std::vector< reco::RecoEcalCandidate > electronList ; 
     for (unsigned int iElectron=0; iElectron < recoElecs->size(); iElectron++) {
         edm::Ref<reco::RecoEcalCandidateCollection> eRef(recoElecs,iElectron);
         if ( eRef->pt() < minEt ) continue ;
         if ( fabs(eRef->eta()) > maxAbsEta ) continue ;
-	if ( passesHFElectronID(*eRef,clusterAssociation, HE) ) electronList.push_back( *eRef ) ;        
+	if ( passesHFElectronID(*eRef,clusterAssociation) ) electronList.push_back( *eRef ) ;        
     }
     std::sort(electronList.begin(),electronList.end(),pTcompare()) ; 
+    if ( electronList.size() ) { 
+      std::cout << "Sorted HF electron list: " << std::endl ; 
+      for (unsigned int i=0; i<electronList.size(); i++) { 
+	std::cout << "Electron " << i+1 << " of " << electronList.size() 
+		  << " with pT " << electronList.at(i).pt() << " GeV" << std::endl ; 
+      }
+    }
     return electronList ; 
   }
 
@@ -437,8 +628,17 @@ namespace higgs {
   // Starting point: https://twiki.cern.ch/twiki/bin/view/CMS/Vgamma2011PhotonID
   bool passesNoTrackID( const reco::Photon& electron, const double rho ) {
 
-    //if ( electron.hadronicOverEm() >= 0.05 ) return false ; 
-    //if ( electron.sigmaIetaIeta() >= 0.03 ) return false ; 
+    std::cout << "Looking at NT electron candidate with " 
+	      << " pt = " << electron.pt()
+	      << "; eta = " << electron.eta()
+	      << "; H/E = " << electron.hadronicOverEm()
+	      << "; sigIeIe = " << electron.sigmaIetaIeta()
+	      << "; ecalIso = " << electron.ecalRecHitSumEtConeDR04()
+	      << "; hcalIso = " << electron.hcalTowerSumEtConeDR04()
+	      << std::endl ; 
+
+    if ( electron.hadronicOverEm() >= 0.05 ) return false ; 
+    if ( electron.sigmaIetaIeta() >= 0.03 ) return false ; 
 
     // Values to compute for isolation 
     double scEt = electron.pt() ; 
@@ -447,7 +647,8 @@ namespace higgs {
 
     if ( electron.ecalRecHitSumEtConeDR04() >= ecalIsoThreshold ) return false ; 
     if ( electron.hcalTowerSumEtConeDR04() >= hcalIsoThreshold ) return false ; 
-    //std::cout<<"H/EM is "<<electron.hadronicOverEm()<<"; sigmaIetaIeta is "<<electron.sigmaIetaIeta()<<std::endl;
+    
+    std::cout << "NT passes selection" << std::endl ; 
 
     return true ; 
   }
@@ -456,7 +657,7 @@ namespace higgs {
 					      const double rho, double minEt, 
 					      double minAbsEta, double maxAbsEta) {
       
-    //if ( recoElecs->size() ) std::cout << "*** Pileup rho is: " << rho << std::endl ; 
+    if ( recoElecs->size() ) std::cout << "*** Pileup rho is: " << rho << std::endl ; 
     std::vector< reco::Photon > electronList ; 
     for (unsigned int iElectron=0; iElectron < recoElecs->size(); iElectron++) {
         edm::Ref<reco::PhotonCollection> eRef(recoElecs,iElectron);
@@ -466,6 +667,13 @@ namespace higgs {
         if ( passesNoTrackID( *eRef,rho ) ) electronList.push_back( *eRef ) ;        
     }
     std::sort(electronList.begin(),electronList.end(),pTcompare()) ; 
+    if ( electronList.size() ) { 
+      std::cout << "Sorted NT electron list: " << std::endl ; 
+      for (unsigned int i=0; i<electronList.size(); i++) { 
+	std::cout << "Electron " << i+1 << " of " << electronList.size() 
+		  << " with pT " << electronList.at(i).pt() << " GeV" << std::endl ; 
+      }
+    }
     return electronList ; 
   }
     
