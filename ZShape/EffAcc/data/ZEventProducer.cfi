@@ -1,0 +1,10 @@
+// Put here the modules you want the cfg file to use,
+// then include this file in your cfg file.
+// i.e. in ZEventProducer.cfg replace 'module demo = ZEventProducer {} '
+// with 'include "producerDir/ZEventProducer/data/ZEventProducer.cfi" '.
+// (Remember that filenames are case sensitive.)
+
+module ZIntoElectronsEventProducer = ZEventProducer {
+ double deltaR = 0.2
+ double minET = 0.050 // 50 MeV...
+}
